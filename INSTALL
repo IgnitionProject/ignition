@@ -1,0 +1,3 @@
+To install ignition, type
+
+   sudo python setup.py install

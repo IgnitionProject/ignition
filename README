@@ -1,0 +1,19 @@
+ignition
+========
+
+A python automation project producing low-level optimized scientific code from 
+high level language descriptions.
+
+Authors
+-------
+
+Andy R. Terrel (http://andy.terrel.us)
+  Texas Advanced Computing Center
+  University of Texas at Austin
+
+
+License
+-------
+
+ignition is licensed under the FreeBSD license. See LICENSE for details. 
+
