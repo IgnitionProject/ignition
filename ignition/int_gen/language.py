@@ -65,8 +65,8 @@ class Add (Func):
             return args[0]
         elif len(args) < 1:
             return None
-        if all(map(lambda a: type(a) == Func, args)):
-            return Func(sum(args))
+        if all(map(lambda a: type(a) is Func, args)):
+            return Func(sum([a.args[0] for a in args]), args[0].args[1])
         return IntGenExpr.__new__(cls, *args)
     def __str__(self):
         return " + ".join(map(str, self.args))
