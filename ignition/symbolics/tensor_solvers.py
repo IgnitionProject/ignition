@@ -334,12 +334,15 @@ def all_back_sub(eqns, knowns, levels= -1, multiple_sols=False, sub_all=True):
     ord_unk_iter = UpdatingPermutationIterator(unks,
                                        levels if levels != -1 else len(unks))
     sols = []
-    print "Searching a possible %d orders" % len(list(ord_unk_iter))
+    tot_to_test = len(list(ord_unk_iter))
+    print "Searching a possible %d orders" % tot_to_test
     ord_unk_iter.reset()
     num_tested = 0
     for ord_unks in ord_unk_iter:
-        print "Testing order:", ord_unks
+#        print "Testing order:", ord_unks
         num_tested += 1
+        if num_tested % (tot_to_test / 10 if tot_to_test > 10 else 2) == 0:
+            print "Tested ", num_tested
         sol_dict, failed_var = backward_sub(eqns, knowns, ord_unks,
                                             multiple_sols, sub_all)
 #        print "  result:", sol_dict, failed_var
