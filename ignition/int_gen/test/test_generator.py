@@ -3,8 +3,8 @@ from subprocess import Popen, PIPE
 import sympy
 
 
-from int_gen.language import *
-from int_gen.generator import *
+from ignition.int_gen.language import DiscFunc, Dom, Func
+from ignition.int_gen.generator import gen_file, int_gen
 
 def test_symbolic_fun():
     x = sympy.Symbol("x")
@@ -27,9 +27,11 @@ def test_disc_fun():
 {
   double ret_val = 0.0;
 
-  unsigned int i;
-  for (i=0; i<NUM_QUAD_PTS; ++i)
-    ret_val += 0.500000*QUAD_WTS[i]*(u[i]);
+  ret_val += 0.118463442528*(u[0])
+           + 0.23931433525*(u[1])
+           + 0.284444444444*(u[2])
+           + 0.23931433525*(u[3])
+           + 0.118463442528*(u[4]);
   return ret_val;
 }
 
@@ -45,9 +47,11 @@ def test_add_fun():
   double ret_val = 0.0;
   ret_val += 0.841470984807897;
 
-  unsigned int i;
-  for (i=0; i<NUM_QUAD_PTS; ++i)
-    ret_val += 0.500000*QUAD_WTS[i]*(u[i]);
+  ret_val += 0.118463442528*(u[0])
+           + 0.23931433525*(u[1])
+           + 0.284444444444*(u[2])
+           + 0.23931433525*(u[3])
+           + 0.118463442528*(u[4]);
   return ret_val;
 }
 
@@ -62,9 +66,11 @@ def test_mul_fun():
 {
   double ret_val = 0.0;
 
-  unsigned int i;
-  for (i=0; i<NUM_QUAD_PTS; ++i)
-    ret_val += 0.500000*QUAD_WTS[i]*(u[i]*cos((0.500000*QUAD_PTS[i]+0.500000)));
+  ret_val += 0.118333123748775*(u[0])
+           + 0.232970501924733*(u[1])
+           + 0.249623484271039*(u[2])
+           + 0.171933767086186*(u[3])
+           + 0.0686101077775073*(u[4]);
   return ret_val;
 }
 
@@ -83,9 +89,11 @@ def test_complex_fun():
   double ret_val = 0.0;
   ret_val += 0.239133626928383;
 
-  unsigned int i;
-  for (i=0; i<NUM_QUAD_PTS; ++i)
-    ret_val += 0.500000*QUAD_WTS[i]*(u[i]*v[i]+cos((0.500000*QUAD_PTS[i]+0.500000))*u[i]*v[i]);
+  ret_val += 0.118463442528*(u[0]*v[0] + 0.998899924090178*u[0]*v[0])
+           + 0.23931433525*(u[1]*v[1] + 0.973491628412768*u[1]*v[1])
+           + 0.284444444444*(u[2]*v[2] + 0.877582561890373*u[2]*v[2])
+           + 0.23931433525*(u[3]*v[3] + 0.718443242887239*u[3]*v[3])
+           + 0.118463442528*(u[4]*v[4] + 0.579166925368017*u[4]*v[4]);
   return ret_val;
 }
 

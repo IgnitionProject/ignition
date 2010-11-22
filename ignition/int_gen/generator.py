@@ -1,7 +1,7 @@
 from math import sqrt
 from sympy import ccode, sympify
 
-from language import Add, Func, Mul, DiscFunc
+from ignition.int_gen.language import Add, DiscFunc
 
 QUAD_PTS = [-(1.0 / 3.0 * sqrt(5 + 2 * sqrt(10.0 / 7.0))),
             - (1.0 / 3.0 * sqrt(5 - 2 * sqrt(10.0 / 7.0))),
@@ -14,6 +14,41 @@ QUAD_WTS = [(322 - 13 * sqrt(70)) / 900,
             (322.0 + 13 * sqrt(70)) / 900,
             (322.0 - 13 * sqrt(70)) / 900]
 
+def init_quad_rule (num_pts, name="Gauss"):
+    global QUAD_PTS, QUAD_WTS
+    if name != "Gauss":
+        raise NotImplementedError
+    if num_pts == 1:
+        QUAD_PTS = [0.0]
+        QUAD_WTS = [2.0]
+    elif num_pts == 2:
+        QUAD_PTS = [-1.0 / sqrt(3), 1.0 / sqrt(3)]
+        QUAD_WTS = [1.0, 1.0]
+    elif num_pts == 3:
+        QUAD_PTS = [-sqrt(15) / 5.0, 0.0, sqrt(15) / 5.0]
+        QUAD_WTS = [5.0 / 9.0, 8.0 / 9.0, 5.0 / 9.0]
+    elif num_pts == 4:
+        QUAD_PTS = [-sqrt((3 + 2 * sqrt(6.0 / 5.0)) / 7.0),
+                    - sqrt((3 - 2 * sqrt(6.0 / 5.0)) / 7.0),
+                    sqrt((3 - 2 * sqrt(6.0 / 5.0)) / 7.0),
+                    sqrt((3 + 2 * sqrt(6.0 / 5.0)) / 7.0)]
+        QUAD_WTS = [(18.0 - sqrt(30) / 36.0),
+                    (18.0 + sqrt(30) / 36.0),
+                    (18.0 + sqrt(30) / 36.0),
+                    (18.0 - sqrt(30) / 36.0)]
+    elif num_pts == 5:
+        QUAD_PTS = [-(1.0 / 3.0 * sqrt(5 + 2 * sqrt(10.0 / 7.0))),
+            - (1.0 / 3.0 * sqrt(5 - 2 * sqrt(10.0 / 7.0))),
+            0.0,
+            1.0 / 3.0 * sqrt(5 - 2.0 * sqrt(10.0 / 7.0)),
+            1.0 / 3.0 * sqrt(5 + 2.0 * sqrt(10.0 / 7.0))]
+        QUAD_WTS = [(322 - 13 * sqrt(70)) / 900,
+            (322 + 13 * sqrt(70)) / 900,
+            128.0 / 225.0,
+            (322.0 + 13 * sqrt(70)) / 900,
+            (322.0 - 13 * sqrt(70)) / 900]
+    else:
+        raise NotImplementedError
 
 def gen_file(name, integrals, func_names, input_vars):
     indent = 0
@@ -126,8 +161,8 @@ def gen_discrete_unrolled(func, dom, ret_str="ret_val", indent=0):
     for i in xrange(len(QUAD_PTS)):
         num, array = func.eval_pt(i, jac * QUAD_PTS[i] + shift)
         if i != 0:
-            disc_eval += "\n%s  + " % (" "*(indent*2 + len(ret_str)))
-        disc_eval += str(jac*num*QUAD_WTS[i]) + "*(" + array +")"
+            disc_eval += "\n%s  + " % (" "*(indent * 2 + len(ret_str)))
+        disc_eval += str(jac * num * QUAD_WTS[i]) + "*(" + array + ")"
     return """
 %(indent)s%(ret_str)s += %(disc_eval)s;
 """ % \
