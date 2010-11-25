@@ -365,7 +365,9 @@ class Inner (TensorExpr, Function):
 def numpy_print(expr):
     dot_str = "dot(%s, %s)"
 #    print "numpy_print: ", expr, type(expr)
-    if isinstance(expr, Mul):
+    if isinstance(expr, (Number, float, int)):
+        return str(expr)
+    elif isinstance(expr, Mul):
         if expr.args[0] is S(-1):
             return "-" + numpy_print(-1 * expr)
         if len(expr.args) == 2:
@@ -379,6 +381,8 @@ def numpy_print(expr):
     elif isinstance(expr, Pow):
         if expr.args[1] == S(-1):
             return "1.0 / %s" % numpy_print(expr.args[0])
+        if expr_rank(expr) == 0:
+            return "(%s)**%s" % tuple(map(numpy_print, expr.args))
         else:
             raise NotImplementedError
     elif isinstance(expr, Inner):
@@ -474,8 +478,18 @@ def expr_rank(eqn):
     if isinstance(eqn, Mul):
         arg_shape = expr_shape(eqn)
         return sum(map(lambda x: x != 1, arg_shape))
-    if isinstance(eqn, Pow) and eqn.args[1] == -1:
-        return expr_rank(eqn.args[0])
+    if isinstance(eqn, Pow):
+        if isinstance(eqn.args[1], (Number, int)):
+            base_rank = expr_rank(eqn.args[0])
+            if eqn.args[1] == -1:
+                return base_rank
+            if base_rank == 0 or base_rank == 2:
+                return base_rank
+            if base_rank == 1 and eqn.args[1] % 2 == 0:
+                return 0
+            if base_rank == 1:
+                return 1
+
 #        arg_ranks = map(expr_rank, eqn.args)
 #        arg_ranks = filter(lambda x: x != 0, arg_ranks)
 #        if len(arg_ranks) == 0:
