@@ -14,7 +14,7 @@ QUAD_WTS = [(322 - 13 * sqrt(70)) / 900,
             (322.0 + 13 * sqrt(70)) / 900,
             (322.0 - 13 * sqrt(70)) / 900]
 
-def init_quad_rule (num_pts, name="Gauss"):
+def select_quad_rule (num_pts, name="Gauss"):
     global QUAD_PTS, QUAD_WTS
     if name != "Gauss":
         raise NotImplementedError

@@ -1,7 +1,7 @@
 from sympy import *
 from ignition.int_gen import *
 
-init_quad_rule(2, "Gauss")
+select_quad_rule(num_pts=2, name="Gauss")
 
 u = DiscFunc("u")
 x = Symbol("x")
