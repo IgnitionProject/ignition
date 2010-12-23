@@ -1,0 +1,5 @@
+Ignition IntGen
+===============
+
+.. automodule:: ignition.intgen
+   :members:

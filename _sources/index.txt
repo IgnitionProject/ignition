@@ -1,0 +1,33 @@
+.. Ignition documentation master file, created by
+   sphinx-quickstart on Wed Dec 22 22:11:56 2010.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+Welcome to Ignition's documentation!
+====================================
+
+`Ignition <http://andy.terrel.us/ignition>`_ is a Python library for defining
+domain specific languages and generating high performance code.
+
+Contents:
+
+.. toctree::
+   :maxdepth: 3
+
+   intro
+   install
+   modules/index
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
+
+If something cannot be easily accessed from this page, it's a bug (`please
+report it`_).
+
+This documentation is maintained with docutils, so you might see some comments in the form #doctest:... . You can safely ignore them.
+
+.. _please report it: https://github.com/aterrel/ignition/issues

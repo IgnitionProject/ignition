@@ -1,0 +1,23 @@
+Installation
+------------
+
+Go to the `Project Page`_ on GitHub. You can either download the source
+by hitting the large downloads button or use git to checkout the repository.
+
+Inside the source, the INSTALL file gives detailed instructions.  Currently the
+library is mostly written in Python which gives two basic install.
+
+User or global install
+    This is done with the usual Python distutils with the command ``python
+    setup.py install``
+
+In source install
+    Since the code is pure Python you can add the source directory to the
+    ``PYTHONPATH`` environment variable.  No code needs to be moved or compiled
+    for this option.
+
+Ignition currently requires `SymPy`_  version 0.6.7 or later.
+
+
+.. _Project Page: https://github.com/aterrel/ignition
+.. _SymPy: http://www.sympy.org/
