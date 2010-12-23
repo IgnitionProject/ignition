@@ -20,12 +20,28 @@ class TensorExpr (Expr):
     shape = None
     is_symmetric = True
 
+    def __mul_by_one (self, other):
+        self_is_one = is_one(self)
+        other_is_one = is_one(other)
+        if self_is_one or other_is_one:
+            ers = expr_rank(self)
+            ero = expr_rank(other)
+            if ers == ero == 2:
+                return other if self_is_one else self
+            if self_is_one and ers == 0:
+                return other
+            if other_is_one and ero == 0:
+                return self
+
     def __mul__ (self, other):
         is_mul_conforming_or_die(self, other)
         if is_zero(self) or is_zero(other):
             return Tensor('0', rank=mul_rank(self, other))
         if is_inner(self, other):
             return Inner(self, other)
+        mul_by_one = self.__mul_by_one(other)
+        if mul_by_one is not None:
+            return mul_by_one
         return super(TensorExpr, self).__mul__(other)
 
     def __rmul__ (self, other):
@@ -34,6 +50,9 @@ class TensorExpr (Expr):
             return Tensor('0', rank=mul_rank(other, self))
         if is_inner(other, self):
             return Inner(other, self)
+        mul_by_one = self.__mul_by_one(other)
+        if mul_by_one is not None:
+            return mul_by_one
         return super(TensorExpr, self).__rmul__(other)
 
     def __add__ (self, other):
@@ -79,6 +98,14 @@ def is_zero (expr):
         return expr.name.startswith('0')
     if isinstance(expr, Transpose):
         return is_zero(expr.args[0])
+
+def is_one (expr):
+    """Returns True, False, or None"""
+    if isinstance(expr, Tensor):
+        return expr.name.startswith('1')
+    if isinstance(expr, Transpose):
+        return is_one(expr.args[0])
+
 
 def is_outer (a, b):
     esa = expr_shape(a)

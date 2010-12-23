@@ -66,5 +66,23 @@ def testZero():
     raises(ConformityError, "z_0+A")
 
 
+def testOne():
+    A = Tensor('A', 2)
+    a = Tensor('a', 1)
+    alpha = Tensor('alpha', 0)
+    ONE = Tensor('1', 2)
+    one = Tensor('1', 0)
+
+    assert(A * ONE == A)
+    assert(ONE * A == A)
+
+    assert(A * one == A)
+    assert(one * A == A)
+    assert (a * one == a)
+    assert (one * a == a)
+    assert(alpha * one == alpha)
+    assert(one * alpha == alpha)
+
+
 if __name__ == "__main__":
     test_numpy_print()

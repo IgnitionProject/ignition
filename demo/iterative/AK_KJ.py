@@ -4,7 +4,12 @@
 """
 
 from ignition.flame import *
-from ignition.symbolics.tensors import Tensor, Zero, One
+
+ZERO = Tensor('0', 2)
+Zero = Tensor('0', 1)
+zero = Tensor('0', 0)
+One = Tensor('1', 1)
+one = Tensor('1', 0)
 
 # Define partition rules 
 def it_part_1x3 (M):
@@ -30,13 +35,13 @@ def repartK (K, *args, **kws):
 def repartJ (J):
     ret_dict = {}
     [[J_tl, _, _],
-     [j_ml, _, _],
+     [Tj_ml, _, _],
      [_, j_bm, J_br]] = J
     ret_dict[J_tl] = [[J_tl.new(ind="00")]]
-    ret_dict[j_ml] = [[Zero]]
-    ret_dict[j_bm] = [[One, Zero]
+    ret_dict[Tj_ml] = [[T(Tj_ml.new(ind="10"))]]
+    ret_dict[j_bm] = [[one, zero],
                       [Zero, j_bm.new(ind="32")]]
-    ret_dict[J_br] = [[Zero],
+    ret_dict[J_br] = [[T(Zero)],
                       [J_br.new(ind="33")]]
     return ret_dict
 
@@ -56,11 +61,11 @@ def fuseK (K, *args, **kws):
 def fuseJ (J):
     ret_dict = {}
     [[J_tl, _, _],
-     [j_ml, _, _],
+     [Tj_ml, _, _],
      [_, j_bm, J_br]] = J
     ret_dict[J_tl] = [[J_tl.new(ind="00"), Zero],
-                      [J_tl.new(ind="10", transpose=True), Zero]]
-    ret_dict[j_ml] = [Zero, One]
+                      [T(Tj_ml.new(ind="10", transpose=True)), zero]]
+    ret_dict[Tj_ml] = [T(Zero), one]
     ret_dict[j_bm] = [j_bm.new(ind="32")]
     ret_dict[J_br] = [J_br.new(ind="33")]
     return ret_dict
@@ -74,9 +79,9 @@ def AK_KJ_Rule (A, K, J):
     [A] = A
     [K_l, k_m, K_r] = K
     [[J_tl, _, _],
-     [j_ml, _, _],
+     [Tj_ml, _, _],
      [_, j_bm, J_br]] = J
-    return flatten((A * K_l - K_l * J_tl + k_m * j_ml).tolist())
+    return flatten((A * K_l - K_l * J_tl + k_m * Tj_ml).tolist())
 
 
 # Define the objects used in the PME
