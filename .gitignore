@@ -9,8 +9,7 @@ my/
 dist/
 build/
 
-doc/_build/
-doc/sphinx/
+doc/build/
 
 .DS_Store
 .project

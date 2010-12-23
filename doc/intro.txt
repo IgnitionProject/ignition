@@ -1,0 +1,14 @@
+Introduction
+------------
+
+Ignition is a research code for defining domain specific languages useful for
+high performance computing (HPC).  The goal of the project is to lower the
+barriers-of-entry for none HPC experts who want to use the power of the HPC
+resources.
+
+Currently, the project has a reference language and generator for integral
+equations, called IntGen.  We are also working on an automation engine for the
+FLAME project that includes dense and sparse linear algebra methods.
+
+In the future we hope to add more application areas to the project.  The next
+area of interest will most likely be finite element algorithms.
