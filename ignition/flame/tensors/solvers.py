@@ -1,13 +1,76 @@
 """Several solvers for overdetermined tensor systems."""
 
 from copy import copy
-from sympy import expand, S
+from sympy import Add, expand, Mul, S
 from sympy.utilities.iterables import postorder_traversal
 
-from tensors import solve_vec_eqn
+from tensor_expr import expr_rank
 from ignition.utils.iterators import UpdatingPermutationIterator
+from ignition import IGNITION_DEBUG as DEBUG
 
-DEBUG = False
+
+class NonLinearEqnError (Exception):
+    pass
+
+class UnsolvableEqnsError (Exception):
+    pass
+
+def solve_vec_eqn(eqn, var):
+    """Returns the solution to a linear equation containing Tensors
+    
+    Raises:
+      NonLinearEqnError if the variable is detected to be nonlinear
+      NotInvertibleError if an inverse is required that is not available
+      NotImplementedError if operation isn't supported by routine     
+    """
+    if DEBUG:
+        print "solve_vec_eqn: ", eqn, "for", var
+    if var.rank != expr_rank(eqn):
+        raise ValueError("Unmatched ranks of clauses")
+    if eqn.as_poly(var).degree() > 1:
+        raise NonLinearEqnError()
+
+    def _solve_recur(expr, rhs=S(0)):
+        expr = expand(expr)
+        if expr == var:
+            return rhs
+        elif isinstance(expr, Mul):
+            lhs = S(1)
+            # Try by rank
+            coeff = expr.coeff(var)
+            coeff_rank = expr_rank(coeff)
+            if coeff_rank == 0:
+                rhs /= coeff
+                for arg in expr.args:
+                    if var in arg:
+                        lhs *= arg
+            elif coeff_rank == 1:
+                raise NotInvertibleError(str(coeff) + " of " + str(expr))
+            elif coeff_rank == 2:
+                for arg in expr.args:
+                    if var in arg:
+                        lhs *= arg
+                    else:
+                        rhs /= arg
+            return _solve_recur(lhs, rhs)
+        elif isinstance(expr, Add):
+            lhs = 0
+            for arg in expr.args:
+                if var in arg:
+                    lhs += arg
+                else:
+                    rhs -= arg
+            if isinstance(lhs, Add):
+                coeff = lhs.coeff(var)
+                if expand(coeff * var) == lhs:
+                    rhs /= coeff
+                    lhs = var
+            return _solve_recur(lhs, rhs)
+        else:
+            raise NotImplementedError("Can't handle expr of type %s" % type(expr))
+    return _solve_recur(expand(eqn))
+
+
 
 def get_eqns_unk (eqns, knowns):
     """Returns the list of unknowns, given the knowns, from a list of equations"""
@@ -286,7 +349,7 @@ def backward_sub(eqns, knowns, unknowns=None, multiple_sols=False, sub_all=False
             sol_dict[unk] = None
 
     all_eqns = copy(eqns)
-    for n, unk in enumerate(unknowns):
+    for _, unk in enumerate(unknowns):
         if DEBUG:
             print "Searching for unk:", unk
         for eqn in all_eqns:
@@ -359,5 +422,5 @@ def all_back_sub(eqns, knowns, levels= -1, multiple_sols=False, sub_all=True):
             uniq_sols.append((sol_dict, ord_unks))
     print "Found %d unique solutions" % len(uniq_sols)
     uniq_sols.sort(key=lambda s: sum([len(list(postorder_traversal(v))) \
-                                      for k, v in s[0].iteritems()]))
+                                      for _, v in s[0].iteritems()]))
     return uniq_sols

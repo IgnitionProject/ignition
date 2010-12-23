@@ -1,5 +1,6 @@
-from sympy import S
-from ignition.symbolics.tensors import numpy_print, T, Tensor, solve_vec_eqn
+from sympy import S, raises
+from ignition.symbolics.tensors import ConformityError, numpy_print, T, Tensor,
+                                       solve_vec_eqn
 
 delta_1, omega_2, pi_1, pi_2, gamma_2, mu_12 = \
     map(lambda x: Tensor(x, rank=0),
@@ -30,6 +31,37 @@ def test_numpy_print():
     #dot(dot(r_1, r_1), (1.0/dot(transpose(dot(transpose(p_1), A)), r_1)))
     print numpy_print((T(p_1) * A * r_2) / (T(p_1) * A * p_1))
     #dot(dot(transpose(dot(transpose(p_1), A)), r_2), (1.0/dot(transpose(dot(transpose(p_1), A)), p_1)))
+
+def testZero():
+    A = Tensor('A', 2)
+    a = Tensor('a', 1)
+    alpha = Tensor('alpha', 0)
+    Z = Tensor('0', 2)
+    z = Tensor('0', 1)
+    z_0 = Tensor('0', 0)
+
+    assert(A + Z == A)
+    assert(Z + A == A)
+    assert(A * Z == Z)
+    assert(Z * A == Z)
+
+    assert(a + z == a)
+    assert(z + a == a)
+    assert(a * z == Z)
+    assert(z * a == Z)
+    assert(z * T(a) == z_0)
+
+    assert(alpha + z_0 == alpha)
+    assert(alpha * z_0 == z_0)
+    assert(alpha * z == z)
+    assert(alpha * Z == Z)
+
+    assert(A * z == z)
+    raises(ConformityError, "z*A")
+    raises(ConformityError, "z0*A")
+    raises(ConformityError, "z+A")
+    raises(ConformityError, "z0+A")
+
 
 if __name__ == "__main__":
     test_numpy_print()
