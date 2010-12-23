@@ -1,7 +1,7 @@
 .. _module-docs:
 
 Ignition Modules Reference
-=======================
+==========================
 
 Because every feature of Ignition must have a test case, when you are not sure how
 to use something, just look into the ``tests/`` directories, find that feature
