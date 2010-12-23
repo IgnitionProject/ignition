@@ -1,6 +1,6 @@
 from sympy import S, raises
-from ignition.symbolics.tensors import ConformityError, numpy_print, T, Tensor,
-                                       solve_vec_eqn
+from ignition.flame.tensors import (ConformityError, numpy_print, T, Tensor,
+                                   solve_vec_eqn)
 
 delta_1, omega_2, pi_1, pi_2, gamma_2, mu_12 = \
     map(lambda x: Tensor(x, rank=0),
@@ -47,20 +47,23 @@ def testZero():
 
     assert(a + z == a)
     assert(z + a == a)
-    assert(a * z == Z)
-    assert(z * a == Z)
-    assert(z * T(a) == z_0)
+    assert(A * z == z)
+    assert(T(a) * z == z_0)
+    assert(T(z) * a == z_0)
+    assert(z * T(a) == Z)
+    assert(a * T(z) == Z)
 
     assert(alpha + z_0 == alpha)
     assert(alpha * z_0 == z_0)
     assert(alpha * z == z)
     assert(alpha * Z == Z)
 
-    assert(A * z == z)
+    assert(z_0 * A == Z)
+    assert(z_0 * a == z)
+
     raises(ConformityError, "z*A")
-    raises(ConformityError, "z0*A")
     raises(ConformityError, "z+A")
-    raises(ConformityError, "z0+A")
+    raises(ConformityError, "z_0+A")
 
 
 if __name__ == "__main__":

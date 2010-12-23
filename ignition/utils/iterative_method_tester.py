@@ -9,8 +9,7 @@ from numpy.random import random
 from numpy.linalg import solve
 from pprint import pprint
 
-from ignition.symbolics.tensors import numpy_print, T, Tensor
-from ignition.symbolics.tensor_solvers import all_back_sub
+from ignition.flame.tensors import all_back_sub, numpy_print, T, Tensor
 
 TEST_NUM_SOLS = 1000
 TEST_LEVELS = -1
@@ -33,7 +32,7 @@ def get_fd_poisson(n=100):
 #    b = ones(n)
     return A, b
 
-def cg_alg_tester(alg, n=100):
+def cg_alg_driver(alg, n=100):
     A, b = get_fd_poisson(n)
     iters, x = alg(A, b, n)
     x_numpy = solve(A, b)
@@ -180,7 +179,7 @@ def cg_alg_from_sols(sols, A, b, n=101):
             break
     return i, x_1
 
-def test_cg_algorithms(cg_eqns, knowns):
+def run_cg_algorithms(cg_eqns, knowns):
     print("Solving for CG updates.")
     cg_sols = all_back_sub(cg_eqns, knowns, levels=TEST_LEVELS)
     tot_test = min(len(cg_sols), TEST_NUM_SOLS)
@@ -191,7 +190,7 @@ def test_cg_algorithms(cg_eqns, knowns):
         print "Algorithm %d:" % i
         pprint(cg_sols[i][0])
         try:
-            iters, l2, linf = cg_alg_tester(partial(cg_alg_from_sols, cg_sols[i]))
+            iters, l2, linf = cg_alg_driver(partial(cg_alg_from_sols, cg_sols[i]))
             print "-" * 80
             print "iters = %d" % iters
             print "l2 error = %.2e" % l2
@@ -219,7 +218,7 @@ def test_reg_cg():
                T(r_1) * r_2,
                T(p_1) * A * p_2,
                ]
-    test_cg_algorithms(cg_eqns, knowns)
+    run_cg_algorithms(cg_eqns, knowns)
 
 def test_expanded_cg():
     delta_1, mu_12 = map(lambda x: Tensor(x, rank=0), ['delta_1', 'mu_12'])
@@ -240,7 +239,7 @@ def test_expanded_cg():
                T(r_1) * r_2,
                T(p_1) * q_2,
                ]
-    test_cg_algorithms(cg_eqns, knowns)
+    run_cg_algorithms(cg_eqns, knowns)
 
 def test_chronos_cg():
     delta_1, omega_2, pi_1, pi_2, mu_12 = map(lambda x: Tensor(x, rank=0), \
@@ -266,22 +265,22 @@ def test_chronos_cg():
                 T(p_1) * A * p_2,
                 T(p_2) * A * p_2 - T(r_2) * A * r_2 + T(mu_12) * pi_1 * mu_12,
                 ]
-    test_cg_algorithms(chronos_eqns, knowns)
+    run_cg_algorithms(chronos_eqns, knowns)
 
 def test_cg_gold():
-    iters, l2, linf = cg_alg_tester(cg_alg_gold)
+    iters, l2, linf = cg_alg_driver(cg_alg_gold)
     print l2, linf
 #    assert(l2 < 1e-10)
 #    assert(linf < 1e-10)
 
 def test_cg_saad_meurant():
-    iters, l2, linf = cg_alg_tester(cg_saad_meurant)
+    iters, l2, linf = cg_alg_driver(cg_saad_meurant)
     print l2, linf
 #    assert(l2 < 1e-10)
 #    assert(linf < 1e-10)
 
 def test_cg_saad():
-    iters, l2, linf = cg_alg_tester(cg_saad)
+    iters, l2, linf = cg_alg_driver(cg_saad)
     print l2, linf
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@ from sympy import Add, Number, Mul, Pow, S
 
 from tensor_expr import expr_rank
 from tensor import Tensor
-from functions import Inner, Inverse, Transpose
+from basic_operators import Inner, Inverse, Transpose
 
 def numpy_print(expr):
     dot_str = "dot(%s, %s)"

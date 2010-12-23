@@ -10,3 +10,4 @@ from tensor_expr import (
 from tensor import (Tensor)
 from basic_operators import (NotInvertibleError, Inner, Inverse, Transpose, T)
 from solvers import (all_back_sub, solve_vec_eqn)
+from printers import (numpy_print)

@@ -21,6 +21,7 @@ class TensorExpr (Expr):
     is_symmetric = True
 
     def __mul__ (self, other):
+        is_mul_conforming_or_die(self, other)
         if is_zero(self) or is_zero(other):
             return Tensor('0', rank=mul_rank(self, other))
         if is_inner(self, other):
@@ -28,15 +29,15 @@ class TensorExpr (Expr):
         return super(TensorExpr, self).__mul__(other)
 
     def __rmul__ (self, other):
+        is_mul_conforming_or_die(other, self)
         if is_zero(self) or is_zero(other):
             return Tensor('0', rank=mul_rank(other, self))
-        if is_inner(self, other):
-            return Inner(self, other)
+        if is_inner(other, self):
+            return Inner(other, self)
         return super(TensorExpr, self).__rmul__(other)
 
     def __add__ (self, other):
-        if expr_rank(self) != expr_rank(other):
-            raise TypeError("Tensor addition only defined for same rank")
+        is_add_conforming_or_die(self, other)
         if is_zero(self):
             return other
         if is_zero(other):
@@ -44,8 +45,7 @@ class TensorExpr (Expr):
         return super(TensorExpr, self).__add__(other)
 
     def __radd__ (self, other):
-        if expr_rank(self) != expr_rank(other):
-            raise TypeError("Tensor addition only defined for same rank")
+        is_add_conforming_or_die(other, self)
         if self.name and self.name.startswith('0'):
             return other
         return super(TensorExpr, self).__radd__(other)
@@ -78,19 +78,33 @@ def is_zero (expr):
     if isinstance(expr, Tensor):
         return expr.name.startswith('0')
     if isinstance(expr, Transpose):
-        return expr.args[0].is_zero
+        return is_zero(expr.args[0])
 
 def is_outer (a, b):
     esa = expr_shape(a)
     esb = expr_shape(b)
     return expr_rank(a) == expr_rank(b) == 1 and \
-           esa[0] == esb[1] == 1 and esa[1] == esa[0]
+           esa[1] == esb[0] == 1 and esa[0] == esb[1]
 
 def is_inner (a, b):
     esa = expr_shape(a)
     esb = expr_shape(b)
     return expr_rank(a) == expr_rank(b) == 1 and \
-           esa[1] == esb[0] == 1 and esa[0] == esa[1]
+           esa[0] == esb[1] == 1 and esa[1] == esb[0]
+
+def is_mul_conforming_or_die (a, b):
+    esa = expr_shape(a)
+    esb = expr_shape(b)
+    if (1, 1) in [esa, esb]:
+        return True
+    if expr_shape(a)[1] != expr_shape(b)[0]:
+        raise ConformityError()
+    return True
+
+def is_add_conforming_or_die (a, b):
+    if expr_rank(a) != expr_rank(b) and expr_shape(a) != expr_shape(b):
+        raise ConformityError()
+    return True
 
 def mul_rank (a, b):
     if is_outer(a, b):
@@ -119,7 +133,7 @@ def expr_shape(expr):
     """
     if isinstance(expr, TensorExpr):
         return expr.shape
-    if isinstance(expr, (Number, Symbol)):
+    if isinstance(expr, (Number, Symbol, int, long, float)):
         return (1, 1)
     if isinstance(expr, Add):
         #TODO: Check consistency
@@ -129,9 +143,6 @@ def expr_shape(expr):
         arg_shapes = filter(lambda x: x != (1, 1), arg_shapes)
         if len(arg_shapes) == 0:
             return (1, 1)
-        for n in xrange(len(arg_shapes) - 1):
-            if arg_shapes[n][1] != arg_shapes[n + 1][0]:
-                raise ConformityError()
         return (arg_shapes[0][0], arg_shapes[-1][1])
     if isinstance(expr, Pow):
         if expr_rank(expr.args[0]) == 1:
