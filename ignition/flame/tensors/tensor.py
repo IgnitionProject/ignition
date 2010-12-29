@@ -3,6 +3,7 @@
 from sympy import Symbol, symbols
 
 from tensor_expr import TensorExpr
+from tensor_names import convert_name, set_lower_ind, set_upper_ind
 
 
 m, n, k = symbols('mnk')
@@ -84,7 +85,17 @@ class Tensor (TensorExpr, Symbol):
         else:
             self.shape = shape
 
-    def new (self, ind=None, transpose=None, hatted=None, rank=None,
-             has_inverse=None):
+    def new (self, name=None, l_ind=None, u_ind=None, rank=None,
+             has_inverse=None, shape=None, conform_name=True):
         """Forms a new Tensor with only the listed attributes changed"""
-        pass
+        name = self.name if name is None else name
+        if l_ind is not None:
+            name = set_lower_ind(name, l_ind)
+        if u_ind is not None:
+            name = set_upper_ind(name, u_ind)
+        rank = self.rank if rank is None else rank
+        if conform_name:
+            name = convert_name(name, rank)
+        shape = self.shape if shape is None else shape
+        has_inv = self.has_inverse if has_inverse is None else has_inverse
+        return Tensor(name, rank=rank, shape=shape, has_inv=has_inv)
