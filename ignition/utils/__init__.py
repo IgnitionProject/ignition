@@ -1,3 +1,3 @@
 from enum import Enum
-from helpers import flatten
-from iterators import UpdatingPermutationIterator
+from iterators import (flatten, flatten_list, nested_list_idxs,
+                       UpdatingPermutationIterator)

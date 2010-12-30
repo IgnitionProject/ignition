@@ -79,3 +79,53 @@ class UpdatingPermutationIterator (object):
             self._curr[pos - 1] += 1
             for idx in xrange(pos, self._n):
                 self._curr[idx] = 0
+
+
+def flatten (alst):
+    """A recursive flattening algorithm for handling arbitrarily nested iterators
+    
+    >>> flatten([0, [1,(2, 3), [4, [5, [6, 7]]]], 8])
+    [1, 2, 3, 4, 5, 6, 7, 8]
+    """
+    def _recur (blst):
+        for elem in blst:
+            if hasattr(elem, "__iter__"):
+                for i in _recur(elem):
+                    yield i
+            else:
+                yield elem
+    return list(_recur(alst))
+
+def flatten_list (alst):
+    """Similar to flatten except only flattens lists
+    
+    >>> flatten_list([0, (2, 3), [4])
+    [0, (2, 3), 4]
+    """
+    def _recur (blst):
+        for elem in blst:
+            if type(elem) is list:
+                for i in _recur(elem):
+                    yield i
+            else:
+                yield elem
+    return list(_recur(alst))
+
+def nested_list_idxs (alst):
+    """Returns tuple generator corresponding to all indexes in the 
+    nested list
+
+    >>> list(nested_list_iter([[1,2],[3]])
+    [(0,0), (0,1), (1,0)]
+    """
+    def _recur (blst, acc):
+        if not type(blst) is list:
+            return tuple(acc)
+        else:
+            ret_val = []
+            for i in xrange(len(blst)):
+                curr_acc = acc + [i]
+                curr_val = _recur(blst[i], curr_acc)
+                ret_val.append(curr_val)
+            return ret_val
+    return flatten_list(_recur(alst, []))
