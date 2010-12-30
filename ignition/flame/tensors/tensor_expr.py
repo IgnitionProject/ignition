@@ -125,12 +125,16 @@ def is_mul_conforming_or_die (a, b):
     if (1, 1) in [esa, esb]:
         return True
     if expr_shape(a)[1] != expr_shape(b)[0]:
-        raise ConformityError()
+        raise ConformityError("%s * %s\n\tranks %d, %d\n\tshapes %s, %s"\
+                              % (str(a), str(b), a.rank, b.rank,
+                                 str(a.shape), str(b.shape)))
     return True
 
 def is_add_conforming_or_die (a, b):
     if expr_rank(a) != expr_rank(b) and expr_shape(a) != expr_shape(b):
-        raise ConformityError()
+        raise ConformityError("%s * %s\n\tranks %d, %d\n\tshapes %s, %s"\
+                              % (str(a), str(b), a.rank, b.rank,
+                                 str(a.shape), str(b.shape)))
     return True
 
 def mul_rank (a, b):
