@@ -40,10 +40,10 @@ class PAlgGenerator (object):
         aft_eqns = self.fuse_invariant()
         print b4_eqns
         print aft_eqns
-#        update_dict = self.updater(b4_eqns, aft_eqns)
-#        print "PAlgGenerator.generate: update_eqns"
-#        for var, update in update_dict.iteritems():
-#            print "  ", var, " = ", update
+        update_dict = self.updater(b4_eqns, aft_eqns)
+        print "PAlgGenerator.generate: update_eqns"
+        for var, update in update_dict.iteritems():
+            print "  ", var, " = ", update
 
 def generate (filename, loop_inv=None, inv_args=[], PME=None, updater=None):
     """Utility function for generating a flame algorithm

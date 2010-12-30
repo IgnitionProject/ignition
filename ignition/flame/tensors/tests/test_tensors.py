@@ -83,18 +83,24 @@ def testOne():
     assert(alpha * one == alpha)
     assert(one * alpha == alpha)
 
-def testNew():
+def testUpdate():
     k = Symbol('k')
     A = Tensor('A', 2)
-    A_TL = A.new(l_ind='TL')
-    A_TL_2 = A_TL.new(u_ind='2', rank=2)
-    A_01 = A_TL.new(l_ind='01', shape=(k, k))
-    a_02 = T(A_TL.new(l_ind='02', shape=(1, k), rank=1))
+    A_TL = A.update(l_ind='TL')
+    A_TL_2 = A_TL.update(u_ind='2', rank=2)
+    A_01 = A_TL.update(l_ind='01', shape=(k, k))
+    a_02 = T(A_TL.update(l_ind='02', shape=(1, k), rank=1))
 
     assert(A_TL == Tensor('A_TL', 2))
     assert(A_TL_2 == Tensor('A_TL^2', 2))
     assert(A_01 == Tensor('A_01', 2, shape=(k, k)))
     assert(a_02 == T(Tensor('a_02', 1, shape=(1, k))))
+
+def testZeroOne():
+    ZERO = Tensor('0', 2)
+    One = Tensor('1', 1)
+    k = Tensor('k', 1)
+    assert(k - ZERO * One == k)
 
 if __name__ == "__main__":
     test_numpy_print()

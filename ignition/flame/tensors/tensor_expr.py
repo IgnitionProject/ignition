@@ -69,6 +69,20 @@ class TensorExpr (Expr):
             return other
         return super(TensorExpr, self).__radd__(other)
 
+    def __sub__ (self, other):
+        if is_zero(self):
+            return - other
+        if is_zero(other):
+            return self
+        return super(TensorExpr, self).__sub__(other)
+
+    def __rsub__ (self, other):
+        if is_zero(self):
+            return other
+        if is_zero(other):
+            return - self
+        return super(TensorExpr, self).__rsub__(other)
+
     def __div__ (self, other):
         if is_zero(self):
             raise ZeroDivisionError()
@@ -91,6 +105,11 @@ class TensorExpr (Expr):
 
     def __rpow__ (self, other):
         raise RuntimeError("Can't raise to the tensor power.")
+
+    def __neg__(self):
+        if is_zero(self):
+            return self
+        return super(TensorExpr, self).__neg__()
 
 def is_zero (expr):
     """Returns True, False, or None"""
@@ -126,15 +145,15 @@ def is_mul_conforming_or_die (a, b):
         return True
     if expr_shape(a)[1] != expr_shape(b)[0]:
         raise ConformityError("%s * %s\n\tranks %d, %d\n\tshapes %s, %s"\
-                              % (str(a), str(b), a.rank, b.rank,
-                                 str(a.shape), str(b.shape)))
+                              % (str(a), str(b), expr_rank(a), expr_rank(b),
+                                 str(expr_shape(a)), str(expr_shape(b))))
     return True
 
 def is_add_conforming_or_die (a, b):
     if expr_rank(a) != expr_rank(b) and expr_shape(a) != expr_shape(b):
-        raise ConformityError("%s * %s\n\tranks %d, %d\n\tshapes %s, %s"\
-                              % (str(a), str(b), a.rank, b.rank,
-                                 str(a.shape), str(b.shape)))
+        raise ConformityError("%s + %s\n\tranks %d, %d\n\tshapes %s, %s"\
+                              % (str(a), str(b), expr_rank(a), expr_rank(b),
+                                 str(expr_shape(a)), str(expr_shape(b))))
     return True
 
 def mul_rank (a, b):
