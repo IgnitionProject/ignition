@@ -40,10 +40,15 @@ class PAlgGenerator (object):
         aft_eqns = self.fuse_invariant()
         print b4_eqns
         print aft_eqns
-        update_dict = self.updater(b4_eqns, aft_eqns)
-        print "PAlgGenerator.generate: update_eqns"
-        for var, update in update_dict.iteritems():
-            print "  ", var, " = ", update
+        update_tups = self.updater(b4_eqns, aft_eqns)
+        if update_tups:
+            print "PAlgGenerator.generate: update_eqns"
+            for up_dict, _ in update_tups:
+                for var, update in up_dict.iteritems():
+                    print "  ", var, " = ", update
+        else:
+            print "PAlgGenerator.generate: no updates found."
+
 
 def generate (filename, loop_inv=None, inv_args=[], PME=None, updater=None):
     """Utility function for generating a flame algorithm
@@ -55,7 +60,8 @@ def generate (filename, loop_inv=None, inv_args=[], PME=None, updater=None):
 
 def tensor_updater (b4_eqns, aft_eqns, levels= -1, num_sols=1):
     """Updater calling tensor solvers."""
-    knowns = flatten([eqn.atoms for eqn in b4_eqns])
+    knowns = flatten([eqn.atoms() for eqn in b4_eqns])
+    print knowns
     sol_dicts = all_back_sub(aft_eqns, knowns, levels)
     sol_dicts = sol_dicts[:num_sols]
     return sol_dicts
