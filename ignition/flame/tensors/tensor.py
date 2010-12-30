@@ -96,6 +96,4 @@ class Tensor (TensorExpr, Symbol):
         rank = self.rank if rank is None else rank
         if conform_name:
             name = convert_name(name, rank)
-        shape = self.shape if shape is None else shape
-        has_inv = self.has_inverse if has_inverse is None else has_inverse
-        return Tensor(name, rank=rank, shape=shape, has_inv=has_inv)
+        return Tensor(name, rank=rank, shape=shape, has_inv=has_inverse)

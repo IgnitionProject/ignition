@@ -69,6 +69,9 @@ class Transpose (TensorExpr, Function):
             return arg
         return Basic.__new__(cls, arg, **options)
 
+    def new(self, *args, **kws):
+        return Transpose(self.args[0].new(*args, **kws))
+
     @property
     def is_commutative(self):
         return self.args[0].is_commutative

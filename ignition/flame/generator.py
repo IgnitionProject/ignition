@@ -15,10 +15,10 @@ class PAlgGenerator (object):
         self.op = operation
         self._args = args
         self.inputs = filter(lambda x: x.arg_src in \
-                             [PObj.ARG_SRC.Input, PObj.ARG_SRC.Overwritten],
+                             [PObj.ARG_SRC.Input, PObj.ARG_SRC.Overwrite],
                              args)
-        self.inputs = filter(lambda x: x.arg_src in \
-                             [PObj.ARG_SRC.Output, PObj.ARG_SRC.Overwritten],
+        self.outputs = filter(lambda x: x.arg_src in \
+                             [PObj.ARG_SRC.Output, PObj.ARG_SRC.Overwrite],
                              args)
         self.out_only = filter(lambda x: x.arg_src == PObj.ARG_SRC.Output,
                                args)
@@ -30,18 +30,20 @@ class PAlgGenerator (object):
         self.updater = kws.get("updater", None)
 
     def repart_invariant(self):
-        return self.op(*map(lambda o: o.repart(o.part()), self._args))
+        return self.op(*map(lambda o: o.repart, self._args))
 
     def fuse_invariant(self):
-        return self.op(*map(lambda o: o.fuse(o.part(), self._args)))
+        return self.op(*map(lambda o: o.fuse, self._args))
 
     def generate (self, filename, type=None):
         b4_eqns = self.repart_invariant()
         aft_eqns = self.fuse_invariant()
-        update_dict = self.updater(b4_eqns, aft_eqns)
-        print "PAlgGenerator.generate: update_eqns"
-        for var, update in update_dict.iteritems():
-            print "  ", var, " = ", update
+        print b4_eqns
+        print aft_eqns
+#        update_dict = self.updater(b4_eqns, aft_eqns)
+#        print "PAlgGenerator.generate: update_eqns"
+#        for var, update in update_dict.iteritems():
+#            print "  ", var, " = ", update
 
 def generate (filename, loop_inv=None, inv_args=[], PME=None, updater=None):
     """Utility function for generating a flame algorithm

@@ -4,6 +4,7 @@ import operator
 from copy import deepcopy
 
 from ignition.utils.enum import Enum
+from ignition.utils.iterators import nested_list_idxs
 
 
 class PObj (object):
@@ -42,23 +43,53 @@ class PObj (object):
         self._kws = kws
         self.size = kws.get("size", None)
         self.dir = kws.get("dir", None)
-        self.part = kws.get("part", None)
+        self.part_fun = kws.get("part_fun", None)
+        self._part = kws.get("part", None)
         self.part_subs = kws.get("part_subs", None)
-        self.repart = kws.get("repart", None)
-        self.fuse = kws.get("fuse", None)
+        self.repart_fun = kws.get("repart_fun", None)
+        self._repart = kws.get("repart", None)
+        self.fuse_fun = kws.get("fuse_fun", None)
+        self._fuse = kws.get("fuse", None)
         self.props = kws.get("props", [])
         self.arg_src = kws.get("arg_src", [])
 
-    def _apply_part_rule(self, rule):
-        return self.part_subs(self.part, rule)
+    @property
+    def part (self):
+        if self._part is None:
+            self._part = self.part_fun(self.obj)
+        return self._part
 
-    def apply_repart (self):
-        """Returns the partition object transformed by repart"""
-        return _apply_part_rule(self.part)
+    def _apply_partsub (self, subs):
+        if self.part_subs is not None:
+            return self.part_subs(self.part, subs)
+        if type(self.part) is list:
+            return self._apply_partsub_list(subs)
+        raise NotImplementedError("Don't know how to substitute in obj of %s." \
+                                  % type(self.part))
 
-    def apply_fuse (self):
-        """Returns the partition object transformed by fuse"""
-        return _apply_part_rule(self.fuse)
+    def _apply_partsub_list (self, subs):
+        def _recur(blst):
+            if type(blst) is list:
+                return map(_recur, blst)
+            elif blst in subs:
+                return subs[blst]
+            else:
+                return blst
+        return _recur(self.part)
+
+    @property
+    def repart (self):
+        """Returns the partition transformed by repart"""
+        if self._repart is None:
+            self._repart = self._apply_partsub(self.repart_fun(self.part))
+        return self._repart
+
+    @property
+    def fuse (self):
+        """Returns the partition transformed by fuse"""
+        if self._fuse is None:
+            self._fuse = self._apply_partsub(self.fuse_fun(self.part))
+        return self._fuse
 
     def __iter__ (self):
         if self.part is None:
