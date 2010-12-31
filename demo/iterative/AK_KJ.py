@@ -101,5 +101,5 @@ J = PObj(Tensor("J", rank=2), part_fun=it_part_J, repart_fun=repartJ, fuse_fun=f
          arg_src=PObj.ARG_SRC.Computed)
 
 # Generate the algorithm
-generate("AK_KJ.out", loop_inv=AK_KJ_Rule, inv_args=[A, K, J],
-         updater=tensor_updater)
+generate(loop_inv=AK_KJ_Rule, inv_args=[A, K, J],
+         updater=tensor_updater, filetype="latex")

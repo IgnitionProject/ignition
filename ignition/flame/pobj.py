@@ -1,10 +1,6 @@
 """Defines PME Language"""
 
-import operator
-from copy import deepcopy
-
 from ignition.utils.enum import Enum
-from ignition.utils.iterators import nested_list_idxs
 
 
 class PObj (object):
@@ -94,7 +90,7 @@ class PObj (object):
     def __iter__ (self):
         if self.part is None:
             raise NotImplementedError
-        for p in self.part():
+        for p in self.part:
             yield p
 
     def __str__(self):

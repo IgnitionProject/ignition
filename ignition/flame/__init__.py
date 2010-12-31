@@ -9,3 +9,4 @@ from tensors import *
 from pobj import *
 from generator import *
 from repartion_rules import *
+from printing import *
