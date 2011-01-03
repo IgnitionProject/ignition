@@ -1,6 +1,12 @@
 Ignition IntGen
 ===============
 
-.. automodule:: ignition.int_gen
+Language
+--------
+.. automodule:: ignition.int_gen.language
    :members:
 
+Generator
+---------
+.. automodule:: ignition.int_gen.generator
+   :members:

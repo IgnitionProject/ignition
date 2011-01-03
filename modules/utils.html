@@ -24,6 +24,7 @@
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Ignition v0.1.0 documentation" href="../index.html" />
     <link rel="up" title="Ignition Modules Reference" href="index.html" />
+    <link rel="next" title="Contributing" href="../contributing.html" />
     <link rel="prev" title="Ignition FLAME" href="flame.html" /> 
   </head>
   <body>
@@ -33,6 +34,8 @@
         <div class="rel">
           <a href="flame.html" title="Ignition FLAME"
              accesskey="P">previous</a> |
+          <a href="../contributing.html" title="Contributing"
+             accesskey="N">next</a> |
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |
           <a href="../genindex.html" title="General Index"
@@ -51,6 +54,156 @@
             
   <div class="section" id="module-ignition.utils">
 <span id="ignition-utils"></span><h1>Ignition Utils<a class="headerlink" href="#module-ignition.utils" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-ignition.utils.enum">
+<span id="enum"></span><h2>Enum<a class="headerlink" href="#module-ignition.utils.enum" title="Permalink to this headline">¶</a></h2>
+<p>Robust enumerated type support in Python.</p>
+<p>This package provides a module for robust enumerations in Python.</p>
+<p>An enumeration object is created with a sequence of string arguments
+to the Enum() constructor:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Colours</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span><span class="s">&#39;red&#39;</span><span class="p">,</span> <span class="s">&#39;blue&#39;</span><span class="p">,</span> <span class="s">&#39;green&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Weekdays</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span><span class="s">&#39;mon&#39;</span><span class="p">,</span> <span class="s">&#39;tue&#39;</span><span class="p">,</span> <span class="s">&#39;wed&#39;</span><span class="p">,</span> <span class="s">&#39;thu&#39;</span><span class="p">,</span> <span class="s">&#39;fri&#39;</span><span class="p">,</span> <span class="s">&#39;sat&#39;</span><span class="p">,</span> <span class="s">&#39;sun&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The return value is an immutable sequence object with a value for each
+of the string arguments. Each value is also available as an attribute
+named from the corresponding string argument:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pizza_night</span> <span class="o">=</span> <span class="n">Weekdays</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">game_night</span> <span class="o">=</span> <span class="n">Weekdays</span><span class="p">[</span><span class="s">&#39;mon&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">shirt_colour</span> <span class="o">=</span> <span class="n">Colours</span><span class="o">.</span><span class="n">green</span>
+</pre></div>
+</div>
+<p>The values are constants that can be compared only with values from
+the same enumeration; comparison with other values will invoke
+Python&#8217;s fallback comparisons:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pizza_night</span> <span class="o">==</span> <span class="n">Weekdays</span><span class="o">.</span><span class="n">fri</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">shirt_colour</span> <span class="o">&gt;</span> <span class="n">Colours</span><span class="o">.</span><span class="n">red</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">shirt_colour</span> <span class="o">==</span> <span class="s">&quot;green&quot;</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>Each value from an enumeration exports its sequence index
+as an integer, and can be coerced to a simple string matching the
+original arguments used to create the enumeration:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">pizza_night</span><span class="p">)</span>
+<span class="go">&#39;fri&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">shirt_colour</span><span class="o">.</span><span class="n">index</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+<p>The object can also take a list or tuple argument for keys that map to the
+same value. The key method will only return the first value in the argument, 
+so to test inclusion use the keys method, which always returns a list:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">multi</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">((</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="s">&#39;bar&#39;</span><span class="p">),</span> <span class="s">&#39;baz&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">multi</span><span class="o">.</span><span class="n">foo</span> <span class="o">==</span> <span class="n">multi</span><span class="o">.</span><span class="n">bar</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">multi</span><span class="o">.</span><span class="n">foo</span><span class="p">)</span>
+<span class="go">&#39;foo&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s">&#39;foo&#39;</span> <span class="ow">in</span> <span class="n">multi</span><span class="o">.</span><span class="n">foo</span><span class="o">.</span><span class="n">keys</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s">&#39;baz&#39;</span> <span class="ow">in</span> <span class="n">multi</span><span class="o">.</span><span class="n">foo</span><span class="o">.</span><span class="n">keys</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<dl class="class">
+<dt id="ignition.utils.enum.Enum">
+<em class="property">class </em><tt class="descclassname">ignition.utils.enum.</tt><tt class="descname">Enum</tt><big>(</big><em>*keys</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/ignition/utils/enum.html#Enum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.utils.enum.Enum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enumerated type.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="ignition.utils.enum.EnumBadKeyError">
+<em class="property">exception </em><tt class="descclassname">ignition.utils.enum.</tt><tt class="descname">EnumBadKeyError</tt><big>(</big><em>key</em><big>)</big><a class="reference internal" href="../_modules/ignition/utils/enum.html#EnumBadKeyError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.utils.enum.EnumBadKeyError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raised when creating an Enum with non-string keys.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="ignition.utils.enum.EnumEmptyError">
+<em class="property">exception </em><tt class="descclassname">ignition.utils.enum.</tt><tt class="descname">EnumEmptyError</tt><a class="reference internal" href="../_modules/ignition/utils/enum.html#EnumEmptyError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.utils.enum.EnumEmptyError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raised when attempting to create an empty enumeration.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="ignition.utils.enum.EnumException">
+<em class="property">exception </em><tt class="descclassname">ignition.utils.enum.</tt><tt class="descname">EnumException</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/ignition/utils/enum.html#EnumException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.utils.enum.EnumException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for all exceptions in this module.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="ignition.utils.enum.EnumImmutableError">
+<em class="property">exception </em><tt class="descclassname">ignition.utils.enum.</tt><tt class="descname">EnumImmutableError</tt><big>(</big><em>*args</em><big>)</big><a class="reference internal" href="../_modules/ignition/utils/enum.html#EnumImmutableError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.utils.enum.EnumImmutableError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raised when attempting to modify an Enum.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="ignition.utils.enum.EnumValue">
+<em class="property">class </em><tt class="descclassname">ignition.utils.enum.</tt><tt class="descname">EnumValue</tt><big>(</big><em>enumtype</em>, <em>index</em>, <em>key</em><big>)</big><a class="reference internal" href="../_modules/ignition/utils/enum.html#EnumValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.utils.enum.EnumValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>A specific value of an enumerated type.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-ignition.utils.iterators">
+<span id="iterators"></span><h2>Iterators<a class="headerlink" href="#module-ignition.utils.iterators" title="Permalink to this headline">¶</a></h2>
+<p>Defines some custom iterators</p>
+<dl class="class">
+<dt id="ignition.utils.iterators.UpdatingPermutationIterator">
+<em class="property">class </em><tt class="descclassname">ignition.utils.iterators.</tt><tt class="descname">UpdatingPermutationIterator</tt><big>(</big><em>items</em>, <em>n=-1</em><big>)</big><a class="reference internal" href="../_modules/ignition/utils/iterators.html#UpdatingPermutationIterator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.utils.iterators.UpdatingPermutationIterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>A permutation iterator that can update to stop cycling on a particular
+position.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">iter</span> <span class="o">=</span> <span class="n">UpdatingPermuataionIterator</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="nb">iter</span><span class="p">)</span>
+<span class="go">[[0, 1], [1, 0]]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">iter</span> <span class="o">=</span> <span class="n">UpdatingPermutationIterator</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">iter</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+<span class="go">[0, 1, 2]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">iter</span><span class="o">.</span><span class="n">bad_pos</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">iter</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+<span class="go">[1, 0, 2]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">iter</span><span class="o">.</span><span class="n">bad_pos</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="nb">iter</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="ignition.utils.iterators.flatten">
+<tt class="descclassname">ignition.utils.iterators.</tt><tt class="descname">flatten</tt><big>(</big><em>alst</em><big>)</big><a class="reference internal" href="../_modules/ignition/utils/iterators.html#flatten"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.utils.iterators.flatten" title="Permalink to this definition">¶</a></dt>
+<dd><p>A recursive flattening algorithm for handling arbitrarily nested iterators</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">flatten</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">]]]],</span> <span class="mi">8</span><span class="p">])</span>
+<span class="go">[1, 2, 3, 4, 5, 6, 7, 8]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="ignition.utils.iterators.flatten_list">
+<tt class="descclassname">ignition.utils.iterators.</tt><tt class="descname">flatten_list</tt><big>(</big><em>alst</em><big>)</big><a class="reference internal" href="../_modules/ignition/utils/iterators.html#flatten_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.utils.iterators.flatten_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Similar to flatten except only flattens lists</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">flatten_list</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+<span class="go">[0, (2, 3), 4]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="ignition.utils.iterators.nested_list_idxs">
+<tt class="descclassname">ignition.utils.iterators.</tt><tt class="descname">nested_list_idxs</tt><big>(</big><em>alst</em><big>)</big><a class="reference internal" href="../_modules/ignition/utils/iterators.html#nested_list_idxs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.utils.iterators.nested_list_idxs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns tuple generator corresponding to all indexes in the 
+nested list</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">nested_list_iter</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">3</span><span class="p">]])</span>
+<span class="go">[(0,0), (0,1), (1,0)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-ignition.utils.iterative_method_tester">
+<span id="iterative-method-tester"></span><h2>Iterative Method Tester<a class="headerlink" href="#module-ignition.utils.iterative_method_tester" title="Permalink to this headline">¶</a></h2>
+<p>Implements testing routines for given iterative method solvers</p>
+</div>
 </div>
 
 
@@ -63,13 +216,14 @@
           <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../intro.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Ignition Modules Reference</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="int_gen.html">Ignition IntGen</a></li>
 <li class="toctree-l2"><a class="reference internal" href="flame.html">Ignition FLAME</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="">Ignition Utils</a></li>
-<li class="toctree-l2"><a class="reference internal" href="index.html#contributions-to-docs">Contributions to docs</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
 </ul>
 
           <h3 style="margin-top: 1.5em;">Search</h3>
@@ -92,6 +246,8 @@
         <div class="left">
           <a href="flame.html" title="Ignition FLAME"
              >previous</a> |
+          <a href="../contributing.html" title="Contributing"
+             >next</a> |
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |
           <a href="../genindex.html" title="General Index"

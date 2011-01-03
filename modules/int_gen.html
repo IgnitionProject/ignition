@@ -52,8 +52,76 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="module-ignition.int_gen">
-<span id="ignition-intgen"></span><h1>Ignition IntGen<a class="headerlink" href="#module-ignition.int_gen" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="ignition-intgen">
+<h1>Ignition IntGen<a class="headerlink" href="#ignition-intgen" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-ignition.int_gen.language">
+<span id="language"></span><h2>Language<a class="headerlink" href="#module-ignition.int_gen.language" title="Permalink to this headline">¶</a></h2>
+<p>Defines the IntGen (Integral Generator) language.</p>
+<dl class="class">
+<dt id="ignition.int_gen.language.Add">
+<em class="property">class </em><tt class="descclassname">ignition.int_gen.language.</tt><tt class="descname">Add</tt><a class="reference internal" href="../_modules/ignition/int_gen/language.html#Add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.int_gen.language.Add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function addition</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="ignition.int_gen.language.DiscFunc">
+<em class="property">class </em><tt class="descclassname">ignition.int_gen.language.</tt><tt class="descname">DiscFunc</tt><a class="reference internal" href="../_modules/ignition/int_gen/language.html#DiscFunc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.int_gen.language.DiscFunc" title="Permalink to this definition">¶</a></dt>
+<dd><p>A discrete function</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="ignition.int_gen.language.Dom">
+<em class="property">class </em><tt class="descclassname">ignition.int_gen.language.</tt><tt class="descname">Dom</tt><a class="reference internal" href="../_modules/ignition/int_gen/language.html#Dom"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.int_gen.language.Dom" title="Permalink to this definition">¶</a></dt>
+<dd><p>The domain</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="ignition.int_gen.language.Func">
+<em class="property">class </em><tt class="descclassname">ignition.int_gen.language.</tt><tt class="descname">Func</tt><a class="reference internal" href="../_modules/ignition/int_gen/language.html#Func"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.int_gen.language.Func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base Function object, also the symbolic function wrapper</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="ignition.int_gen.language.IntGenExpr">
+<em class="property">class </em><tt class="descclassname">ignition.int_gen.language.</tt><tt class="descname">IntGenExpr</tt><a class="reference internal" href="../_modules/ignition/int_gen/language.html#IntGenExpr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.int_gen.language.IntGenExpr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base Expression Object</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="ignition.int_gen.language.Integral">
+<em class="property">class </em><tt class="descclassname">ignition.int_gen.language.</tt><tt class="descname">Integral</tt><a class="reference internal" href="../_modules/ignition/int_gen/language.html#Integral"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.int_gen.language.Integral" title="Permalink to this definition">¶</a></dt>
+<dd><p>An integral</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="ignition.int_gen.language.Mul">
+<em class="property">class </em><tt class="descclassname">ignition.int_gen.language.</tt><tt class="descname">Mul</tt><a class="reference internal" href="../_modules/ignition/int_gen/language.html#Mul"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.int_gen.language.Mul" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function multiplication</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-ignition.int_gen.generator">
+<span id="generator"></span><h2>Generator<a class="headerlink" href="#module-ignition.int_gen.generator" title="Permalink to this headline">¶</a></h2>
+<p>Defines the generators for the IntGen language.</p>
+<dl class="function">
+<dt id="ignition.int_gen.generator.gen_file">
+<tt class="descclassname">ignition.int_gen.generator.</tt><tt class="descname">gen_file</tt><big>(</big><em>name</em>, <em>integrals</em>, <em>func_names</em>, <em>input_vars</em><big>)</big><a class="reference internal" href="../_modules/ignition/int_gen/generator.html#gen_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.int_gen.generator.gen_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper to generate numerous integrals in a single file.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ignition.int_gen.generator.int_gen">
+<tt class="descclassname">ignition.int_gen.generator.</tt><tt class="descname">int_gen</tt><big>(</big><em>integral</em>, <em>func_name</em>, <em>input_vars</em>, <em>indent=0</em><big>)</big><a class="reference internal" href="../_modules/ignition/int_gen/generator.html#int_gen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.int_gen.generator.int_gen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main C code generator for a integral expression</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ignition.int_gen.generator.select_quad_rule">
+<tt class="descclassname">ignition.int_gen.generator.</tt><tt class="descname">select_quad_rule</tt><big>(</big><em>num_pts</em>, <em>name='Gauss'</em><big>)</big><a class="reference internal" href="../_modules/ignition/int_gen/generator.html#select_quad_rule"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.int_gen.generator.select_quad_rule" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simple selector for quadrature rules</p>
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -66,13 +134,14 @@
           <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../intro.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Ignition Modules Reference</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="">Ignition IntGen</a></li>
 <li class="toctree-l2"><a class="reference internal" href="flame.html">Ignition FLAME</a></li>
 <li class="toctree-l2"><a class="reference internal" href="utils.html">Ignition Utils</a></li>
-<li class="toctree-l2"><a class="reference internal" href="index.html#contributions-to-docs">Contributions to docs</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
 </ul>
 
           <h3 style="margin-top: 1.5em;">Search</h3>

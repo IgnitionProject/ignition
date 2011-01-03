@@ -1,14 +1,56 @@
 Introduction
-------------
+============
 
 Ignition is a research code for defining domain specific languages useful for
 high performance computing (HPC).  The goal of the project is to lower the
-barriers-of-entry for none HPC experts who want to use the power of the HPC
+barriers-of-entry for non-experts who want to use the power of the HPC
 resources.
+
+
+-----------------
+Current languages
+-----------------
 
 Currently, the project has a reference language and generator for integral
 equations, called IntGen.  We are also working on an automation engine for the
 FLAME project that includes dense and sparse linear algebra methods.
 
+IntGen
+------
+
+While it may be well known among HPC experts integration routines are often
+much more difficult to make fast than a simple loop.  IntGen offers a simple
+implementation of one dimensional integration.  It is a reference to how a
+domain specific language can be used to speed up numerical code.
+
+Using IntGen's expressions a user defines an integration expression that can
+combine both symbolics and discrete functions.  From this integration
+expression, code generated is generated that efficiently evaluates the integral
+and provides the user with quadrature points and weight according to the
+specification given by the user.
+
+As the project grows, IntGen may grow to do more but currently it is left to be
+simple allowing for novices to understand the basics of how Ignition implements
+DSL's and code generators.
+
+FLAME
+-----
+
+`FLAME`_, or Formal Linear Algebra Methods Environment, is a project for
+transforming the development of dense linear algebra libraries from an art
+reserved for experts to a science that can be understood by novice and expert
+alike.  Using a simple language for defining loops, the algorithms are formally
+derived and allow for numerous variants to be produced.
+
+Ignition defines a language for specifying FLAME operation and generating the
+worksheets and code.  These operations are still under development.
+
+------
+Future
+------
+
 In the future we hope to add more application areas to the project.  The next
 area of interest will most likely be finite element algorithms.
+
+
+.. _FLAME: http://z.cs.utexas.edu/wiki/flame.wiki/FrontPage

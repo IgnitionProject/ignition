@@ -4,8 +4,70 @@ Ignition FLAME
 .. automodule:: ignition.flame
    :members:
 
+--------------------------------
+Partition Objects and Generators
+--------------------------------
 
+Pobj
+----
+.. automodule:: ignition.flame.pobj
+   :members:
+
+Generator
+---------
+.. automodule:: ignition.flame.generator
+   :members:
+
+---------------
 Tensor library
---------------
+---------------
 
 .. automodule:: ignition.flame.tensors
+   :members:
+
+Tensor
+------
+.. automodule:: ignition.flame.tensors.tensor
+   :members:
+
+Tensor Expr
+-----------
+.. automodule:: ignition.flame.tensors.tensor_expr
+   :members:
+
+Basic Operators
+---------------
+.. automodule:: ignition.flame.tensors.basic_operators
+   :members:
+
+Solvers
+-------
+.. automodule:: ignition.flame.tensors.solvers
+   :members:
+
+Tensor Names
+------------
+.. automodule:: ignition.flame.tensors.tensor_names
+   :members:
+
+Printers
+--------
+.. automodule:: ignition.flame.tensors.printers
+   :members:
+
+--------
+Printing
+--------
+
+.. automodule:: ignition.flame.printing
+   :members:
+
+Printer
+-------
+.. automodule:: ignition.flame.printing.printer
+   :members:
+
+Worksheet Printer
+-----------------
+.. automodule:: ignition.flame.printing.worksheet
+   :members:

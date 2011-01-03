@@ -1,0 +1,17 @@
+Contributing
+============
+
+Ignition currently uses `GitHub`_ for all hosting of issues and source code.
+Feel free to fork and submit patches to the `project page`_.
+
+Contributions to docs
+---------------------
+
+All contributions are welcome. If you'd like to improve something, look into
+the sources if they contain the information you need (if not, please fix them),
+otherwise the documentation generation needs to be improved (look in the
+``doc/`` directory).
+
+
+.. _GitHub: http://github.org
+.. _project page: https://github.com/aterrel/ignition

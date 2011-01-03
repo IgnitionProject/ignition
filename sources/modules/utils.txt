@@ -3,3 +3,19 @@ Ignition Utils
 
 .. automodule:: ignition.utils
    :members:
+
+Enum
+----
+.. automodule:: ignition.utils.enum
+   :members:
+
+Iterators
+---------
+.. automodule:: ignition.utils.iterators
+   :members:
+
+Iterative Method Tester
+------------------------
+.. automodule:: ignition.utils.iterative_method_tester
+
+
