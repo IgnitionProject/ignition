@@ -1,0 +1,528 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>ignition.flame.tensors.solvers &mdash; Ignition v0.1.0 documentation</title>
+    <link rel="stylesheet" href="../../../../static/agogo.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../static/doctools.js"></script>
+    <link rel="top" title="Ignition v0.1.0 documentation" href="../../../../index.html" />
+    <link rel="up" title="Module code" href="../../../index.html" /> 
+  </head>
+  <body>
+    <div class="header-wrapper">
+      <div class="header">
+        <h1><a href="../../../../index.html">Ignition v0.1.0 documentation</a></h1>
+        <div class="rel">
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a>
+        </div>
+       </div>
+    </div>
+
+    <div class="content-wrapper">
+      <div class="content">
+        <div class="document">
+            
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for ignition.flame.tensors.solvers</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Several solvers for overdetermined tensor systems.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
+<span class="kn">from</span> <span class="nn">sympy</span> <span class="kn">import</span> <span class="n">Add</span><span class="p">,</span> <span class="n">expand</span><span class="p">,</span> <span class="n">Mul</span><span class="p">,</span> <span class="n">S</span>
+<span class="kn">from</span> <span class="nn">sympy.utilities.iterables</span> <span class="kn">import</span> <span class="n">postorder_traversal</span>
+
+<span class="kn">from</span> <span class="nn">tensor_expr</span> <span class="kn">import</span> <span class="n">expr_rank</span>
+<span class="kn">from</span> <span class="nn">ignition.utils.iterators</span> <span class="kn">import</span> <span class="n">UpdatingPermutationIterator</span>
+<span class="kn">from</span> <span class="nn">ignition</span> <span class="kn">import</span> <span class="n">IGNITION_DEBUG</span> <span class="k">as</span> <span class="n">DEBUG</span>
+
+
+<span class="k">class</span> <span class="nc">NonLinearEqnError</span> <span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">UnsolvableEqnsError</span> <span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<div class="viewcode-block" id="solve_vec_eqn"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.solvers.solve_vec_eqn">[docs]</a><span class="k">def</span> <span class="nf">solve_vec_eqn</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">var</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the solution to a linear equation containing Tensors</span>
+<span class="sd">    </span>
+<span class="sd">    Raises:</span>
+<span class="sd">      NonLinearEqnError if the variable is detected to be nonlinear</span>
+<span class="sd">      NotInvertibleError if an inverse is required that is not available</span>
+<span class="sd">      NotImplementedError if operation isn&#39;t supported by routine     </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;solve_vec_eqn: &quot;</span><span class="p">,</span> <span class="n">eqn</span><span class="p">,</span> <span class="s">&quot;for&quot;</span><span class="p">,</span> <span class="n">var</span>
+    <span class="k">if</span> <span class="n">var</span><span class="o">.</span><span class="n">rank</span> <span class="o">!=</span> <span class="n">expr_rank</span><span class="p">(</span><span class="n">eqn</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Unmatched ranks of clauses&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">eqn</span><span class="o">.</span><span class="n">as_poly</span><span class="p">(</span><span class="n">var</span><span class="p">)</span><span class="o">.</span><span class="n">degree</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">NonLinearEqnError</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_solve_recur</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">rhs</span><span class="o">=</span><span class="n">S</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
+        <span class="n">expr</span> <span class="o">=</span> <span class="n">expand</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">expr</span> <span class="o">==</span> <span class="n">var</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">rhs</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Mul</span><span class="p">):</span>
+            <span class="n">lhs</span> <span class="o">=</span> <span class="n">S</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c"># Try by rank</span>
+            <span class="n">coeff</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">coeff</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+            <span class="n">coeff_rank</span> <span class="o">=</span> <span class="n">expr_rank</span><span class="p">(</span><span class="n">coeff</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">coeff_rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">rhs</span> <span class="o">/=</span> <span class="n">coeff</span>
+                <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">arg</span><span class="p">:</span>
+                        <span class="n">lhs</span> <span class="o">*=</span> <span class="n">arg</span>
+            <span class="k">elif</span> <span class="n">coeff_rank</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">NotInvertibleError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">coeff</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; of &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">expr</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">coeff_rank</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">arg</span><span class="p">:</span>
+                        <span class="n">lhs</span> <span class="o">*=</span> <span class="n">arg</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">rhs</span> <span class="o">/=</span> <span class="n">arg</span>
+            <span class="k">return</span> <span class="n">_solve_recur</span><span class="p">(</span><span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Add</span><span class="p">):</span>
+            <span class="n">lhs</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">arg</span><span class="p">:</span>
+                    <span class="n">lhs</span> <span class="o">+=</span> <span class="n">arg</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">rhs</span> <span class="o">-=</span> <span class="n">arg</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lhs</span><span class="p">,</span> <span class="n">Add</span><span class="p">):</span>
+                <span class="n">coeff</span> <span class="o">=</span> <span class="n">lhs</span><span class="o">.</span><span class="n">coeff</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">expand</span><span class="p">(</span><span class="n">coeff</span> <span class="o">*</span> <span class="n">var</span><span class="p">)</span> <span class="o">==</span> <span class="n">lhs</span><span class="p">:</span>
+                    <span class="n">rhs</span> <span class="o">/=</span> <span class="n">coeff</span>
+                    <span class="n">lhs</span> <span class="o">=</span> <span class="n">var</span>
+            <span class="k">return</span> <span class="n">_solve_recur</span><span class="p">(</span><span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Can&#39;t handle expr of type </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">expr</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">_solve_recur</span><span class="p">(</span><span class="n">expand</span><span class="p">(</span><span class="n">eqn</span><span class="p">))</span>
+
+
+</div>
+<div class="viewcode-block" id="get_eqns_unk"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.solvers.get_eqns_unk">[docs]</a><span class="k">def</span> <span class="nf">get_eqns_unk</span> <span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the list of unknowns, given the knowns, from a list of equations&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="n">eqns</span> <span class="o">=</span> <span class="p">[</span><span class="n">eqns</span><span class="p">]</span>
+    <span class="n">atoms</span> <span class="o">=</span> <span class="nb">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">acc</span><span class="p">,</span> <span class="n">eqn</span><span class="p">:</span> <span class="n">acc</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">eqn</span><span class="o">.</span><span class="n">atoms</span><span class="p">()),</span> <span class="n">eqns</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span>
+    <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="ow">not</span> <span class="n">x</span><span class="o">.</span><span class="n">is_Number</span><span class="p">,</span> <span class="n">atoms</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">knowns</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="forward_solve"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.solvers.forward_solve">[docs]</a><span class="k">def</span> <span class="nf">forward_solve</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">,</span> <span class="n">branching</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a dict of unknowns:solutions from a simple backward solve.</span>
+<span class="sd">    </span>
+<span class="sd">    Does a simple backward solver for a list of eqn given a list of unknowns. </span>
+<span class="sd">    Each equation should be an expression that equals zero.  If an unknown is </span>
+<span class="sd">    not solved for, then its entry in the solution dict will be None.</span>
+<span class="sd">    </span>
+<span class="sd">     </span>
+<span class="sd">    &gt;&gt;&gt; q, r, s = map(lambda x: Tensor(x, rank=1), &#39;qrs&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; delta = Tensor(&#39;delta&#39;, rank=0)</span>
+<span class="sd">    &gt;&gt;&gt; eqn1 = s + q</span>
+<span class="sd">    &gt;&gt;&gt; eqn2 = delta * r - q</span>
+<span class="sd">    &gt;&gt;&gt; forward_solve([eqn1, eqn2], [delta, r])</span>
+<span class="sd">    {q: delta*r, s: -q}</span>
+
+<span class="sd">    Will raise same exceptions as solve_vec_eqn.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sol_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">unsolved</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">eqns</span><span class="p">)</span>
+    <span class="n">unknowns</span> <span class="o">=</span> <span class="n">get_eqns_unk</span><span class="p">(</span><span class="n">unsolved</span><span class="p">,</span> <span class="n">knowns</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">unknowns</span><span class="p">:</span>
+        <span class="n">sol_dict</span><span class="p">[</span><span class="n">atom</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">solved</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">branching</span><span class="p">:</span>
+            <span class="n">sol_unks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">eqn</span> <span class="ow">in</span> <span class="n">unsolved</span><span class="p">:</span>
+            <span class="n">eqn_unk</span> <span class="o">=</span> <span class="n">get_eqns_unk</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">eqn</span><span class="o">.</span><span class="n">atoms</span><span class="p">()</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">unknowns</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">eqn_unk</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">eqn_unk</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">solved</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">eqn</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="n">eqn_unk</span> <span class="o">=</span> <span class="n">eqn_unk</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                    <span class="k">print</span> <span class="s">&quot;solving eqn&quot;</span><span class="p">,</span> <span class="n">eqn</span><span class="p">,</span> <span class="s">&quot;for&quot;</span><span class="p">,</span> <span class="n">eqn_unk</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">sol</span> <span class="o">=</span> <span class="n">solve_vec_eqn</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">eqn_unk</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">inst</span><span class="p">:</span>
+                    <span class="k">print</span> <span class="s">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">80</span>
+                    <span class="k">print</span> <span class="n">inst</span>
+                    <span class="k">print</span> <span class="s">&quot;Runtime error: forward_solve:&quot;</span>
+                    <span class="k">print</span> <span class="s">&quot;  solve_vec_eqn( &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">eqn</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;, &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">eqn_unk</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; )&quot;</span>
+                    <span class="k">print</span> <span class="s">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">80</span>
+                    <span class="k">raise</span>
+                <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                    <span class="k">print</span> <span class="s">&quot;given solution&quot;</span><span class="p">,</span> <span class="n">sol</span>
+                <span class="k">if</span> <span class="n">branching</span><span class="p">:</span>
+                    <span class="n">sol_unks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">eqn_unk</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">unknowns</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">eqn_unk</span><span class="p">)</span>
+                <span class="n">solved</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">eqn</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">branching</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">sol_dict</span><span class="p">[</span><span class="n">eqn_unk</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="n">sol_dict</span><span class="p">[</span><span class="n">eqn_unk</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">sol</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">sol_dict</span><span class="p">[</span><span class="n">eqn_unk</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sol</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">sol_dict</span><span class="p">[</span><span class="n">eqn_unk</span><span class="p">]</span> <span class="o">=</span> <span class="n">expand</span><span class="p">(</span><span class="n">sol</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">inst</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                    <span class="k">print</span> <span class="s">&quot;could not solve&quot;</span><span class="p">,</span> <span class="n">eqn</span><span class="p">,</span> <span class="s">&quot;for&quot;</span><span class="p">,</span> <span class="n">eqn_unk</span>
+                    <span class="k">print</span> <span class="n">inst</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">solved</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">unknowns</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&quot;Exiting forward_solve with&quot;</span>
+                <span class="k">print</span> <span class="s">&quot;  solved:&quot;</span><span class="p">,</span> <span class="n">solved</span>
+                <span class="k">print</span> <span class="s">&quot;  unknowns:&quot;</span><span class="p">,</span> <span class="n">unknowns</span>
+            <span class="k">return</span> <span class="n">sol_dict</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">unsolved</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">solved</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">branching</span><span class="p">:</span>
+                <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">unknowns</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">sol_unks</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="get_solved"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.solvers.get_solved">[docs]</a><span class="k">def</span> <span class="nf">get_solved</span> <span class="p">(</span><span class="n">sol_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the solved variables of a solution dictionary&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">sol_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">,</span> <span class="n">sol_dict</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="is_solved"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.solvers.is_solved">[docs]</a><span class="k">def</span> <span class="nf">is_solved</span> <span class="p">(</span><span class="n">sol_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns if all variables in the solution dict are solved&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">acc</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="n">acc</span> <span class="ow">and</span> <span class="n">sol_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">,</span> <span class="n">sol_dict</span><span class="p">,</span>
+                  <span class="bp">True</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="update_sol_dict_unk_sol"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.solvers.update_sol_dict_unk_sol">[docs]</a><span class="k">def</span> <span class="nf">update_sol_dict_unk_sol</span> <span class="p">(</span><span class="n">sol_dict</span><span class="p">,</span> <span class="n">unknowns</span><span class="p">,</span> <span class="n">solved</span><span class="p">,</span> <span class="n">curr_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Upadates the solution dict, unknown list and solved list based on </span>
+<span class="sd">    given solution dict (curr_dict)&quot;&quot;&quot;</span>
+    <span class="n">newly_solved</span> <span class="o">=</span> <span class="n">get_solved</span><span class="p">(</span><span class="n">curr_dict</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">newly_solved</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">newly_solved</span>
+    <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;Updating newly_solved:&quot;</span><span class="p">,</span> <span class="n">newly_solved</span>
+    <span class="n">sol_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">curr_dict</span><span class="p">)</span>
+    <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">unknowns</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">k</span><span class="p">),</span> <span class="n">newly_solved</span><span class="p">)</span>
+    <span class="n">solved</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">newly_solved</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">newly_solved</span>
+</div>
+<div class="viewcode-block" id="print_sols"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.solvers.print_sols">[docs]</a><span class="k">def</span> <span class="nf">print_sols</span><span class="p">(</span><span class="n">sol</span><span class="p">,</span> <span class="n">sol_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Simple printer for solutions&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sol</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;    &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;=&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">sol_dict</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+</div>
+<div class="viewcode-block" id="add_new_eqns"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.solvers.add_new_eqns">[docs]</a><span class="k">def</span> <span class="nf">add_new_eqns</span> <span class="p">(</span><span class="n">add_vars</span><span class="p">,</span> <span class="n">all_eqns</span><span class="p">,</span> <span class="n">sol_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Substitutes solved values into equations and adds them to the list of </span>
+<span class="sd">    equations&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">knwn</span> <span class="ow">in</span> <span class="n">add_vars</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">eqn</span> <span class="ow">in</span> <span class="n">all_eqns</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">knwn</span> <span class="ow">in</span> <span class="n">eqn</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                    <span class="k">print</span> <span class="s">&quot;substituting:&quot;</span><span class="p">,</span> <span class="n">knwn</span><span class="p">,</span> <span class="s">&quot;=&quot;</span><span class="p">,</span> <span class="n">sol_dict</span><span class="p">[</span><span class="n">knwn</span><span class="p">],</span> <span class="s">&quot;in&quot;</span><span class="p">,</span> <span class="n">eqn</span>
+                <span class="n">new_eqn</span> <span class="o">=</span> <span class="n">expand</span><span class="p">(</span><span class="n">eqn</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">knwn</span><span class="p">,</span> <span class="n">sol_dict</span><span class="p">[</span><span class="n">knwn</span><span class="p">]))</span>
+                <span class="k">if</span> <span class="n">new_eqn</span> <span class="o">==</span> <span class="n">S</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span> <span class="k">continue</span>
+                <span class="n">all_eqns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_eqn</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                    <span class="k">print</span> <span class="s">&quot;Added&quot;</span><span class="p">,</span> <span class="n">new_eqn</span>
+
+</div>
+<div class="viewcode-block" id="assump_solve"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.solvers.assump_solve">[docs]</a><span class="k">def</span> <span class="nf">assump_solve</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">,</span> <span class="n">assumps</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An aggressive solver for list of eqns and given knowns.</span>
+<span class="sd">    </span>
+<span class="sd">    Similar to forward_solve, but will iteratively update equations based on given</span>
+<span class="sd">    solutions by assuming an unknown is known. </span>
+<span class="sd">    </span>
+<span class="sd">    &gt;&gt;&gt; q, r, s = map(lambda x: Tensor(x, rank=1), &#39;qrs&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; s_t = Transpose(s)</span>
+<span class="sd">    &gt;&gt;&gt; delta = Tensor(&#39;delta&#39;, rank=0)</span>
+<span class="sd">    &gt;&gt;&gt; eqn1 = r - s - q * delta</span>
+<span class="sd">    &gt;&gt;&gt; eqn2 = s_t * r</span>
+<span class="sd">    &gt;&gt;&gt; assump_solve([eqn1, eqn2], [s, q])</span>
+<span class="sd">    {delta: -(T(s)*s)/(T(s)*q), r: delta*q + s}</span>
+<span class="sd">    </span>
+<span class="sd">    Should not raise any exceptions, but may return a solution dict with</span>
+<span class="sd">    unsolved variables.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># See what we can solve first</span>
+    <span class="k">global</span> <span class="n">DEBUG</span>
+
+    <span class="n">all_eqns</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">expand</span><span class="p">,</span> <span class="n">eqns</span><span class="p">)</span>
+    <span class="n">ret_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">unknowns</span> <span class="o">=</span> <span class="n">get_eqns_unk</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">)</span>
+    <span class="n">solved</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">assumps</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">assumps</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">num_x_explode</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;Entering iteration with ret_dict and all_eqns:&quot;</span>
+            <span class="k">print</span> <span class="n">ret_dict</span>
+            <span class="k">print</span> <span class="n">all_eqns</span>
+            <span class="k">print</span> <span class="n">unknowns</span>
+            <span class="k">print</span> <span class="n">solved</span>
+
+        <span class="n">newly_solved</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c"># First solve without assumptions:</span>
+        <span class="n">curr_dict</span> <span class="o">=</span> <span class="n">forward_solve</span><span class="p">(</span><span class="n">all_eqns</span><span class="p">,</span> <span class="n">knowns</span> <span class="o">+</span> <span class="n">solved</span><span class="p">)</span>
+        <span class="n">newly_solved</span> <span class="o">=</span> <span class="n">update_sol_dict_unk_sol</span><span class="p">(</span><span class="n">ret_dict</span><span class="p">,</span> <span class="n">unknowns</span><span class="p">,</span> <span class="n">solved</span><span class="p">,</span> <span class="n">curr_dict</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">DEBUG</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">newly_solved</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;Solved without assumptions:&quot;</span>
+            <span class="n">print_sols</span><span class="p">(</span><span class="n">newly_solved</span><span class="p">,</span> <span class="n">curr_dict</span><span class="p">)</span>
+
+        <span class="c"># Next try assuming some things are known then solve</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">newly_solved</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ordered_assumps</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">assumps</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">unknowns</span><span class="p">]</span>
+            <span class="n">ordered_assumps</span> <span class="o">+=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">unknowns</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">assumps</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">unk</span> <span class="ow">in</span> <span class="n">ordered_assumps</span><span class="p">:</span>
+            <span class="c">#assume unk is knw</span>
+                <span class="n">curr_dict</span> <span class="o">=</span> <span class="n">forward_solve</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span> <span class="o">+</span> <span class="n">solved</span> <span class="o">+</span> <span class="p">[</span><span class="n">unk</span><span class="p">])</span>
+                <span class="n">newly_solved</span> <span class="o">=</span> <span class="n">update_sol_dict_unk_sol</span><span class="p">(</span><span class="n">ret_dict</span><span class="p">,</span> <span class="n">unknowns</span><span class="p">,</span> <span class="n">solved</span><span class="p">,</span> <span class="n">curr_dict</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">newly_solved</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                        <span class="k">print</span> <span class="s">&quot;Assuming &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">unk</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; solved: &quot;</span>
+                        <span class="n">print_sols</span><span class="p">(</span><span class="n">newly_solved</span><span class="p">,</span> <span class="n">ret_dict</span><span class="p">)</span>
+                    <span class="k">break</span>
+
+        <span class="c"># If we didn&#39;t get any new solutions, we try to explode the space or we quit</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">newly_solved</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">num_x_explode</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                    <span class="k">print</span> <span class="s">&quot;Stopping because len(newly_solved) == 0, still don&#39;t know:&quot;</span><span class="p">,</span> <span class="n">unknowns</span>
+                <span class="k">break</span>
+            <span class="n">num_x_explode</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&quot;Exploding the space of equations by subing everything&quot;</span>
+            <span class="n">add_new_eqns</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">ret_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">,</span> <span class="n">ret_dict</span><span class="p">),</span>
+                         <span class="n">all_eqns</span><span class="p">,</span> <span class="n">ret_dict</span><span class="p">)</span>
+
+        <span class="c"># Substitute new values into equations and add them to the set of eqns        </span>
+        <span class="n">add_new_eqns</span><span class="p">(</span><span class="n">newly_solved</span><span class="p">,</span> <span class="n">all_eqns</span><span class="p">,</span> <span class="n">ret_dict</span><span class="p">)</span>
+        <span class="c"># If we solved all unknowns stop</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unknowns</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&quot;Stopping because len(unknowns) == 0&quot;</span>
+            <span class="k">break</span>
+
+    <span class="k">return</span> <span class="n">ret_dict</span>
+</div>
+<span class="k">def</span> <span class="nf">build_assump_stack</span> <span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">unknowns</span> <span class="o">=</span> <span class="n">get_eqns_unk</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">)</span>
+    <span class="n">sol_dict</span> <span class="o">=</span> <span class="n">forward_solve</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">)</span>
+    <span class="n">solved</span> <span class="o">=</span> <span class="n">get_solved</span><span class="p">(</span><span class="n">sol_dict</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">levels</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="n">levels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">unknowns</span><span class="p">)</span>
+    <span class="n">assump_stack</span> <span class="o">=</span> <span class="p">[</span> <span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">unknowns</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">solved</span><span class="p">)]</span>
+    <span class="n">complete_assump</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">level</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="n">level</span> <span class="o">&lt;</span> <span class="n">levels</span> <span class="ow">and</span> <span class="n">assump_stack</span><span class="p">:</span>
+<span class="c">#        print &quot;assump_stack:&quot;, assump_stack</span>
+        <span class="n">level_assumps</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">assump</span> <span class="ow">in</span> <span class="n">assump_stack</span><span class="p">:</span>
+<span class="c">#            print &quot;assump:&quot;, assump</span>
+            <span class="n">sol_dict</span> <span class="o">=</span> <span class="n">forward_solve</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span> <span class="o">+</span> <span class="n">assump</span><span class="p">)</span>
+            <span class="n">solved</span> <span class="o">=</span> <span class="n">get_solved</span><span class="p">(</span><span class="n">sol_dict</span><span class="p">)</span>
+<span class="c">#            print &quot;solved:&quot;, solved</span>
+            <span class="n">free_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">unknowns</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">solved</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">assump</span><span class="p">)</span>
+<span class="c">#            print &quot;free_vars:&quot;, free_vars</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">free_vars</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">unk</span> <span class="ow">in</span> <span class="n">free_vars</span><span class="p">:</span>
+                    <span class="n">level_assumps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">assump</span> <span class="o">+</span> <span class="p">[</span><span class="n">unk</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">level_assumps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">assump</span><span class="p">)</span>
+<span class="c">#        print &quot;level_assumps:&quot;, level_assumps</span>
+        <span class="n">assump_stack</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">level_assumps</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">level_assumps</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">level</span><span class="p">:</span>
+                <span class="n">complete_assump</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">level_assumps</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">assump_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">level_assumps</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">level</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">complete_assump</span> <span class="o">+</span> <span class="n">assump_stack</span>
+
+<div class="viewcode-block" id="branching_assump_solve"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.solvers.branching_assump_solve">[docs]</a><span class="k">def</span> <span class="nf">branching_assump_solve</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns all unique solutions discovered by assuming different unknowns</span>
+<span class="sd">    and branching to see if different solutions occur.</span>
+<span class="sd">    </span>
+<span class="sd">    See also: assump_solve    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">print</span> <span class="s">&quot;Building assumption stacks&quot;</span>
+    <span class="n">assump_stack</span> <span class="o">=</span> <span class="n">build_assump_stack</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">,</span> <span class="n">levels</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&quot;Got </span><span class="si">%d</span><span class="s"> assumption stacks&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">assump_stack</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&quot;Solving for each assumption&quot;</span>
+    <span class="n">sol_dicts</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">assumps</span><span class="p">:</span> <span class="n">assump_solve</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">,</span> <span class="n">assumps</span><span class="p">),</span>
+                    <span class="n">assump_stack</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&quot;Done solving, filtering for unique sol_dicts&quot;</span>
+    <span class="n">sol_dicts</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="n">is_solved</span><span class="p">,</span> <span class="n">sol_dicts</span><span class="p">)</span>
+    <span class="n">unique_dicts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">sol_dict</span> <span class="ow">in</span> <span class="n">sol_dicts</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sol_dict</span> <span class="ow">in</span> <span class="n">unique_dicts</span><span class="p">:</span>
+            <span class="n">unique_dicts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sol_dict</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">unique_dicts</span>
+
+</div>
+<span class="k">def</span> <span class="nf">backward_sub</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">,</span> <span class="n">unknowns</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">multiple_sols</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">sub_all</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">unknowns</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">unknowns</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">unknowns</span> <span class="o">=</span> <span class="n">unknowns</span> <span class="o">+</span> \
+        <span class="p">[</span><span class="n">u</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">get_eqns_unk</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">)</span> <span class="k">if</span> <span class="n">u</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">unknowns</span><span class="p">]</span>
+
+    <span class="n">sol_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">unk</span> <span class="ow">in</span> <span class="n">unknowns</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">multiple_sols</span><span class="p">:</span>
+            <span class="n">sol_dict</span><span class="p">[</span><span class="n">unk</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sol_dict</span><span class="p">[</span><span class="n">unk</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="n">all_eqns</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">eqns</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">unk</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">unknowns</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;Searching for unk:&quot;</span><span class="p">,</span> <span class="n">unk</span>
+        <span class="k">for</span> <span class="n">eqn</span> <span class="ow">in</span> <span class="n">all_eqns</span><span class="p">:</span>
+            <span class="n">sol</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="c">#            print &quot;eqn:&quot;, eqn, &quot;eqn.atoms():&quot;, eqn.atoms(), &quot;eqn.atoms().intersection(unknowns[n:1]):&quot;, eqn.atoms().intersection(unknowns[n:1])</span>
+            <span class="k">if</span>  <span class="n">unk</span> <span class="ow">in</span> <span class="n">eqn</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">sol</span> <span class="o">=</span> <span class="n">solve_vec_eqn</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">unk</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">inst</span><span class="p">:</span>
+                    <span class="k">print</span> <span class="s">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">80</span>
+                    <span class="k">print</span> <span class="n">inst</span>
+                    <span class="k">print</span> <span class="s">&quot;Caught Runtime error: backward_sub&quot;</span>
+                    <span class="k">print</span> <span class="s">&quot;  solve_vec_eqn( &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">eqn</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;, &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">unk</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; )&quot;</span>
+                    <span class="k">print</span> <span class="s">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">80</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">inst</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
+                        <span class="k">print</span> <span class="s">&quot;could not solve&quot;</span><span class="p">,</span> <span class="n">eqn</span><span class="p">,</span> <span class="s">&quot;for&quot;</span><span class="p">,</span> <span class="n">unk</span>
+                        <span class="k">print</span> <span class="n">inst</span>
+                <span class="k">if</span> <span class="n">sol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">multiple_sols</span><span class="p">:</span>
+                        <span class="n">sol_dict</span><span class="p">[</span><span class="n">unk</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">sol</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">sol_dict</span><span class="p">[</span><span class="n">unk</span><span class="p">]</span> <span class="o">=</span> <span class="n">sol</span>
+                        <span class="k">break</span>
+        <span class="k">if</span> <span class="n">sol_dict</span><span class="p">[</span><span class="n">unk</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="p">(</span><span class="n">multiple_sols</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">sol_dict</span><span class="p">[</span><span class="n">unk</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="n">unk</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_eqns</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">eqn</span> <span class="ow">in</span> <span class="n">all_eqns</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">multiple_sols</span><span class="p">:</span>
+                    <span class="n">sols</span> <span class="o">=</span> <span class="n">sol_dict</span><span class="p">[</span><span class="n">unk</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">sols</span> <span class="o">=</span> <span class="p">[</span><span class="n">sol_dict</span><span class="p">[</span><span class="n">unk</span><span class="p">]]</span>
+                <span class="n">new_eqns</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">sol</span><span class="p">:</span> <span class="n">expand</span><span class="p">(</span><span class="n">eqn</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">unk</span><span class="p">,</span> <span class="n">sol</span><span class="p">)),</span>
+                                    <span class="n">sols</span><span class="p">))</span>
+            <span class="n">new_eqns</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span> <span class="o">!=</span> <span class="n">S</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="nb">set</span><span class="p">(</span><span class="n">new_eqns</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">sub_all</span><span class="p">:</span>
+                <span class="n">all_eqns</span> <span class="o">=</span> <span class="n">new_eqns</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">all_eqns</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">new_eqns</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">sol_dict</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">all_back_sub</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">multiple_sols</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">sub_all</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="n">unks</span> <span class="o">=</span> <span class="n">get_eqns_unk</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">)</span>
+    <span class="n">ord_unk_iter</span> <span class="o">=</span> <span class="n">UpdatingPermutationIterator</span><span class="p">(</span><span class="n">unks</span><span class="p">,</span>
+                                       <span class="n">levels</span> <span class="k">if</span> <span class="n">levels</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="n">unks</span><span class="p">))</span>
+    <span class="n">sols</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">tot_to_test</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">ord_unk_iter</span><span class="p">))</span>
+    <span class="k">print</span> <span class="s">&quot;Searching a possible </span><span class="si">%d</span><span class="s"> orders&quot;</span> <span class="o">%</span> <span class="n">tot_to_test</span>
+    <span class="n">ord_unk_iter</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+    <span class="n">num_tested</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">ord_unks</span> <span class="ow">in</span> <span class="n">ord_unk_iter</span><span class="p">:</span>
+<span class="c">#        print &quot;Testing order:&quot;, ord_unks</span>
+        <span class="n">num_tested</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">num_tested</span> <span class="o">%</span> <span class="p">(</span><span class="n">tot_to_test</span> <span class="o">/</span> <span class="mi">10</span> <span class="k">if</span> <span class="n">tot_to_test</span> <span class="o">&gt;</span> <span class="mi">10</span> <span class="k">else</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;Tested &quot;</span><span class="p">,</span> <span class="n">num_tested</span>
+        <span class="n">sol_dict</span><span class="p">,</span> <span class="n">failed_var</span> <span class="o">=</span> <span class="n">backward_sub</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">,</span> <span class="n">ord_unks</span><span class="p">,</span>
+                                            <span class="n">multiple_sols</span><span class="p">,</span> <span class="n">sub_all</span><span class="p">)</span>
+<span class="c">#        print &quot;  result:&quot;, sol_dict, failed_var</span>
+        <span class="k">if</span> <span class="n">sol_dict</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">failed_var</span> <span class="ow">in</span> <span class="n">ord_unks</span><span class="p">:</span>
+                <span class="n">ord_unk_iter</span><span class="o">.</span><span class="n">bad_pos</span><span class="p">(</span><span class="n">ord_unks</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">failed_var</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sols</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">sol_dict</span><span class="p">,</span> <span class="n">ord_unks</span><span class="p">))</span>
+    <span class="k">print</span> <span class="s">&quot;Tested </span><span class="si">%d</span><span class="s"> orders&quot;</span> <span class="o">%</span> <span class="n">num_tested</span>
+    <span class="k">print</span> <span class="s">&quot;Filtering for unique solutions&quot;</span>
+    <span class="n">uniq_sols</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">sol_dict</span><span class="p">,</span> <span class="n">ord_unks</span> <span class="ow">in</span> <span class="n">sols</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">sol_dict</span><span class="p">,</span> <span class="n">uniq_sols</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">uniq_sols</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">sol_dict</span><span class="p">,</span> <span class="n">ord_unks</span><span class="p">))</span>
+    <span class="k">print</span> <span class="s">&quot;Found </span><span class="si">%d</span><span class="s"> unique solutions&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">uniq_sols</span><span class="p">)</span>
+    <span class="n">uniq_sols</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">postorder_traversal</span><span class="p">(</span><span class="n">v</span><span class="p">)))</span> \
+                                      <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()]))</span>
+    <span class="k">return</span> <span class="n">uniq_sols</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+        </div>
+        <div class="sidebar">
+          <h3>Table Of Contents</h3>
+          <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules/index.html">Ignition Modules Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contributing.html">Contributing</a></li>
+</ul>
+
+          <h3 style="margin-top: 1.5em;">Search</h3>
+          <form class="search" action="../../../../search.html" method="get">
+            <input type="text" name="q" size="18" />
+            <input type="submit" value="Go" />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+          </form>
+          <p class="searchtip" style="font-size: 90%">
+            Enter search terms or a module, class or function name.
+          </p>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+    <div class="footer-wrapper">
+      <div class="footer">
+        <div class="left">
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a>
+        </div>
+
+        <div class="right">
+          
+    <div class="footer">
+        &copy; Copyright 2010, Andy R. Terrel.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+    </div>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+  </body>
+</html>
