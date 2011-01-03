@@ -1,3 +1,5 @@
+"""Some basic tensor operators"""
+
 from sympy import Add, Basic, expand, Function, Mul
 
 from tensor_expr import expr_rank, expr_shape, TensorExpr
@@ -8,6 +10,7 @@ class NotInvertibleError (Exception):
     pass
 
 class Inverse (TensorExpr, Function):
+    """Represents the inverse of a tensor expr."""
     nargs = 1
 
     def __new__ (cls, arg, **options):
@@ -48,6 +51,8 @@ class Inverse (TensorExpr, Function):
         return self
 
 class Transpose (TensorExpr, Function):
+    """Represents the transpose of a tensor expr."""
+
     nargs = 1
 
     def __new__(cls, arg, **options):
@@ -107,6 +112,8 @@ class Transpose (TensorExpr, Function):
 T = Transpose
 
 class Inner (TensorExpr, Function):
+    """Represents the inner product of two tensor exprs."""
+
     nargs = 2
 
     is_commutative = True

@@ -1,3 +1,5 @@
+"""Defines the generators for the IntGen language."""
+
 from math import sqrt
 from sympy import ccode, sympify
 
@@ -15,6 +17,7 @@ QUAD_WTS = [(322 - 13 * sqrt(70)) / 900,
             (322.0 - 13 * sqrt(70)) / 900]
 
 def select_quad_rule (num_pts, name="Gauss"):
+    """Simple selector for quadrature rules"""
     global QUAD_PTS, QUAD_WTS
     if name != "Gauss":
         raise NotImplementedError
@@ -51,6 +54,7 @@ def select_quad_rule (num_pts, name="Gauss"):
         raise NotImplementedError
 
 def gen_file(name, integrals, func_names, input_vars):
+    """Wrapper to generate numerous integrals in a single file."""
     indent = 0
     code = gen_header(name, indent)
     code += gen_QUAD_RULE(indent)
@@ -78,6 +82,7 @@ def gen_QUAD_RULE(indent):
                    "qd_wts": ", ".join(map(str, QUAD_WTS))}
 
 def int_gen(integral, func_name, input_vars, indent=0):
+    """Main C code generator for a integral expression"""
     sym, disc = split_func(integral.args[0])
     ret_str = "ret_val"
     code = gen_fdec(func_name, input_vars, indent)

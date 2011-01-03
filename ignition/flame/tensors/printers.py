@@ -1,3 +1,5 @@
+"""Simple printers for tensor expressions"""
+
 import operator
 from sympy import Add, Number, Mul, Pow, S
 
@@ -6,6 +8,7 @@ from tensor import Tensor
 from basic_operators import Inner, Inverse, Transpose
 
 def numpy_print(expr):
+    """Prints a tensor expression in Python using numpy."""
     dot_str = "dot(%s, %s)"
 #    print "numpy_print: ", expr, type(expr)
     if isinstance(expr, (Number, float, int)):

@@ -8,10 +8,12 @@ class ConformityError (Exception):
 
 class TensorExpr (Expr):
     """Base object for things with Tensor properties such as:
-    * rank
-    * shape
-    * has_inverse
-    * algebraic ops ( + - * / **)
+    
+        * rank
+        * shape
+        * has_inverse
+        * algebraic ops 
+    
     """
     _op_priority = 20
     rank = -1

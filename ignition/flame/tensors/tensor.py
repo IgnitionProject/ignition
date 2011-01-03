@@ -10,6 +10,7 @@ m, n, k = symbols('mnk')
 
 class Tensor (TensorExpr, Symbol):
     """Basic Tensor symbol.
+    
     >>> A = Tensor('A', rank=2)
     >>> B = Tensor('B', rank=2)
     >>> x = Tensor('x', rank=1)
@@ -20,6 +21,7 @@ class Tensor (TensorExpr, Symbol):
     alpha*A*x + beta*B*x
     >>> expand((alpha*A+beta*B)*(x+y))
     alpha*A*x + alpha*A*y + beta*B*x + beta*B*y
+    
     """
 
     def __new__ (cls, ten, rank=None, shape=None, has_inv=None, transposed=None,

@@ -4,31 +4,39 @@ from ignition.utils.enum import Enum
 
 
 class PObj (object):
-    """A partitioned object
-    
-    A partitioned object is the base for the PME language.  It has the 
-    following attributes:
-    
-    name : The name of the object being partitioned.
-    
-    Optional keyword arguments
+    """Represents a partitioned object
 
-    Properties of the partition
-    size: The size of the partition, currently a two-tuple. default: (2,2)
-    dir:  The direction of the traversal, used for automatically selecting
-          repart and fuse rules. Optional but default assumed if repart and 
-          fuse rules are not given.
-    props: List of properties of partitioned object useful for choosing choosing
-           partitition rules.  For example: ["Symmetric", "UpperTriangular",
-           "LowerTriangular", "Input", "Output", "Overwritten"]
-          
-    Methods for transforming object before and after loop updates
-    part:   Method for transforming object to list of objects.
-    repart: Method that returns dictionary for partition to loop variables 
-            before the loop updates.
-    fuse:   Method that returns dictionary for partition to loop variables
-            after the loop updates.
+    The base for the PME language. Each object in a partitioned equation must
+    derive from this class.
+
+    Args:
+        obj: The  underlying object being partitioned.
+
+    Optional keyword arguments:
+        size: 
+            The size of the partition, currently a two-tuple. default: (2,2)
+
+        dir: 
+            The direction of the traversal, used for automatically selecting
+            repart and fuse rules. Optional but default assumed if repart and 
+            fuse rules are not given.
+           
+        props: 
+            List of properties of partitioned object useful for choosing choosing
+            partitition rules.  For example: ["Symmetric", "UpperTriangular",
+            "LowerTriangular", "Input", "Output", "Overwritten"]
             
+        part_fun: 
+            Method for transforming object to list of objects.
+            
+        repart_fun: 
+            Method that returns dictionary for partition to loop variables 
+            before the loop updates.
+            
+        fuse_fun: 
+            Method that returns dictionary for partition to loop variables
+            after the loop updates.
+
     """
 
     ARG_SRC = Enum("Input", "Output", "Overwrite", "Computed")

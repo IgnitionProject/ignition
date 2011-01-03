@@ -1,4 +1,4 @@
-"""Worksheet Printer """
+"""Worksheet printer class"""
 
 from printer import TemplatePrinter
 

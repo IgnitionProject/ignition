@@ -1,23 +1,46 @@
 Installation
+============
+
 ------------
+Requirements
+------------
+
+Currently the Ignition project relies on `SymPy`_ v0.6.7 for symbolic algebra
+and `Mako`_ v0.3.6 for printing.  Before installing Ignition, it is recommended
+to get the `development version of SymPy`_, but Mako can be installed with
+``easy_install mako``.
+
+--------
+Download
+--------
 
 Go to the `Project Page`_ on GitHub. You can either download the source
 by hitting the large downloads button or use git to checkout the repository.
 
+-------
+Install
+-------
+
 Inside the source, the INSTALL file gives detailed instructions.  Currently the
 library is mostly written in Python which gives two basic install.
 
+
 User or global install
-    This is done with the usual Python distutils with the command ``python
-    setup.py install``
+----------------------
+
+This is done with the usual Python distutils with the command ``python setup.py
+install``
 
 In source install
-    Since the code is pure Python you can add the source directory to the
-    ``PYTHONPATH`` environment variable.  No code needs to be moved or compiled
-    for this option.
+-----------------
 
-Ignition currently requires `SymPy`_  version 0.6.7 or later.
+Since the code is pure Python you can add the source directory to the
+``PYTHONPATH`` environment variable.  No code needs to be moved or compiled for
+this option.
 
 
-.. _Project Page: https://github.com/aterrel/ignition
+
 .. _SymPy: http://www.sympy.org/
+.. _Mako: http://www.makotemplates.org/
+.. _development version of SymPy: https://github.com/sympy/sympy
+.. _Project Page: https://github.com/aterrel/ignition

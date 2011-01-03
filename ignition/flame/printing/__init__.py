@@ -1,3 +1,5 @@
+"""Module defining whole program printers for generator objects."""
+
 import os
 
 FLAME_TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")

@@ -1,4 +1,4 @@
-""" Module Doc String """
+"""Base printer objects."""
 
 import sys
 

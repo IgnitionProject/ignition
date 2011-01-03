@@ -179,7 +179,7 @@ htmlhelp_basename = 'Ignitiondoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'Ignition.tex', u'Ignition Documentation',
+  ('index', 'Ignition.tex', u'The Ignition Library',
    u'Andy R. Terrel', 'manual'),
 ]
 
@@ -212,7 +212,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'ignition', u'Ignition Documentation',
+    ('index', 'ignition', u'The Ignition Library',
      [u'Andy R. Terrel'], 1)
 ]
 

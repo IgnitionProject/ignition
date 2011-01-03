@@ -1,4 +1,4 @@
-"""Defines the IntGen (Integral Generator) language"""
+"""Defines the IntGen (Integral Generator) language."""
 
 import operator
 from sympy import ccode
@@ -46,7 +46,7 @@ class Mul (Func):
             return None
         if all(map(lambda a: type(a) == Func, args)):
             #TODO: Check for consistent variables
-            return Func(reduce(operator.mul, [a.args[0] for a in args]),\
+            return Func(reduce(operator.mul, [a.args[0] for a in args]), \
                         a.args[1])
         return IntGenExpr.__new__(cls, *args)
     def __str__(self):
@@ -73,7 +73,7 @@ class Add (Func):
     def eval_str(self, dom, idx_str, qd_pt_str):
         return "+".join(map(lambda a:a.eval_str(dom, idx_str, qd_pt_str), self.args))
     def eval_pt(self, qd_idx, pt):
-        na_tuples= map(lambda arg: arg.eval_pt(qd_idx, pt), self.args)
+        na_tuples = map(lambda arg: arg.eval_pt(qd_idx, pt), self.args)
         disc_eval = ""
         for i, (n, a) in enumerate(na_tuples):
             if i != 0:
