@@ -5,7 +5,8 @@ from printer import TemplatePrinter
 class WorksheetPrinter (TemplatePrinter):
     """Basic FLAME worksheet printer class"""
 
-    def __init__ (self, gen_obj, template="worksheet.mako", filename=None, **kws):
+    def __init__ (self, gen_obj, filename=None, template="worksheet.mako", **kws):
+        print "WorksheetPrinter(gen_obj, " + template + ", " + str(filename) + ")"
         TemplatePrinter.__init__(self, template, filename)
         self._gen_obj = gen_obj
 
@@ -42,15 +43,15 @@ class WorksheetPrinter (TemplatePrinter):
 
     @property
     def _guard (self):
-        return "" #str(self._gen_obj.guard)
+        return str(self._gen_obj.guard) + " is/are not empty"
 
     @property
     def _fuse (self):
-        return ""
+        return str(self._gen_obj.fuse)
 
     @property
     def _operation (self):
-        return ""
+        return str(self._gen_obj.op_applied)
 
     @property
     def _outputs (self):
@@ -58,15 +59,15 @@ class WorksheetPrinter (TemplatePrinter):
 
     @property
     def _precondition (self):
-        return ""
+        return self._invariant
 
     @property
     def _postcondition (self):
-        return ""
+        return self._invariant + " and " + self._guard
 
     @property
     def _partition (self):
-        return ""
+        return str(self._gen_obj.partition)
 
     @property
     def _partition_sizes (self):
@@ -74,7 +75,7 @@ class WorksheetPrinter (TemplatePrinter):
 
     @property
     def _repartition (self):
-        return ""
+        return str(self._gen_obj.repartition)
 
     @property
     def _reparition_sizes (self):
@@ -91,7 +92,7 @@ class WorksheetPrinter (TemplatePrinter):
 class LatexWorksheetPrinter (WorksheetPrinter):
 
     def __init__ (self, gen_obj, filename=None):
-        WorksheetPrinter.__init__(self, gen_obj, "flatex.mako", filename)
+        WorksheetPrinter.__init__(self, gen_obj, filename, "flatex.mako")
 
     @property
     def template_dict(self):

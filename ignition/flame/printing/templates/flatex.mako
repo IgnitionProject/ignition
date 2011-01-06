@@ -6,28 +6,29 @@
 \renewcommand{\WSoperation}{Compute ${outputs} of size ${sizes} so
   that ${operation}}
 
-\renewcommand{\WSprecondition}{${precondition}}
-
-\renewcommand{\WSpostcondition}{${postcondition}}
-
 \renewcommand{\WSpartition}{${partition}}
 
 \renewcommand{\WSpartitionsizes}{${partition_sizes}}
 
-\renewcommand{\WSrepartition}{${repartition}}
-
-\renewcommand{\WSrepartitionsizes}{${repartition_sizes}}
-\renewcommand{\WSmoveboundary}{${fuse}}
+\renewcommand{\WSinvariant}{${invariant}}
 
 \renewcommand{\WSguard}{${guard}}
 
-\renewcommand{\WSinvariant}{${invariant}}
+\renewcommand{\WSprecondition}{${precondition}}
+
+\renewcommand{\WSrepartition}{${repartition}}
+
+\renewcommand{\WSrepartitionsizes}{${repartition_sizes}}
 
 \renewcommand{\WSbeforeupdate}{${before_update}}
 
+\renewcommand{\WSupdate}{${update}}
+
 \renewcommand{\WSafterupdate}{${after_update}}
 
-\renewcommand{\WSupdate}{${update}}
+\renewcommand{\WSmoveboundary}{${fuse}}
+
+\renewcommand{\WSpostcondition}{${postcondition}}
 
 \begin{figure}[tb!]
   \centering\small

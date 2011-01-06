@@ -77,6 +77,10 @@ def fuseA (A):
     [A_inner] = A
     return {A_inner:matrix([A])}
 
+# Define the operation
+def AK_KJ_Op (A, K, J):
+    return A * K - K * J
+
 # Define the loop invariant
 def AK_KJ_Rule (A, K, J):
     [A] = A
@@ -84,8 +88,12 @@ def AK_KJ_Rule (A, K, J):
     [[J_tl, _, _],
      [Tj_ml, _, _],
      [_, j_bm, J_br]] = J
-    return flatten((A * K_l - K_l * J_tl - k_m * Tj_ml).tolist())
-
+    op = (A * K_l - K_l * J_tl - k_m * Tj_ml)
+    if type(op) is matrix:
+        op = op.tolist()
+    if type(op) is list:
+        op = flatten(op)
+    return op
 
 # Define the objects used in the PME
 A = Tensor("A", rank=2)
@@ -101,5 +109,7 @@ J = PObj(Tensor("J", rank=2), part_fun=it_part_J, repart_fun=repartJ, fuse_fun=f
          arg_src=PObj.ARG_SRC.Computed)
 
 # Generate the algorithm
-generate(loop_inv=AK_KJ_Rule, inv_args=[A, K, J],
-         updater=tensor_updater, filetype="latex")
+#generate(op=AK_KJ_Op, loop_inv=AK_KJ_Rule, inv_args=[A, K, J],
+#         updater=tensor_updater, filetype="latex")
+generate(op=AK_KJ_Op, loop_inv=AK_KJ_Rule, inv_args=[A, K, J],
+         updater=tensor_updater, filetype="text")
