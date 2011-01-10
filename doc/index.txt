@@ -14,13 +14,26 @@ currently available.
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    intro
    install
    tutorial
    modules/index
    contributing
+
+License
+=======
+
+Ignition is licensed under `BSD3`_.
+
+Notes
+=====
+
+If something cannot be easily accessed from this page, it's a bug (`please
+report it`_).
+
+This documentation is maintained with docutils, so you might see some comments in the form #doctest:... . You can safely ignore them.
 
 Indices and tables
 ==================
@@ -29,9 +42,5 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-If something cannot be easily accessed from this page, it's a bug (`please
-report it`_).
-
-This documentation is maintained with docutils, so you might see some comments in the form #doctest:... . You can safely ignore them.
-
 .. _please report it: https://github.com/aterrel/ignition/issues
+.. _BSD3: http://en.wikipedia.org/wiki/BSD_licenses#3-clause_license_.28.22New_BSD_License.22_or_.22Modified_BSD_License.22.29
