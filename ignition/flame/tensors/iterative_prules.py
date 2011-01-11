@@ -2,34 +2,29 @@
 
 from numpy import matrix
 
-from part import Fuse, Part, Repart
+from ignition.flame.prule import FuseRule, PartRule, RepartRule
 from basic_operators import T
 from constants import one, Zero, zero
 
-class Part_1x1 (Part):
-    @staticmethod
-    def __call__ (M):
+class Part_1x1 (PartRule):
+    def __call__ (self, M):
         return [M]
 
-class Repart_1x1 (Repart):
-    @staticmethod
-    def __call__ (M):
+class Repart_1x1 (RepartRule):
+    def __call__ (self, M):
         return {M[0]:matrix(M)}
 
-class Fuse_1x1 (Fuse):
-    @staticmethod
-    def __call__ (M):
+class Fuse_1x1 (FuseRule):
+    def __call__ (self, M):
         return {M[0]:matrix(M)}
 
-class Part_1x3 (Part):
-    @staticmethod
-    def __call__ (M):
+class Part_1x3 (PartRule):
+    def __call__ (self, M):
         return [M.update(l_ind="L"), M.update(l_ind="m", rank=M.rank - 1),
                 M.update(l_ind="R")]
 
-class Repart_1x3 (Repart):
-    @staticmethod
-    def __call__ (M):
+class Repart_1x3 (RepartRule):
+    def __call__ (self, M):
         ret_dict = {}
         [M_l, m_m, M_r] = M
         ret_dict[M_l] = matrix([[M_l.update(l_ind="0")]])
@@ -37,9 +32,8 @@ class Repart_1x3 (Repart):
         ret_dict[M_r] = matrix([[M_r.update(l_ind="2", rank=1), M_r.update(l_ind="3")]])
         return ret_dict
 
-class Fuse_1x3 (Fuse):
-    @staticmethod
-    def __call__ (M):
+class Fuse_1x3 (FuseRule):
+    def __call__ (self, M):
         ret_dict = {}
         [M_l, m_m, M_r] = M
         ret_dict[M_l] = matrix([M_l.update(l_ind="0"), m_m.update (l_ind="1")])
@@ -47,17 +41,15 @@ class Fuse_1x3 (Fuse):
         ret_dict[M_r] = matrix([M_r.update(l_ind="3")])
         return ret_dict
 
-class Part_J_3x3 (Part):
-    @staticmethod
-    def __call__(J):
+class Part_J_3x3 (PartRule):
+    def __call__(self, J):
         return \
           [[J.update(l_ind="tl"), Zero, Zero],
            [T(J.update(l_ind="ml", rank=J.rank - 1)), Zero, Zero],
            [Zero, J.update(l_ind="bm", rank=J.rank - 1), J.update(l_ind="br")]]
 
-class Repart_J_3x3 (Repart):
-    @staticmethod
-    def __call__(J):
+class Repart_J_3x3 (RepartRule):
+    def __call__(self, J):
         ret_dict = {}
         [[J_tl, _, _],
          [Tj_ml, _, _],
@@ -70,9 +62,8 @@ class Repart_J_3x3 (Repart):
                                   [J_br.update(l_ind="33")]])
         return ret_dict
 
-class Fuse_J_3x3 (Fuse):
-    @staticmethod
-    def __call__(J):
+class Fuse_J_3x3 (FuseRule):
+    def __call__(self, J):
         ret_dict = {}
         [[J_tl, _, _],
          [Tj_ml, _, _],
