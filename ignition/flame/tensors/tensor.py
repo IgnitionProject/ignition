@@ -3,7 +3,7 @@
 from sympy import Symbol, symbols
 
 from tensor_expr import TensorExpr
-from tensor_names import convert_name, set_lower_ind, set_upper_ind
+from tensor_names import convert_name, set_lower_ind, set_upper_ind, to_latex
 
 
 m, n, k = symbols('mnk')
@@ -86,6 +86,10 @@ class Tensor (TensorExpr, Symbol):
             self.shape = (n, n)
         else:
             self.shape = shape
+
+    @property
+    def latex(self):
+        return to_latex(self.name)
 
     def update (self, name=None, l_ind=None, u_ind=None, rank=None,
              has_inverse=None, shape=None, conform_name=True):

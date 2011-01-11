@@ -23,15 +23,6 @@ def test_vec_solve():
     A = Tensor('A', rank=2)
     print solve_vec_eqn(-mu_12 * (T(p_1) * A * p_2) - mu_12 * (T(p_2) * A * p_1) + (T(p_2) * A * p_1) , mu_12)
 
-def test_numpy_print():
-    assert(numpy_print(-mu_12 * p_1 + r_2) == "-dot(mu_12, p_1) + r_2")
-    assert(numpy_print(delta_1 * A * p_1 + r_1) == "dot(delta_1, dot(A, p_1)) + r_1")
-    assert(numpy_print(delta_1 * p_1 + x_1) == "dot(delta_1, p_1) + x_1")
-    print numpy_print((T(r_1) * r_1) / (T(r_1) * A * p_1))
-    #dot(dot(r_1, r_1), (1.0/dot(transpose(dot(transpose(p_1), A)), r_1)))
-    print numpy_print((T(p_1) * A * r_2) / (T(p_1) * A * p_1))
-    #dot(dot(transpose(dot(transpose(p_1), A)), r_2), (1.0/dot(transpose(dot(transpose(p_1), A)), p_1)))
-
 def testZero():
     A = Tensor('A', 2)
     a = Tensor('a', 1)

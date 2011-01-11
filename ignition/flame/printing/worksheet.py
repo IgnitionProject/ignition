@@ -1,9 +1,13 @@
 """Worksheet printer class"""
 
+from ignition.flame.tensors.printers import latex_print
+
 from printer import TemplatePrinter
 
 class WorksheetPrinter (TemplatePrinter):
     """Basic FLAME worksheet printer class"""
+
+    _rule_print_attr = "_str"
 
     def __init__ (self, gen_obj, filename=None, template="worksheet.mako", **kws):
         print "WorksheetPrinter(gen_obj, " + template + ", " + str(filename) + ")"
@@ -29,25 +33,46 @@ class WorksheetPrinter (TemplatePrinter):
                 "update" : self._update,
                 }
 
+    def _tensor_print(self, expr):
+        return str(expr)
+
+    def _list_ten_print (self, l_o_t):
+        if isinstance(l_o_t, (list, tuple)):
+            return "[ " + " and ".join(map(self._list_ten_print, l_o_t)) + " ]"
+        else:
+            return self._tensor_print(l_o_t)
+
+    def _print_rules(self, part_dict, rule_dict, reverse=False):
+        ret_str = ""
+        for obj, part in part_dict.iteritems():
+            p = rule_dict[obj].__getattribute__(self._rule_print_attr)
+            if reverse:
+                ret_str += "%s <- %s\n" % (self._tensor_print(obj), p(part))
+            else:
+                ret_str += "%s -> %s\n" % (self._tensor_print(obj), p(part))
+        return ret_str
+
     @property
     def _after_update (self):
-        return str(self._gen_obj.aft_eqns)
+        return self._list_ten_print(self._gen_obj.aft_eqns)
 
     @property
     def _before_update (self):
-        return str(self._gen_obj.b4_eqns)
+        return self._list_ten_print(self._gen_obj.b4_eqns)
 
     @property
     def _invariant (self):
-        return str(self._gen_obj.loop_inv)
+        return self._list_ten_print(self._gen_obj.loop_inv)
 
     @property
     def _guard (self):
-        return str(self._gen_obj.guard) + " is/are not empty"
+        return " and ".join(map(self._tensor_print, self._gen_obj.guard)) + \
+               " is/are not empty"
 
     @property
     def _fuse (self):
-        return str(self._gen_obj.fuse)
+        return self._print_rules(self._gen_obj.partition,
+                                 self._gen_obj.fuse_fun, reverse=True)
 
     @property
     def _operation (self):
@@ -67,7 +92,8 @@ class WorksheetPrinter (TemplatePrinter):
 
     @property
     def _partition (self):
-        return str(self._gen_obj.partition)
+        return self._print_rules(self._gen_obj.partition,
+                                 self._gen_obj.part_fun)
 
     @property
     def _partition_sizes (self):
@@ -75,7 +101,8 @@ class WorksheetPrinter (TemplatePrinter):
 
     @property
     def _repartition (self):
-        return str(self._gen_obj.repartition)
+        return self._print_rules(self._gen_obj.partition,
+                                 self._gen_obj.repart_fun)
 
     @property
     def _reparition_sizes (self):
@@ -87,9 +114,17 @@ class WorksheetPrinter (TemplatePrinter):
 
     @property
     def _update (self):
-        return str(self._gen_obj.update)
+        ret_str = ""
+        for k, v in self._gen_obj.update.iteritems():
+            ret_str += "%s = %s\n" % (self._tensor_print(k),
+                                      self._tensor_print(v))
+        return ret_str
 
 class LatexWorksheetPrinter (WorksheetPrinter):
+
+    _tensor_printer = latex_print
+    _rule_print_attr = "_latex"
+
 
     def __init__ (self, gen_obj, filename=None):
         WorksheetPrinter.__init__(self, gen_obj, filename, "flatex.mako")
@@ -101,5 +136,15 @@ class LatexWorksheetPrinter (WorksheetPrinter):
         td["label"] = "none"
         return td
 
+    def _tensor_print(self, expr):
+        return latex_print(expr)
 
-
+    def _print_rules(self, part_dict, rule_dict, reverse=False):
+        ret_str = ""
+        for obj, part in part_dict.iteritems():
+            p = rule_dict[obj].__getattribute__(self._rule_print_attr)
+            arrow = "\rightarrow"
+            if reverse:
+                arrow = "\leftarrow"
+            ret_str += "%s %s %s\n" % (self._tensor_print(obj), arrow, p(part))
+        return ret_str

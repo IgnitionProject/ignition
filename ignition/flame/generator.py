@@ -44,6 +44,13 @@ class PAlgGenerator (object):
         return ret_dict
 
     @property
+    def part_fun (self):
+        ret_dict = {}
+        for v in self._args:
+            ret_dict[v.obj] = v.part_fun
+        return ret_dict
+
+    @property
     def repartition (self):
         """Repartition mapping"""
         ret_dict = {}
@@ -52,11 +59,25 @@ class PAlgGenerator (object):
         return ret_dict
 
     @property
+    def repart_fun (self):
+        ret_dict = {}
+        for v in self._args:
+            ret_dict[v.obj] = v.repart_fun
+        return ret_dict
+
+    @property
     def fuse (self):
         """Fuse mapping"""
         ret_dict = {}
         for v in self._args:
             ret_dict[v.obj] = v.fuse
+        return ret_dict
+
+    @property
+    def fuse_fun (self):
+        ret_dict = {}
+        for v in self._args:
+            ret_dict[v.obj] = v.fuse_fun
         return ret_dict
 
     def _repart_invariant(self):

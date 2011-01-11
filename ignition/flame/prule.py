@@ -33,18 +33,10 @@ class PartRule (Rule):
     def _latex (self):
         return "Partition"
 
-class RepartRule (Rule):
+class RepartFuseRule (Rule):
     """Provides call backs to repartition a partition in the domain language."""
     def __str__ (self):
         return "RepartRule()"
 
     def _latex (self):
         return "Repartition"
-
-class FuseRule (Rule):
-    """Provides call backs to fuse a partition in the domain language."""
-    def __str__ (self):
-        return "FuseRule()"
-
-    def _latex (self):
-        return "Fuse"
