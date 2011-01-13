@@ -1,7 +1,4 @@
-"""Simple demo of iterative update for AK = KJ
-
-
-"""
+"""Simple demo of iterative update for AK = KJ"""
 
 from numpy import matrix
 
@@ -24,11 +21,6 @@ def AK_KJ_Rule (A, K, J):
     if type(op) is list:
         op = flatten(op)
     return op
-
-# Define the objects used in the PME
-A = Tensor("A", rank=2)
-K = Tensor("K", rank=2)
-J = Tensor("J", rank=2)
 
 # Define the Partition Objs
 A = PObj(Tensor("A", rank=2),

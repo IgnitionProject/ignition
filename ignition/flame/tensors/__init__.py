@@ -13,6 +13,4 @@ from solvers import (all_back_sub, solve_vec_eqn)
 from printers import (numpy_print, latex_print)
 from tensor_names import (convert_name, set_lower_ind, set_upper_ind, to_latex)
 from constants import (I, One, one, ZERO, Zero, zero)
-from iterative_prules import (Fuse_1x1, Part_1x1, Repart_1x1,
-                              Fuse_1x3, Part_1x3, Repart_1x3,
-                              Fuse_J_3x3, Part_J_3x3, Repart_J_3x3)
+from iterative_prules import *

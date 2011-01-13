@@ -1,5 +1,6 @@
 """Some basic tensor operators"""
 
+from numpy import matrix
 from sympy import Add, Basic, expand, Function, Mul
 
 from tensor_expr import expr_rank, expr_shape, TensorExpr
@@ -58,6 +59,12 @@ class Transpose (TensorExpr, Function):
     def __new__(cls, arg, **options):
         if isinstance(arg, Transpose) and isinstance(arg.args[0], Tensor):
             return arg.args[0]
+        if isinstance(arg, matrix):
+            new_arg = arg.copy().transpose()
+            for i in xrange(new_arg.shape[0]):
+                for j in xrange(new_arg.shape[1]):
+                    new_arg[i, j] = Transpose(new_arg[i, j])
+            return new_arg
         if isinstance(arg, Tensor):
             if arg.rank == 0:
                 return arg

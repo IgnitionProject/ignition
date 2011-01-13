@@ -114,6 +114,8 @@ class WorksheetPrinter (TemplatePrinter):
 
     @property
     def _update (self):
+        if self._gen_obj.update is None:
+            return "UPDATES NOT DETERMINED."
         ret_str = ""
         for k, v in self._gen_obj.update.iteritems():
             ret_str += "%s = %s\n" % (self._tensor_print(k),

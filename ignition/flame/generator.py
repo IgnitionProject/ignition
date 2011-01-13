@@ -1,5 +1,7 @@
 """Code generator for PME Language"""
 
+import pprint
+
 from ignition.flame.pobj import PObj
 from ignition.utils import flatten
 from ignition.flame.tensors.solvers import all_back_sub
@@ -120,10 +122,19 @@ def generate (filename=None, filetype=None, op=None, loop_inv=None, inv_args=[],
     get_printer(gen_obj, filename, filetype).write()
     return gen_obj
 
-def tensor_updater (b4_eqns, aft_eqns, levels= -1, num_sols=1):
+def tensor_updater (b4_eqns, aft_eqns, levels= -1, num_sols=1, verbose=True):
     """Updater calling tensor solvers."""
-    knowns = flatten([eqn.atoms() for eqn in b4_eqns])
-    print knowns
+    knowns = set(flatten([eqn.atoms() for eqn in b4_eqns]))
+    if verbose:
+        print "=" * 80
+        print "Calling Generator with following:"
+        print "*" * 80
+        print "Knowns:", pprint.pformat(knowns, 8)
+        print "-" * 80
+        print "Unknowns:", pprint.pformat(set(flatten([eqn.atoms() for eqn in aft_eqns])) - knowns, 10)
+        print "-" * 80
+        print "eqns:", pprint.pformat(aft_eqns, 6)
+        print "=" * 80
     sol_dicts = all_back_sub(aft_eqns, knowns, levels)
     sol_dicts = sol_dicts[:num_sols]
     return sol_dicts
