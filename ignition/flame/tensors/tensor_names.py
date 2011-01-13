@@ -56,6 +56,24 @@ def join_name (name, lower, upper, latex=False):
             ret_val += upper
     return ret_val
 
+def add_idx (name, idx, latex=False):
+    """Returns a name with an added index.
+    
+    >>> add_idx("a", "r")
+    "a[r]"
+    >>> add_idx("a_0^2", "r")
+    "a[r]_0^2"
+    >>> add_idx("a[r]", "n")
+    "a[r][n]"
+    >>> add_idx("a", 3)
+    "a[3]"
+    >>> add_idx("a_02", "delta", latex=True)
+    "a[\delta]_{02}
+    """
+    b, l, u = split_name(name)
+    b = b + "[" + str(idx) + "]"
+    return join_name(b, l, u, latex)
+
 def to_latex(name):
     """Returns name for latex printing.
     
@@ -153,12 +171,12 @@ def convert_name (name, rank):
     if base[0] in ['0', '1']:
         return name
     elif name_rank == 2:
+        r_1 = join_name(base.lower(), low, up)
         if rank == 1:
-            return join_name(base.lower(), low, up)
+            return r_1
         elif rank == 0:
-            sca_name = RM_2_GREEK.get(base.lower(), None)
-            if sca_name:
-                return join_name(sca_name, low, up)
+                return convert_name(r_1, 0)
+
     elif name_rank == 1:
         if rank == 2:
             return join_name(base.upper(), low, up)
@@ -166,18 +184,24 @@ def convert_name (name, rank):
             sca_name = RM_2_GREEK.get(base, None)
             if sca_name:
                 return join_name(sca_name, low, up)
+            else:
+                return join_name("s" + base, low, up)
     elif name_rank == 0:
         alpha_name = None
-        for k, v in RM_2_GREEK.iteritems():
-            if v == base:
-                alpha_name = k
-                break
+        if base[0] == 's':
+            alpha_name = base[1:]
+        else:
+            for k, v in RM_2_GREEK.iteritems():
+                if v == base:
+                    alpha_name = k
+                    break
         if alpha_name:
+            r_1 = join_name(alpha_name, low, up)
             if rank == 2:
-                return join_name(alpha_name.upper(), low, up)
+                return convert_name(r_1, 2)
             elif rank == 1:
-                return join_name(alpha_name, low, up)
-    raise ValueError("Unable to convert name.")
+                return r_1
+    raise ValueError("Unable to convert name: %s." % name)
 
 def rank_from_name (name):
     base, _, _ = split_name(name)

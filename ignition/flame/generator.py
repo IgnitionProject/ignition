@@ -97,10 +97,11 @@ class PAlgGenerator (object):
     def gen_update (self, filename=None, type=None):
         """Generates the loop updates and pre/post conditions inside loop."""
         self.loop_inv = self._loop_invariant()
-        self.b4_eqns = self._repart_invariant()
-        self.aft_eqns = self._fuse_invariant()
+        self.b4_eqns, kb4 = self._repart_invariant()
+        self.aft_eqns, kaft = self._fuse_invariant()
         self.guard = self._guard()
-        self.update_tups = self.updater(self.b4_eqns, self.aft_eqns)
+        self.update_tups = self.updater(self.b4_eqns, self.aft_eqns,
+                                        e_knowns=kb4 + kaft)
         if len(self.update_tups) == 0:
             print "PAlgGenerator.generate: no updates found."
             self.update = None
@@ -122,18 +123,19 @@ def generate (filename=None, filetype=None, op=None, loop_inv=None, inv_args=[],
     get_printer(gen_obj, filename, filetype).write()
     return gen_obj
 
-def tensor_updater (b4_eqns, aft_eqns, levels= -1, num_sols=1, verbose=True):
+def tensor_updater (b4_eqns, aft_eqns, e_knowns=[], levels= -1, num_sols=1, verbose=True):
     """Updater calling tensor solvers."""
-    knowns = set(flatten([eqn.atoms() for eqn in b4_eqns]))
+    knowns = set(flatten([eqn.atoms() for eqn in b4_eqns])).union(set(e_knowns))
     if verbose:
         print "=" * 80
         print "Calling Generator with following:"
         print "*" * 80
-        print "Knowns:", pprint.pformat(knowns, 8)
+        print "Knowns:", knowns #pprint.pformat(knowns, indent=8)
         print "-" * 80
-        print "Unknowns:", pprint.pformat(set(flatten([eqn.atoms() for eqn in aft_eqns])) - knowns, 10)
+        unknown = set(flatten([eqn.atoms() for eqn in aft_eqns])) - knowns
+        print "Unknowns:", pprint.pformat(unknown, indent=10)
         print "-" * 80
-        print "eqns:", pprint.pformat(aft_eqns, 6)
+        print "eqns:", pprint.pformat(aft_eqns, indent=6)
         print "=" * 80
     sol_dicts = all_back_sub(aft_eqns, knowns, levels)
     sol_dicts = sol_dicts[:num_sols]

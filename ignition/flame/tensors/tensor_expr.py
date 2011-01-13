@@ -1,4 +1,5 @@
 from sympy import Add, Expr, Number, Mul, Pow, Symbol
+from sympy.core.decorators import call_highest_priority
 
 # from tensor import Tensor /* cyclic */
 # from functions import Inner, Inverse, Transpose /* cyclic */
@@ -35,6 +36,7 @@ class TensorExpr (Expr):
             if other_is_one and ero == 0:
                 return self
 
+    @call_highest_priority('__rmul__')
     def __mul__ (self, other):
         is_mul_conforming_or_die(self, other)
         if is_zero(self) or is_zero(other):
@@ -46,6 +48,7 @@ class TensorExpr (Expr):
             return mul_by_one
         return super(TensorExpr, self).__mul__(other)
 
+    @call_highest_priority('__mul__')
     def __rmul__ (self, other):
         is_mul_conforming_or_die(other, self)
         if is_zero(self) or is_zero(other):
@@ -57,6 +60,7 @@ class TensorExpr (Expr):
             return mul_by_one
         return super(TensorExpr, self).__rmul__(other)
 
+    @call_highest_priority('__radd__')
     def __add__ (self, other):
         is_add_conforming_or_die(self, other)
         if is_zero(self):
@@ -65,12 +69,14 @@ class TensorExpr (Expr):
             return self
         return super(TensorExpr, self).__add__(other)
 
+    @call_highest_priority('__add__')
     def __radd__ (self, other):
         is_add_conforming_or_die(other, self)
         if self.name and self.name.startswith('0'):
             return other
         return super(TensorExpr, self).__radd__(other)
 
+    @call_highest_priority('__rsub__')
     def __sub__ (self, other):
         if is_zero(self):
             return - other
@@ -78,6 +84,7 @@ class TensorExpr (Expr):
             return self
         return super(TensorExpr, self).__sub__(other)
 
+    @call_highest_priority('__sub__')
     def __rsub__ (self, other):
         if is_zero(self):
             return other
@@ -85,6 +92,7 @@ class TensorExpr (Expr):
             return - self
         return super(TensorExpr, self).__rsub__(other)
 
+    @call_highest_priority('__rdiv__')
     def __div__ (self, other):
         if is_zero(self):
             raise ZeroDivisionError()
@@ -92,19 +100,24 @@ class TensorExpr (Expr):
             return Mul(self, Inverse(other))
         return super(TensorExpr, self).__div__(other)
 
+    @call_highest_priority('__div__')
     def __rdiv__ (self, other):
         if is_zero(self):
             raise ZeroDivisionError()
         return Mul(other, Inverse(self))
 
+    @call_highest_priority('__rpow__')
     def __pow__ (self, other):
         if is_zero(self):
+            return self
+        if is_one(self):
             return self
         elif isinstance(other, int) and other < 0:
             return Inverse(self) ** (-other)
         else:
             return Pow(self, other)
 
+    @call_highest_priority('__pow__')
     def __rpow__ (self, other):
         raise RuntimeError("Can't raise to the tensor power.")
 

@@ -114,6 +114,58 @@ class Fuse_3x3 (TensorRepartFuseRule):
         ret[M_br] = matrix([[M_br.update(l_ind="33")]])
         return ret
 
+class Part_Upper_3x3 (TensorPartRule):
+    shape = (3, 3)
+    _latex_head = "\FLAThreeByThree"
+    def __call__(self, U):
+        return \
+          [[U.update(l_ind="tl"), U.update(l_ind="tm", rank=1), U.update(l_ind="tr")],
+           [T(Zero), U.update(l_ind="mm", rank=0), T(U.update(l_ind="mr", rank=1))],
+           [Zero, Zero, U.update(l_ind="br")]]
+
+class Repart_Upper_3x3 (TensorRepartFuseRule):
+    shape = (3, 3)
+    reshape = (4, 4)
+    _latex_head = "\FLAFourByFour"
+    def __call__(self, U):
+        ret = {}
+        [[U_tl, u_tm, U_tr],
+         [_, u_mm, T_u_mr],
+         [_, _, U_br]] = U
+
+        ret[U_tl] = matrix([[U_tl.update(l_ind="00")]])
+        ret[u_tm] = matrix([[u_tm.update(l_ind="01")]])
+        ret[U_tr] = matrix([[u_tm.update(l_ind="02"), U_tr.update(l_ind="03")]])
+
+        ret[u_mm] = matrix([[u_mm.update(l_ind="11")]])
+        ret[T_u_mr] = matrix([[u_mm.update(l_ind="12"), T_u_mr.update(l_ind="13")]])
+
+        ret[U_br] = matrix([[u_mm.update(l_ind="22"), T_u_mr.update(l_ind="23")],
+                            [Zero, U_br.update(l_ind="33")]])
+        return ret
+
+class Fuse_Upper_3x3 (TensorRepartFuseRule):
+    shape = (3, 3)
+    reshape = (4, 4)
+    _latex_head = "\FLAFourByFour"
+    def __call__(self, U):
+        ret = {}
+        [[U_tl, u_tm, U_tr],
+         [_, u_mm, T_u_mr],
+         [_, _, U_br]] = U
+
+        ret[U_tl] = matrix([[U_tl.update(l_ind="00"), u_tm.update(l_ind="01")],
+                            [T(Zero), u_mm.update(l_ind="11")]])
+        ret[u_tm] = matrix([[u_tm.update(l_ind="02")],
+                            [u_mm.update(l_ind="12")]])
+        ret[U_tr] = matrix([[U_tr.update(l_ind="03")],
+                            [T_u_mr.update(l_ind="13")]])
+
+        ret[u_mm] = matrix([[u_mm.update(l_ind="22")]])
+        ret[T_u_mr] = matrix([[T_u_mr.update(l_ind="23")]])
+
+        ret[U_br] = matrix([[U_br.update(l_ind="33")]])
+        return ret
 
 class Part_Diag_3x3 (TensorPartRule):
     shape = (3, 3)
@@ -152,6 +204,45 @@ class Fuse_Diag_3x3 (TensorRepartFuseRule):
                             [T(Zero), delta_mm.update(l_ind="11")]])
         ret[delta_mm] = matrix([[delta_mm.update(l_ind="22")]])
         ret[D_br] = matrix([[D_br.update(l_ind="33")]])
+        return ret
+
+class Part_I_3x3 (TensorPartRule):
+    shape = (3, 3)
+    _latex_head = "\FLAThreeByThree"
+    def __call__(self, I):
+        return \
+          [[I.update(l_ind="tl"), Zero, ZERO],
+           [T(Zero), one, T(Zero)],
+           [ZERO, Zero, I.update(l_ind="br")]]
+
+class Repart_I_3x3 (TensorRepartFuseRule):
+    shape = (3, 3)
+    reshape = (4, 4)
+    _latex_head = "\FLAFourByFour"
+    def __call__(self, I):
+        ret = {}
+        [[I_tl, _, _],
+         [_, o, _],
+         [_, _, I_br]] = I
+        ret[I_tl] = matrix([[I_tl.update(l_ind="00")]])
+        ret[o] = matrix([[one]])
+        ret[I_br] = matrix([[one, T(Zero)],
+                            [Zero, I_br.update(l_ind="33")]])
+        return ret
+
+class Fuse_I_3x3 (TensorRepartFuseRule):
+    shape = (3, 3)
+    reshape = (4, 4)
+    _latex_head = "\FLAFourByFour"
+    def __call__(self, I):
+        ret = {}
+        [[I_tl, _, _],
+         [_, o, _],
+         [_, _, I_br]] = I
+        ret[I_tl] = matrix([[I_tl.update(l_ind="00"), Zero],
+                            [T(Zero), one]])
+        ret[o] = matrix([[one]])
+        ret[I_br] = matrix([[I_br.update(l_ind="33")]])
         return ret
 
 class Part_J_3x3 (TensorPartRule):
@@ -288,7 +379,7 @@ class Fuse_I_U_3x3 (TensorRepartFuseRule):
         [[I_U_tl, u_tm, U_tr],
          [_, i_u_mm, t_u_mr],
          [_, _, I_U_br]] = I_U
-        ret[I_U_tl] = matrix([[I_U_tl.update(l_ind="00"), I_U_tl.update(l_ind="00", rank=1)],
+        ret[I_U_tl] = matrix([[I_U_tl.update(l_ind="00"), I_U_tl.update(l_ind="01", rank=1)],
                               [T(Zero), one]])
         ret[u_tm] = matrix([[u_tm.update(l_ind="01")],
                             [u_tm.update(l_ind="12", rank=0)]])

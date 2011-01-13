@@ -1,9 +1,12 @@
 """Rules for symbolic tensor algebra"""
 
 from sympy import Symbol, symbols
+from sympy.core.decorators import call_highest_priority
+
 
 from tensor_expr import TensorExpr
-from tensor_names import convert_name, set_lower_ind, set_upper_ind, to_latex
+from tensor_names import add_idx, convert_name, set_lower_ind, set_upper_ind, \
+                         to_latex
 
 
 m, n, k = symbols('mnk')
@@ -74,7 +77,7 @@ class Tensor (TensorExpr, Symbol):
         obj._set_default_shape(shape)
         return obj
 
-    def _set_default_shape(self, shape):
+    def _set_default_shape (self, shape):
         if self.rank == 0:
             self.shape = (1, 1)
         elif self.rank == 1 and shape is None:
@@ -88,7 +91,7 @@ class Tensor (TensorExpr, Symbol):
             self.shape = shape
 
     @property
-    def latex(self):
+    def latex (self):
         return to_latex(self.name)
 
     def update (self, name=None, l_ind=None, u_ind=None, rank=None,
@@ -103,3 +106,52 @@ class Tensor (TensorExpr, Symbol):
         if conform_name:
             name = convert_name(name, rank)
         return Tensor(name, rank=rank, shape=shape, has_inv=has_inverse)
+
+class BasisVector (Tensor):
+    """Unit basis vector with 1 at given position r.
+    
+    >>> e_0 = BasisVector(0)
+    >>> A = Tensor('A')
+    >>> A*e_0 
+    a[0]
+    
+    """
+
+    _op_priority = 122
+
+    def __new__ (cls, pos_or_ten, shape=None, **kws):
+        if isinstance(pos_or_ten, Tensor) and pos_or_ten.rank == 1:
+            return pos_or_ten
+        elif not isinstance(pos_or_ten, int):
+            raise ValueError("Must give either tensor or position, given %s" % \
+                             str(pos_or_ten))
+        obj = Tensor.__new__(cls, add_idx("e", pos_or_ten), rank=1)
+        obj.idx = pos_or_ten
+        return obj
+
+    @call_highest_priority('__rmul__')
+    def __mul__ (self, other):
+        print "Inside BasisVector.__mul__"
+        return super(BasisVector, self).__mul__(other)
+
+    @call_highest_priority('__mul__')
+    def __rmul__ (self, other):
+        print "Inside BasisVector.__rmul__"
+        if isinstance(other, Transpose) and isinstance(other.args[0], BasisVector):
+            if other.args[0].idx == self.idx:
+                return one
+            else:
+                return zero
+        if isinstance(other, Tensor):
+            ero = other.rank
+            eso = other.shape
+            if ero == 2:
+                return other.update(add_idx(other.name, self.idx), rank=1)
+            if ero == 1 and eso == (1, n):
+                return other.update(add_idx(other.name, self.idx), rank=0)
+        return super(BasisVector, self).__rmul__(other)
+
+
+from basic_operators import Transpose
+from ignition.flame.tensors.constants import one, zero
+

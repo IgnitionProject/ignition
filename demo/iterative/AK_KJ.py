@@ -20,7 +20,7 @@ def AK_KJ_Rule (A, K, J):
         op = op.tolist()
     if type(op) is list:
         op = flatten(op)
-    return op
+    return op, []
 
 # Define the Partition Objs
 A = PObj(Tensor("A", rank=2),
