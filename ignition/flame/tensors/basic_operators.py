@@ -1,10 +1,11 @@
 """Some basic tensor operators"""
 
 from numpy import matrix
-from sympy import Add, Basic, expand, Function, Mul
+from sympy import Add, Basic, expand, Function, Mul, S
 
 from tensor_expr import expr_rank, expr_shape, TensorExpr
-from tensor import Tensor
+from tensor import Tensor, n
+from ignition.flame.tensors.tensor_expr import is_one, is_zero
 
 
 class NotInvertibleError (Exception):
@@ -15,14 +16,27 @@ class Inverse (TensorExpr, Function):
     nargs = 1
 
     def __new__ (cls, arg, **options):
+#        print "Inverse(", arg, ")"
         if isinstance(arg, Inverse):
             return arg.args[0]
+        if arg.is_Number:
+            return 1 / arg
+        if is_one(arg):
+            return arg
+        if is_zero(arg):
+            raise NotInvertibleError
+
         arg_rank = expr_rank(arg)
         if arg_rank == 1:
             raise NotInvertibleError
         if isinstance(arg, Tensor) and arg.name.startswith('0'):
             raise NotInvertibleError
-        if isinstance(arg, TensorExpr) and not arg.has_inverse:
+        # FIXME: Funky case trying to catch lower triangular or diagonal
+        #        muls T(P_0)*A*P_0
+        if arg_rank == 2 and isinstance(arg, Mul) and \
+            T(arg.args[0]) == arg.args[-1]:
+            pass
+        elif isinstance(arg, TensorExpr) and not arg.has_inverse:
             raise NotInvertibleError
         options['commutative'] = arg.is_commutative
         return Basic.__new__(cls, arg, **options)
@@ -46,9 +60,9 @@ class Inverse (TensorExpr, Function):
 
     def _eval_expand_basic(self, deep=True, **hints):
         if isinstance(self.args[0], Mul):
-            if reduce(lambda acc, m: acc and m.has_inverse(), self.args[0].args,
+            if reduce(lambda acc, m: acc and (m.is_Number or m.has_inverse), self.args[0].args,
                       True):
-                return Mul(*map(Inverse, reversed(self.args[0].args)))
+                return reduce(operator.mul, *map(Inverse, reversed(self.args[0].args)))
         return self
 
 class Transpose (TensorExpr, Function):

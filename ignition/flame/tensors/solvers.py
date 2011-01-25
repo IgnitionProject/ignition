@@ -5,12 +5,14 @@ import pprint
 from sympy import Add, expand, Mul, S
 from sympy.utilities.iterables import postorder_traversal
 
-from tensor_expr import expr_rank
+from tensor_expr import expr_coeff, expr_rank
 from ignition import IGNITION_DEBUG as DEBUG
 from ignition.utils import flatten, UpdatingPermutationIterator
 from ignition.flame.tensors.constants import CONSTANTS
-from ignition.flame.tensors.basic_operators import NotInvertibleError
+from ignition.flame.tensors.basic_operators import Inner, NotInvertibleError, \
+    Inverse
 
+#DEBUG = 0
 
 class NonLinearEqnError (Exception):
     pass
@@ -19,27 +21,24 @@ class UnsolvableEqnsError (Exception):
     pass
 
 
-def tensor_solver (b4_eqns, aft_eqns, e_knowns=[], levels= -1, num_sols=1,
+def tensor_solver (b4_eqns, aft_eqns, e_knowns=[], levels=4, num_sols=1,
                     verbose=True):
     """Updater calling tensor solvers."""
-    print "tensor_solver:"
-    print "  b4_eqns:", pprint.pformat(b4_eqns, 11, 80)
-    print "  aft_eqns:", pprint.pformat(aft_eqns, 11, 80)
-    print "  e_knowns:", pprint.pformat(e_knowns, 11, 80)
     knowns = set(flatten([eqn.atoms() for eqn in b4_eqns])).union(set(e_knowns))
     knowns -= CONSTANTS
     if verbose or DEBUG:
         print "=" * 80
         print "Calling Generator with following:"
         print "*" * 80
-        print "Knowns:", knowns #pprint.pformat(knowns, indent=8)
+        print "Knowns:", pprint.pformat(knowns, 4, 80)
         print "-" * 80
         unknown = set(flatten([eqn.atoms() for eqn in aft_eqns])) - knowns
         print "Unknowns:", pprint.pformat(unknown, indent=10)
         print "-" * 80
         print "eqns:", pprint.pformat(aft_eqns, indent=6)
         print "=" * 80
-    sol_dicts = all_back_sub(aft_eqns, knowns, levels)
+    sol_dicts = all_back_sub(aft_eqns, knowns, levels, False, False)
+    print "Sol_dict", pprint.pformat(sol_dicts, 4, 80)
     sol_dicts = sol_dicts[:num_sols]
     return sol_dicts
 
@@ -66,21 +65,10 @@ def solve_vec_eqn(eqn, var):
         elif isinstance(expr, Mul):
             lhs = S(1)
             # Try by rank
-            coeff = expr.coeff(var)
-            coeff_rank = expr_rank(coeff)
-            if coeff_rank == 0:
-                rhs /= coeff
-                for arg in expr.args:
-                    if var in arg:
-                        lhs *= arg
-            elif coeff_rank == 1:
-                raise NotInvertibleError(str(coeff) + " of " + str(expr))
-            elif coeff_rank == 2:
-                for arg in expr.args:
-                    if var in arg:
-                        lhs *= arg
-                    else:
-                        rhs /= arg
+            l_coeff, var_expr, r_coeff = expr_coeff(expr, var)
+#            print "coeff", l_coeff, var_expr, r_coeff
+            lhs = var_expr
+            rhs = Inverse(l_coeff) * rhs * Inverse(r_coeff)
             return _solve_recur(lhs, rhs)
         elif isinstance(expr, Add):
             lhs = 0
@@ -364,11 +352,14 @@ def branching_assump_solve(eqns, knowns, levels= -1):
     return unique_dicts
 
 
-def backward_sub(eqns, knowns, unknowns=None, multiple_sols=False, sub_all=False):
+def backward_sub(eqns, knowns, unknowns=None, multiple_sols=False, sub_all=False,
+                 invertible=None):
     if unknowns is None:
         unknowns = []
     unknowns = unknowns + \
         [u for u in get_eqns_unk(eqns, knowns) if u not in unknowns]
+
+    constraints = filter(lambda x: isinstance(x, (Mul, Inner)), eqns)
 
     sol_dict = {}
     for unk in unknowns:
@@ -414,21 +405,30 @@ def backward_sub(eqns, knowns, unknowns=None, multiple_sols=False, sub_all=False
                     sols = [sol_dict[unk]]
                 for sol in sols:
                     # FIXME: This a hack, if the substitution raised a 
-                    #        NotInvertivle Error then the equation is jacked up
+                    #        NotInvertibleError then the equation is jacked up
                     try:
                         sub_sol = eqn.subs(unk, sol)
                         new_eqns.append(expand(sub_sol))
                     except NotInvertibleError:
                         pass
+            for i in xrange(len(new_eqns)):
+                if new_eqns[i] in constraints:
+                    continue
+                for cnstrt in constraints:
+                        new_eqns[i] = new_eqns[i].subs(cnstrt, S(0))
             new_eqns = filter(lambda s: s != S(0), set(new_eqns))
+#            print "New Eqns:", pprint.pformat(new_eqns, 5, 80)
             if sub_all:
                 all_eqns = new_eqns
             else:
                 all_eqns.extend(new_eqns)
     return (sol_dict, None)
 
-def all_back_sub(eqns, knowns, levels= -1, multiple_sols=False, sub_all=True):
+def all_back_sub(eqns, knowns, levels= -1, multiple_sols=False, sub_all=True,
+                 invertible=None):
     unks = get_eqns_unk(eqns, knowns)
+    print "Knowns:", knowns
+    print "Unknowns:", unks
     ord_unk_iter = UpdatingPermutationIterator(unks,
                                        levels if levels != -1 else len(unks))
     sols = []
@@ -442,7 +442,7 @@ def all_back_sub(eqns, knowns, levels= -1, multiple_sols=False, sub_all=True):
         if num_tested % (tot_to_test / 10 if tot_to_test > 10 else 2) == 0:
             print "Tested ", num_tested
         sol_dict, failed_var = backward_sub(eqns, knowns, ord_unks,
-                                            multiple_sols, sub_all)
+                                            multiple_sols, sub_all, invertible)
 #        print "  result:", sol_dict, failed_var
         if sol_dict is None:
             if failed_var in ord_unks:

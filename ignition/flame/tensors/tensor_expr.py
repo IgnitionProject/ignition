@@ -1,4 +1,6 @@
-from sympy import Add, Expr, Number, Mul, Pow, Symbol
+import operator
+
+from sympy import Add, Expr, Number, Mul, Pow, S, Symbol
 from sympy.core.decorators import call_highest_priority
 
 # from tensor import Tensor /* cyclic */
@@ -132,6 +134,8 @@ def is_zero (expr):
         return expr.name.startswith('0')
     if isinstance(expr, Transpose):
         return is_zero(expr.args[0])
+    if expr == S(0):
+        return True
 
 def is_one (expr):
     """Returns True, False, or None"""
@@ -139,7 +143,8 @@ def is_one (expr):
         return expr.name.startswith('1')
     if isinstance(expr, Transpose):
         return is_one(expr.args[0])
-
+    if expr == S(1):
+        return True
 
 def is_outer (a, b):
     esa = expr_shape(a)
@@ -165,6 +170,8 @@ def is_mul_conforming_or_die (a, b):
     return True
 
 def is_add_conforming_or_die (a, b):
+    if a in [S(0), S(1)] or b in [S(0), S(1)]:
+        return True
     if expr_rank(a) != expr_rank(b) and expr_shape(a) != expr_shape(b):
         raise ConformityError("%s + %s\n\tranks %d, %d\n\tshapes %s, %s"\
                               % (str(a), str(b), expr_rank(a), expr_rank(b),
@@ -256,6 +263,19 @@ def expr_rank(expr):
                 return 1
     raise NotImplementedError("expr_rank can't handle: %s of type: %s" % \
                               (str(expr), type(expr)))
+
+def expr_coeff(expr, var):
+    if not isinstance(expr, Mul):
+        return expr
+    if len(filter(lambda x: var in x, expr.args)) != 1:
+        raise ValueError("Can't handle eqns with more than one of var, given %s, %s"\
+                         % (expr, var))
+    for idx, e in enumerate(expr.args):
+        if var in e:
+            break
+    lhs = expr.args[:idx]
+    rhs = expr.args[idx + 1:] if len(expr.args) > idx + 1 else []
+    return reduce(operator.mul, lhs, S(1)), expr.args[idx], reduce(operator.mul, rhs, S(1))
 
 
 from tensor import Tensor #/* cyclic */

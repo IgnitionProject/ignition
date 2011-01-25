@@ -8,7 +8,7 @@ from ignition.utils import flatten_list
 # Define the operation
 def CG_Op (A, X, P, I, U, J, D, R, O):
     return [X * (I + U) - P * D,
-            A * P * D - R * (I + U),
+            A * P * D - R * (I - U),
             P * (I - J) - R,
             T(R) * R - O]
 
@@ -67,24 +67,6 @@ D = iterative_arg ("D", rank=2, part_suffix="Diag_3x3", arg_src="Computed")
 R = iterative_arg ("R", rank=2, part_suffix="1x3", arg_src="Computed")
 O = iterative_arg ("O", rank=2, part_suffix="1x3", arg_src="Computed")
 
-# Create a new solver based on Victor's techinques
-def victor_solver (b4_eqns, aft_eqns, e_knowns=[], levels= -1, num_sols=1,
-                    verbose=True):
-    R_0 = Tensor("R_0", 2)
-    r_1 = Tensor("r_1", 1)
-    r_2 = Tensor("r_2", 1)
-    new_aft_eqns = []
-    for eqn in aft_eqns:
-        if expr_shape(eqn)[0] == 1:
-            continue
-        new_aft_eqns.append((T(R_0) * (eqn)).expand())
-        new_aft_eqns.append((T(r_1) * (eqn)).expand())
-        new_aft_eqns.append((T(r_2) * (eqn)).expand())
-    aft_eqns += new_aft_eqns
-    aft_eqns = map(lambda x: x.expand(), aft_eqns)
-    return tensor_solver(b4_eqns, aft_eqns, e_knowns, levels, num_sols, verbose)
-
-
 # Generate the algorithm
-generate(op=CG_Op, loop_inv=CG_Inv, solver=victor_solver,
+generate(op=CG_Op, loop_inv=CG_Inv, solver=tensor_solver,
          inv_args=[A, X, P, I, U, J, D, R, O], filetype="latex")
