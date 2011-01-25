@@ -1,12 +1,15 @@
 """Several solvers for overdetermined tensor systems."""
 
 from copy import copy
+import pprint
 from sympy import Add, expand, Mul, S
 from sympy.utilities.iterables import postorder_traversal
 
 from tensor_expr import expr_rank
-from ignition.utils.iterators import UpdatingPermutationIterator
 from ignition import IGNITION_DEBUG as DEBUG
+from ignition.utils import flatten, UpdatingPermutationIterator
+from ignition.flame.tensors.constants import CONSTANTS
+from ignition.flame.tensors.basic_operators import NotInvertibleError
 
 
 class NonLinearEqnError (Exception):
@@ -14,6 +17,32 @@ class NonLinearEqnError (Exception):
 
 class UnsolvableEqnsError (Exception):
     pass
+
+
+def tensor_solver (b4_eqns, aft_eqns, e_knowns=[], levels= -1, num_sols=1,
+                    verbose=True):
+    """Updater calling tensor solvers."""
+    print "tensor_solver:"
+    print "  b4_eqns:", pprint.pformat(b4_eqns, 11, 80)
+    print "  aft_eqns:", pprint.pformat(aft_eqns, 11, 80)
+    print "  e_knowns:", pprint.pformat(e_knowns, 11, 80)
+    knowns = set(flatten([eqn.atoms() for eqn in b4_eqns])).union(set(e_knowns))
+    knowns -= CONSTANTS
+    if verbose or DEBUG:
+        print "=" * 80
+        print "Calling Generator with following:"
+        print "*" * 80
+        print "Knowns:", knowns #pprint.pformat(knowns, indent=8)
+        print "-" * 80
+        unknown = set(flatten([eqn.atoms() for eqn in aft_eqns])) - knowns
+        print "Unknowns:", pprint.pformat(unknown, indent=10)
+        print "-" * 80
+        print "eqns:", pprint.pformat(aft_eqns, indent=6)
+        print "=" * 80
+    sol_dicts = all_back_sub(aft_eqns, knowns, levels)
+    sol_dicts = sol_dicts[:num_sols]
+    return sol_dicts
+
 
 def solve_vec_eqn(eqn, var):
     """Returns the solution to a linear equation containing Tensors
@@ -383,8 +412,14 @@ def backward_sub(eqns, knowns, unknowns=None, multiple_sols=False, sub_all=False
                     sols = sol_dict[unk]
                 else:
                     sols = [sol_dict[unk]]
-                new_eqns.extend(map(lambda sol: expand(eqn.subs(unk, sol)),
-                                    sols))
+                for sol in sols:
+                    # FIXME: This a hack, if the substitution raised a 
+                    #        NotInvertivle Error then the equation is jacked up
+                    try:
+                        sub_sol = eqn.subs(unk, sol)
+                        new_eqns.append(expand(sub_sol))
+                    except NotInvertibleError:
+                        pass
             new_eqns = filter(lambda s: s != S(0), set(new_eqns))
             if sub_all:
                 all_eqns = new_eqns

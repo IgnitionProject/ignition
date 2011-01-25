@@ -9,3 +9,5 @@ zero = Tensor('0', 0)
 I = Tensor('1', 2)
 One = Tensor('1', 1)
 one = Tensor('1', 0)
+
+CONSTANTS = set([ZERO, Zero, zero, I, One, one])

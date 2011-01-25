@@ -21,7 +21,7 @@ def CG_Inv (A, X, P, I, U, J, D, R, O):
      [_, o, _],
      [_, _, I_br]] = I
     [[U_tl, u_tm, U_tr],
-     [_, u_mm, t_u_mr],
+     [_, _, t_u_mr],
      [_, _, U_br]] = U
     [[J_tl, _, _],
      [T_m_j_ml, _, _],
@@ -32,17 +32,15 @@ def CG_Inv (A, X, P, I, U, J, D, R, O):
     [R_l, r_m, R_t] = R
     eqns = [A * P_l * D_l - R_l * (I_tl - J_tl) - r_m * T_m_j_ml,
             P_l * D_l - X_l * (I_tl - J_tl) - x_m * T_m_j_ml,
-            P_l * (I_tl + U_tl) - R_l,
-            P_l * u_tm + p_m - r_m,
+            P_l * (I_tl - U_tl) - R_l,
+            - P_l * u_tm + p_m - r_m,
             T(R_l) * r_m,
             T(r_m) * R_l,
             T(P_l) * A * p_m]
 
-    known = [one,
-            Zero,
-            I_tl,
-            U_tr,
-            u_mm]
+    known = []
+#            U_tr,
+#            u_mm]
 
     print "U_tr:", U_tr
 #    print "P_l:", P_l
@@ -59,53 +57,34 @@ def CG_Inv (A, X, P, I, U, J, D, R, O):
     return eqns, reduce(unroll_mats, known, [])
 
 # Define the Partition Objs
-A = PObj(Tensor("A", rank=2),
-         part_fun=Part_1x1(),
-         repart_fun=Repart_1x1(),
-         fuse_fun=Fuse_1x1(),
-         arg_src=PObj.ARG_SRC.Input)
-X = PObj(Tensor("X", rank=2),
-         part_fun=Part_1x3(),
-         repart_fun=Repart_1x3(),
-         fuse_fun=Fuse_1x3(),
-         arg_src=PObj.ARG_SRC.Overwrite)
-P = PObj(Tensor("P", rank=2),
-         part_fun=Part_1x3(),
-         repart_fun=Repart_1x3(),
-         fuse_fun=Fuse_1x3(),
-         arg_src=PObj.ARG_SRC.Computed)
-I = PObj(Tensor("I", rank=2),
-         part_fun=Part_I_3x3(),
-         repart_fun=Repart_I_3x3(),
-         fuse_fun=Fuse_I_3x3(),
-         arg_src=PObj.ARG_SRC.Computed)
-U = PObj(Tensor("U", rank=2),
-         part_fun=Part_Upper_3x3(),
-         repart_fun=Repart_Upper_3x3(),
-         fuse_fun=Fuse_Upper_3x3(),
-         arg_src=PObj.ARG_SRC.Computed)
-J = PObj(Tensor("J", rank=2),
-         part_fun=Part_J_3x3(),
-         repart_fun=Repart_J_3x3(),
-         fuse_fun=Fuse_J_3x3(),
-         arg_src=PObj.ARG_SRC.Computed)
-D = PObj(Tensor("D", rank=2),
-         part_fun=Part_Diag_3x3(),
-         repart_fun=Repart_Diag_3x3(),
-         fuse_fun=Fuse_Diag_3x3(),
-         arg_src=PObj.ARG_SRC.Computed)
-R = PObj(Tensor("R", rank=2),
-         part_fun=Part_1x3(),
-         repart_fun=Repart_1x3(),
-         fuse_fun=Fuse_1x3(),
-         arg_src=PObj.ARG_SRC.Computed)
-O = PObj(Tensor("O", rank=2),
-         part_fun=Part_1x3(),
-         repart_fun=Repart_1x3(),
-         fuse_fun=Fuse_1x3(),
-         arg_src=PObj.ARG_SRC.Computed)
+A = iterative_arg("A", rank=2, part_suffix="1x1")
+X = iterative_arg ("X", rank=2, part_suffix="1x3", arg_src="Overwrite")
+P = iterative_arg ("P", rank=2, part_suffix="1x3", arg_src="Computed")
+I = iterative_arg ("I", rank=2, part_suffix="I_3x3", arg_src="Computed")
+U = iterative_arg ("U", rank=2, part_suffix="Upper_3x3", arg_src="Computed")
+J = iterative_arg ("J", rank=2, part_suffix="J_3x3", arg_src="Computed")
+D = iterative_arg ("D", rank=2, part_suffix="Diag_3x3", arg_src="Computed")
+R = iterative_arg ("R", rank=2, part_suffix="1x3", arg_src="Computed")
+O = iterative_arg ("O", rank=2, part_suffix="1x3", arg_src="Computed")
+
+# Create a new solver based on Victor's techinques
+def victor_solver (b4_eqns, aft_eqns, e_knowns=[], levels= -1, num_sols=1,
+                    verbose=True):
+    R_0 = Tensor("R_0", 2)
+    r_1 = Tensor("r_1", 1)
+    r_2 = Tensor("r_2", 1)
+    new_aft_eqns = []
+    for eqn in aft_eqns:
+        if expr_shape(eqn)[0] == 1:
+            continue
+        new_aft_eqns.append((T(R_0) * (eqn)).expand())
+        new_aft_eqns.append((T(r_1) * (eqn)).expand())
+        new_aft_eqns.append((T(r_2) * (eqn)).expand())
+    aft_eqns += new_aft_eqns
+    aft_eqns = map(lambda x: x.expand(), aft_eqns)
+    return tensor_solver(b4_eqns, aft_eqns, e_knowns, levels, num_sols, verbose)
+
 
 # Generate the algorithm
-generate(op=CG_Op, loop_inv=CG_Inv,
-         inv_args=[A, X, P, I, U, J, D, R, O],
-         updater=tensor_updater, filetype="text")
+generate(op=CG_Op, loop_inv=CG_Inv, solver=victor_solver,
+         inv_args=[A, X, P, I, U, J, D, R, O], filetype="latex")

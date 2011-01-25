@@ -42,10 +42,10 @@ def print_visitor(expr_to_print, str_dict):
         elif isinstance(expr, Pow):
             if expr.args[1] == S(-1):
                 return str_dict["div_under_one"] % _visit(expr.args[0])
-            if expr_rank(expr) == 0:
+            if expr_rank(expr.args[1]) == 0 or expr_rank(expr) == 0:
                 return str_dict["pow"] % tuple(map(_visit, expr.args))
             else:
-                raise NotImplementedError
+                raise NotImplementedError("Unable to print: %s" % expr)
         elif isinstance(expr, Inner):
             return str_dict["dot"] % (_visit(expr.args[0]),
                                       _visit(expr.args[1]))

@@ -1,10 +1,6 @@
 """Code generator for PME Language"""
 
-import pprint
-
 from ignition.flame.pobj import PObj
-from ignition.utils import flatten
-from ignition.flame.tensors.solvers import all_back_sub
 from ignition.flame.printing import get_printer
 
 class PAlgGenerator (object):
@@ -14,7 +10,7 @@ class PAlgGenerator (object):
     args: List of PObjs that are input for the operation.
     """
 
-    def __init__ (self, loop_inv_op, *args, **kws):
+    def __init__ (self, loop_inv_op, solver, *args, **kws):
         self.loop_inv_op = loop_inv_op
         self._args = args
         self.op = kws.get("op", None)
@@ -35,7 +31,8 @@ class PAlgGenerator (object):
             raise ValueError, \
              "PAlgGenerator requires at least one output, none given."
         self.debug = False
-        self.updater = kws.get("updater", None)
+        self.solver = solver
+
 
     @property
     def partition (self):
@@ -100,7 +97,7 @@ class PAlgGenerator (object):
         self.b4_eqns, kb4 = self._repart_invariant()
         self.aft_eqns, kaft = self._fuse_invariant()
         self.guard = self._guard()
-        self.update_tups = self.updater(self.b4_eqns, self.aft_eqns,
+        self.update_tups = self.solver(self.b4_eqns, self.aft_eqns,
                                         e_knowns=kb4 + kaft)
         if len(self.update_tups) == 0:
             print "PAlgGenerator.generate: no updates found."
@@ -109,7 +106,7 @@ class PAlgGenerator (object):
             self.update = self.update_tups[0][0]
 
 def generate (filename=None, filetype=None, op=None, loop_inv=None, inv_args=[],
-              PME=None, updater=None):
+              PME=None, solver=None):
     """Utility function for generating a flame algorithm.
     
     Will create a generator object and write it to file, then return the
@@ -118,26 +115,8 @@ def generate (filename=None, filetype=None, op=None, loop_inv=None, inv_args=[],
     For more complete documentation see the PAlgGenerator object and 
     the printing module.
     """
-    gen_obj = PAlgGenerator(loop_inv, *inv_args, op=op, updater=updater)
+    gen_obj = PAlgGenerator(loop_inv, solver, *inv_args, op=op)
     gen_obj.gen_update(filename, filetype)
     get_printer(gen_obj, filename, filetype).write()
     return gen_obj
-
-def tensor_updater (b4_eqns, aft_eqns, e_knowns=[], levels= -1, num_sols=1, verbose=True):
-    """Updater calling tensor solvers."""
-    knowns = set(flatten([eqn.atoms() for eqn in b4_eqns])).union(set(e_knowns))
-    if verbose:
-        print "=" * 80
-        print "Calling Generator with following:"
-        print "*" * 80
-        print "Knowns:", knowns #pprint.pformat(knowns, indent=8)
-        print "-" * 80
-        unknown = set(flatten([eqn.atoms() for eqn in aft_eqns])) - knowns
-        print "Unknowns:", pprint.pformat(unknown, indent=10)
-        print "-" * 80
-        print "eqns:", pprint.pformat(aft_eqns, indent=6)
-        print "=" * 80
-    sol_dicts = all_back_sub(aft_eqns, knowns, levels)
-    sol_dicts = sol_dicts[:num_sols]
-    return sol_dicts
 

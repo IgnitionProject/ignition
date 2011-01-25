@@ -3,6 +3,7 @@
 from numpy import matrix
 
 from ignition.flame import *
+from ignition.utils import flatten
 
 # Define the operation
 def AK_KJ_Op (A, K, J):
@@ -43,4 +44,4 @@ J = PObj(Tensor("J", rank=2),
 #generate(op=AK_KJ_Op, loop_inv=AK_KJ_Rule, inv_args=[A, K, J],
 #         updater=tensor_updater, filetype="latex")
 generate(op=AK_KJ_Op, loop_inv=AK_KJ_Rule, inv_args=[A, K, J],
-         updater=tensor_updater, filetype="text")
+         solver=tensor_solver, filetype="text")
