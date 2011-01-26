@@ -56,6 +56,14 @@ def CG_Inv (A, X, P, I, U, J, D, R, O):
     eqns = reduce(unroll_mats, eqns, [])
     return eqns, reduce(unroll_mats, known, [])
 
+# Hold your nose
+from ignition.flame.tensors.basic_operators import add_invertible
+A = Tensor("A", rank=2)
+P_0 = Tensor("P_0", rank=2)
+add_invertible(T(P_0) * A * P_0)
+add_invertible(T(P_0) * A ** 2 * P_0)
+
+
 # Define the Partition Objs
 A = iterative_arg("A", rank=2, part_suffix="1x1")
 X = iterative_arg ("X", rank=2, part_suffix="1x3", arg_src="Overwrite")
@@ -66,6 +74,7 @@ J = iterative_arg ("J", rank=2, part_suffix="J_3x3", arg_src="Computed")
 D = iterative_arg ("D", rank=2, part_suffix="Diag_3x3", arg_src="Computed")
 R = iterative_arg ("R", rank=2, part_suffix="1x3", arg_src="Computed")
 O = iterative_arg ("O", rank=2, part_suffix="1x3", arg_src="Computed")
+
 
 # Generate the algorithm
 generate(op=CG_Op, loop_inv=CG_Inv, solver=tensor_solver,

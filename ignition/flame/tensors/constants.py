@@ -11,3 +11,8 @@ One = Tensor('1', 1)
 one = Tensor('1', 0)
 
 CONSTANTS = set([ZERO, Zero, zero, I, One, one])
+
+
+# Not constants but putting here anyways
+A = Tensor("A", rank=2)
+P_0 = Tensor("P_0", rank=2)

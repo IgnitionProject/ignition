@@ -1,12 +1,15 @@
 """Some basic tensor operators"""
 
+import operator
 from numpy import matrix
-from sympy import Add, Basic, expand, Function, Mul, S
+from sympy import Add, Basic, expand, Function, Mul, Pow, S
 
 from tensor_expr import expr_rank, expr_shape, TensorExpr
 from tensor import Tensor, n
 from ignition.flame.tensors.tensor_expr import is_one, is_zero
+from ignition.flame.tensors.constants import A, P_0
 
+INVERTIBLE = []
 
 class NotInvertibleError (Exception):
     pass
@@ -17,26 +20,31 @@ class Inverse (TensorExpr, Function):
 
     def __new__ (cls, arg, **options):
 #        print "Inverse(", arg, ")"
+#        print INVERTIBLE
         if isinstance(arg, Inverse):
             return arg.args[0]
         if arg.is_Number:
             return 1 / arg
+
+        arg_rank = expr_rank(arg)
+        if arg_rank == 1:
+            raise NotInvertibleError
+
         if is_one(arg):
             return arg
         if is_zero(arg):
             raise NotInvertibleError
 
-        arg_rank = expr_rank(arg)
-        if arg_rank == 1:
-            raise NotInvertibleError
-        if isinstance(arg, Tensor) and arg.name.startswith('0'):
-            raise NotInvertibleError
         # FIXME: Funky case trying to catch lower triangular or diagonal
-        #        muls T(P_0)*A*P_0
-        if arg_rank == 2 and isinstance(arg, Mul) and \
-            T(arg.args[0]) == arg.args[-1]:
+        #        muls like T(P_0)*A*P_0
+        if arg in INVERTIBLE:
             pass
         elif isinstance(arg, TensorExpr) and not arg.has_inverse:
+            raise NotInvertibleError
+        elif isinstance(arg, Mul):
+            if arg.args[0] == S(-1):
+                return - Inverse(reduce(operator.mul, arg.args[1:]))
+        if not expr_invertible(arg):
             raise NotInvertibleError
         options['commutative'] = arg.is_commutative
         return Basic.__new__(cls, arg, **options)
@@ -60,8 +68,8 @@ class Inverse (TensorExpr, Function):
 
     def _eval_expand_basic(self, deep=True, **hints):
         if isinstance(self.args[0], Mul):
-            if reduce(lambda acc, m: acc and (m.is_Number or m.has_inverse), self.args[0].args,
-                      True):
+            if reduce(lambda acc, m: acc and expr_invertible(m),
+                      self.args[0].args, True):
                 return reduce(operator.mul, *map(Inverse, reversed(self.args[0].args)))
         return self
 
@@ -228,3 +236,31 @@ class Inner (TensorExpr, Function):
 
         return Add(*ret_add_exprs)
 
+def expr_invertible(expr):
+    if expr.is_Number:
+        return True
+    if isinstance(expr, TensorExpr) and expr.has_inverse:
+        return True
+    elif isinstance(expr, Pow):
+        return expr_invertible(expr.args[0])
+    if isinstance(expr, Inverse):
+        return True
+    if expr in INVERTIBLE:
+        return True
+    er = expr_rank(expr)
+    if er == 1:
+        return False
+    if is_one(expr):
+        return True
+    if is_zero(expr):
+        return False
+    # FIXME: Funky case trying to catch lower triangular or diagonal
+    #        muls like T(P_0)*A*P_0
+    if isinstance(expr, Mul):
+        return reduce(lambda acc, x: acc and expr_invertible(x), expr.args, True)
+    if isinstance(expr, Pow):
+        return expr_invertible(expr.args[0])
+
+def add_invertible(expr):
+    global INVERTIBLE
+    INVERTIBLE.append(expr)

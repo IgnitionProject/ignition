@@ -12,7 +12,7 @@ from ignition.flame.tensors.constants import CONSTANTS
 from ignition.flame.tensors.basic_operators import Inner, NotInvertibleError, \
     Inverse
 
-#DEBUG = 0
+#DEBUG = 1
 
 class NonLinearEqnError (Exception):
     pass
@@ -24,8 +24,14 @@ class UnsolvableEqnsError (Exception):
 def tensor_solver (b4_eqns, aft_eqns, e_knowns=[], levels=4, num_sols=1,
                     verbose=True):
     """Updater calling tensor solvers."""
+    if verbose or DEBUG:
+        print "tensor_solver:"
+        print "  b4_eqns:", pprint.pformat(b4_eqns, 4, 80)
+        print "  aft_eqns:", pprint.pformat(aft_eqns, 4, 80)
+        print "  e_knowns:", pprint.pformat(e_knowns, 4, 80)
     knowns = set(flatten([eqn.atoms() for eqn in b4_eqns])).union(set(e_knowns))
     knowns -= CONSTANTS
+    eqns = aft_eqns + b4_eqns
     if verbose or DEBUG:
         print "=" * 80
         print "Calling Generator with following:"
@@ -33,12 +39,13 @@ def tensor_solver (b4_eqns, aft_eqns, e_knowns=[], levels=4, num_sols=1,
         print "Knowns:", pprint.pformat(knowns, 4, 80)
         print "-" * 80
         unknown = set(flatten([eqn.atoms() for eqn in aft_eqns])) - knowns
-        print "Unknowns:", pprint.pformat(unknown, indent=10)
+        print "Unknowns:", pprint.pformat(unknown, 4, 80)
         print "-" * 80
-        print "eqns:", pprint.pformat(aft_eqns, indent=6)
+        print "eqns:", pprint.pformat(eqns, 4, 80)
         print "=" * 80
-    sol_dicts = all_back_sub(aft_eqns, knowns, levels, False, False)
-    print "Sol_dict", pprint.pformat(sol_dicts, 4, 80)
+    sol_dicts = all_back_sub(eqns, knowns, levels, False, False)
+    if verbose or DEBUG:
+        print "Sol dicts: ", pprint.pformat(sol_dicts, 4, 80)
     sol_dicts = sol_dicts[:num_sols]
     return sol_dicts
 
@@ -66,7 +73,6 @@ def solve_vec_eqn(eqn, var):
             lhs = S(1)
             # Try by rank
             l_coeff, var_expr, r_coeff = expr_coeff(expr, var)
-#            print "coeff", l_coeff, var_expr, r_coeff
             lhs = var_expr
             rhs = Inverse(l_coeff) * rhs * Inverse(r_coeff)
             return _solve_recur(lhs, rhs)
@@ -434,28 +440,30 @@ def all_back_sub(eqns, knowns, levels= -1, multiple_sols=False, sub_all=True,
     sols = []
     tot_to_test = len(list(ord_unk_iter))
     print "Searching a possible %d orders" % tot_to_test
+    print "Hit control-C to stop searching and return solutions already found."
     ord_unk_iter.reset()
     num_tested = 0
     for ord_unks in ord_unk_iter:
-#        print "Testing order:", ord_unks
-        num_tested += 1
-        if num_tested % (tot_to_test / 10 if tot_to_test > 10 else 2) == 0:
-            print "Tested ", num_tested
-        sol_dict, failed_var = backward_sub(eqns, knowns, ord_unks,
-                                            multiple_sols, sub_all, invertible)
-#        print "  result:", sol_dict, failed_var
-        if sol_dict is None:
-            if failed_var in ord_unks:
-                ord_unk_iter.bad_pos(ord_unks.index(failed_var))
-        else:
-            sols.append((sol_dict, ord_unks))
+        try:
+    #        print "Testing order:", ord_unks
+            num_tested += 1
+            if num_tested % (tot_to_test / 10 if tot_to_test > 10 else 2) == 0:
+                print "Tested: ", num_tested, ", Solutions:", len(sols)
+            sol_dict, failed_var = backward_sub(eqns, knowns, ord_unks,
+                                                multiple_sols, sub_all, invertible)
+    #        print "  result:", sol_dict, failed_var
+            if sol_dict is None:
+                if failed_var in ord_unks:
+                    ord_unk_iter.bad_pos(ord_unks.index(failed_var))
+            else:
+                for var in sol_dict:
+                    sol_dict[var] = sol_dict[var].expand()
+                if len(filter(lambda x: x[0] == sol_dict, sols)) == 0:
+                    sols.append((sol_dict, ord_unks))
+        except KeyboardInterrupt:
+            break
     print "Tested %d orders" % num_tested
-    print "Filtering for unique solutions"
-    uniq_sols = []
-    for sol_dict, ord_unks in sols:
-        if len(filter(lambda x: x[0] == sol_dict, uniq_sols)) == 0:
-            uniq_sols.append((sol_dict, ord_unks))
-    print "Found %d unique solutions" % len(uniq_sols)
-    uniq_sols.sort(key=lambda s: sum([len(list(postorder_traversal(v))) \
+    print "Found %d unique solutions" % len(sols)
+    sols.sort(key=lambda s: sum([len(list(postorder_traversal(v))) \
                                       for _, v in s[0].iteritems()]))
-    return uniq_sols
+    return sols
