@@ -10,7 +10,9 @@ I = Tensor('1', 2)
 One = Tensor('1', 1)
 one = Tensor('1', 0)
 
-CONSTANTS = set([ZERO, Zero, zero, I, One, one])
+e = Tensor('e', 1)
+
+CONSTANTS = set([ZERO, Zero, zero, I, One, one, e])
 
 
 # Not constants but putting here anyways

@@ -21,7 +21,7 @@ class UnsolvableEqnsError (Exception):
     pass
 
 
-def tensor_solver (b4_eqns, aft_eqns, e_knowns=[], levels=4, num_sols=1,
+def tensor_solver (b4_eqns, aft_eqns, e_knowns=[], levels= -1, num_sols=1,
                     verbose=True):
     """Updater calling tensor solvers."""
     if verbose or DEBUG:
@@ -30,9 +30,9 @@ def tensor_solver (b4_eqns, aft_eqns, e_knowns=[], levels=4, num_sols=1,
         print "  aft_eqns:", pprint.pformat(aft_eqns, 4, 80)
         print "  e_knowns:", pprint.pformat(e_knowns, 4, 80)
     knowns = set(flatten([eqn.atoms() for eqn in b4_eqns])).union(set(e_knowns))
-    knowns -= CONSTANTS
+    knowns.union(CONSTANTS)
     eqns = aft_eqns + b4_eqns
-    if verbose or DEBUG:
+    if verbose or DEBUG or True:
         print "=" * 80
         print "Calling Generator with following:"
         print "*" * 80
@@ -43,7 +43,7 @@ def tensor_solver (b4_eqns, aft_eqns, e_knowns=[], levels=4, num_sols=1,
         print "-" * 80
         print "eqns:", pprint.pformat(eqns, 4, 80)
         print "=" * 80
-    sol_dicts = all_back_sub(eqns, knowns, levels, False, False)
+    sol_dicts = all_back_sub(eqns, knowns, levels, False, True)
     if verbose or DEBUG:
         print "Sol dicts: ", pprint.pformat(sol_dicts, 4, 80)
     sol_dicts = sol_dicts[:num_sols]
@@ -65,18 +65,23 @@ def solve_vec_eqn(eqn, var):
     if eqn.as_poly(var).degree() > 1:
         raise NonLinearEqnError()
 
+    def _only_solve_numerator(expr):
+        return isinstance(expr, Mul) and \
+            len(expr.args) == 2 and isinstance(expr.args[1], Inverse) and \
+            expr.args[1].rank == 0 and var in expr.args[0]
+
     def _solve_recur(expr, rhs=S(0)):
-        expr = expand(expr)
         if expr == var:
             return rhs
-        elif isinstance(expr, Mul):
+        expr = expand(expr)
+        if isinstance(expr, Mul):
             lhs = S(1)
             # Try by rank
             l_coeff, var_expr, r_coeff = expr_coeff(expr, var)
             lhs = var_expr
             rhs = Inverse(l_coeff) * rhs * Inverse(r_coeff)
             return _solve_recur(lhs, rhs)
-        elif isinstance(expr, Add):
+        if isinstance(expr, Add):
             lhs = 0
             for arg in expr.args:
                 if var in arg:
@@ -89,11 +94,12 @@ def solve_vec_eqn(eqn, var):
                     rhs /= coeff
                     lhs = var
             return _solve_recur(lhs, rhs)
-        else:
-            raise NotImplementedError("Can't handle expr of type %s" % type(expr))
-    return _solve_recur(expand(eqn))
-
-
+        raise NotImplementedError("Can't handle expr of type %s" % type(expr))
+    # Check if expr is of the form (a + b) / c with rank(c) == 0
+    # then solve just the numerator
+    if _only_solve_numerator(eqn):
+        return _solve_recur(eqn.args[0])
+    return _solve_recur(eqn)
 
 def get_eqns_unk (eqns, knowns):
     """Returns the list of unknowns, given the knowns, from a list of equations"""
@@ -358,8 +364,7 @@ def branching_assump_solve(eqns, knowns, levels= -1):
     return unique_dicts
 
 
-def backward_sub(eqns, knowns, unknowns=None, multiple_sols=False, sub_all=False,
-                 invertible=None):
+def backward_sub(eqns, knowns, unknowns=None, multiple_sols=False, sub_all=True):
     if unknowns is None:
         unknowns = []
     unknowns = unknowns + \
@@ -375,13 +380,16 @@ def backward_sub(eqns, knowns, unknowns=None, multiple_sols=False, sub_all=False
             sol_dict[unk] = None
 
     all_eqns = copy(eqns)
-    for _, unk in enumerate(unknowns):
+    solved = [] # Maintain a list of solved vars that can't be referenced in new
+                # solutions.
+    while len(unknowns) > 0:
+        unk = unknowns.pop(0)
         if DEBUG:
             print "Searching for unk:", unk
         for eqn in all_eqns:
             sol = None
 #            print "eqn:", eqn, "eqn.atoms():", eqn.atoms(), "eqn.atoms().intersection(unknowns[n:1]):", eqn.atoms().intersection(unknowns[n:1])
-            if  unk in eqn:
+            if unk in eqn and  all(map(lambda u: u not in eqn, solved)):
                 try:
                     sol = solve_vec_eqn(eqn, unk)
                 except RuntimeError as inst:
@@ -403,6 +411,7 @@ def backward_sub(eqns, knowns, unknowns=None, multiple_sols=False, sub_all=False
         if sol_dict[unk] is None or (multiple_sols and len(sol_dict[unk]) == 0):
             return (None, unk)
         else:
+            solved.append(unk)
             new_eqns = []
             for eqn in all_eqns:
                 if multiple_sols:
@@ -430,8 +439,7 @@ def backward_sub(eqns, knowns, unknowns=None, multiple_sols=False, sub_all=False
                 all_eqns.extend(new_eqns)
     return (sol_dict, None)
 
-def all_back_sub(eqns, knowns, levels= -1, multiple_sols=False, sub_all=True,
-                 invertible=None):
+def all_back_sub(eqns, knowns, levels= -1, multiple_sols=False, sub_all=True):
     unks = get_eqns_unk(eqns, knowns)
     print "Knowns:", knowns
     print "Unknowns:", unks
@@ -450,14 +458,14 @@ def all_back_sub(eqns, knowns, levels= -1, multiple_sols=False, sub_all=True,
             if num_tested % (tot_to_test / 10 if tot_to_test > 10 else 2) == 0:
                 print "Tested: ", num_tested, ", Solutions:", len(sols)
             sol_dict, failed_var = backward_sub(eqns, knowns, ord_unks,
-                                                multiple_sols, sub_all, invertible)
+                                                multiple_sols, sub_all)
     #        print "  result:", sol_dict, failed_var
             if sol_dict is None:
                 if failed_var in ord_unks:
                     ord_unk_iter.bad_pos(ord_unks.index(failed_var))
             else:
-                for var in sol_dict:
-                    sol_dict[var] = sol_dict[var].expand()
+#                for var in sol_dict:
+#                    sol_dict[var] = sol_dict[var].expand()
                 if len(filter(lambda x: x[0] == sol_dict, sols)) == 0:
                     sols.append((sol_dict, ord_unks))
         except KeyboardInterrupt:

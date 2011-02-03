@@ -70,7 +70,8 @@ class Inverse (TensorExpr, Function):
         if isinstance(self.args[0], Mul):
             if reduce(lambda acc, m: acc and expr_invertible(m),
                       self.args[0].args, True):
-                return reduce(operator.mul, *map(Inverse, reversed(self.args[0].args)))
+                #print "Inverse(", self.args, ")._eval_expand_basic"
+                return reduce(operator.mul, map(Inverse, reversed(self.args[0].args)))
         return self
 
 class Transpose (TensorExpr, Function):

@@ -6,7 +6,7 @@ import sys
 from ignition import *
 from ignition.flame.tensors.solvers import backward_sub
 
-SHOW_NUM_SOLS = 3
+SHOW_NUM_SOLS = 10
 
 # First define the variables 
 delta_1, omega_2, pi_1, pi_2, gamma_2, mu_12 = \
@@ -140,8 +140,8 @@ def cg_demo_eqns ():
     print "Sol:", pprint.pformat(sol)
 
 if __name__ == "__main__":
-    cg_demo_eqns()
-#    cg()
+#    cg_demo_eqns()
+    cg()
 
 
 #[   (   {   p_2: P_0*u_02 + su_12*p_1 + r_2,

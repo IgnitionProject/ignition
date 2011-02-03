@@ -388,3 +388,60 @@ class Fuse_I_U_3x3 (TensorRepartFuseRule):
         ret[t_u_mr] = matrix([[t_u_mr.update(l_ind="23")]])
         ret[I_U_br] = matrix([[I_U_br.update(l_ind="33")]])
         return ret
+
+
+class Part_H_3x3 (TensorPartRule):
+    shape = (3, 3)
+    _latex_head = "\FLAThreeByThree"
+    def __call__(self, H):
+        return \
+          [[H.update(l_ind="tl"), H.update(l_ind="tm", rank=1), H.update(l_ind="tr")],
+           [T(H.update(l_ind="ml", rank=1)), H.update(l_ind="mm", rank=0), T(H.update(l_ind="mr", rank=1))],
+           [ZERO, H.update(l_ind="bm", rank=1), H.update(l_ind="br")]]
+
+class Repart_H_3x3 (TensorRepartFuseRule):
+    shape = (3, 3)
+    reshape = (4, 4)
+    _latex_head = "\FLAFourByFour"
+    def __call__(self, H):
+        ret = {}
+        [[H_tl, h_tm, H_tr],
+         [Th_ml, eta_mm, Th_mr],
+         [_, h_bm, H_br]] = H
+        ret[H_tl] = matrix([[H_tl.update(l_ind="00")]])
+        ret[h_tm] = matrix([[h_tm.update(l_ind="01")]])
+        ret[H_tr] = matrix([[h_tm.update(l_ind="02"), H_tl.update(l_ind="00")]])
+
+        ret[Th_ml] = matrix([[Th_ml.update(l_ind="10")]])
+        ret[eta_mm] = matrix([[eta_mm.update(l_ind="11")]])
+        ret[Th_mr] = matrix([[eta_mm.update(l_ind="12"), Th_mr.update(l_ind="13")]])
+
+        ret[h_bm] = matrix([[eta_mm.update(l_ind="21")],
+                            [Zero]])
+        ret[H_br] = matrix([[eta_mm.update(l_ind="22"), Th_mr.update(l_ind="23")],
+                            [h_bm.update(l_ind="32"), H_br.update(l_ind="33")]])
+        return ret
+
+class Fuse_H_3x3 (TensorRepartFuseRule):
+    shape = (3, 3)
+    reshape = (4, 4)
+    _latex_head = "\FLAFourByFour"
+    def __call__(self, H):
+        ret = {}
+        [[H_tl, h_tm, H_tr],
+         [Th_ml, eta_mm, Th_mr],
+         [_, h_bm, H_br]] = H
+        ret[H_tl] = matrix([[H_tl.update(l_ind="00"), h_tm.update(l_ind="01")],
+                            [Th_ml.update(l_ind="10"), eta_mm.update(l_ind="11")]])
+        ret[h_tm] = matrix([[h_tm.update(l_ind="02")],
+                            [eta_mm.update(l_ind="12")]])
+        ret[H_tr] = matrix([[H_tr.update(l_ind="03")],
+                            [Th_mr.update(l_ind="13")]])
+
+        ret[Th_ml] = matrix([[T(Zero), eta_mm.update(l_ind="21")]])
+        ret[eta_mm] = matrix([[eta_mm.update(l_ind="22")]])
+        ret[Th_mr] = matrix([[Th_mr.update(l_ind="23")]])
+
+        ret[h_bm] = matrix([[h_bm.update(l_ind="32")]])
+        ret[H_br] = matrix([[H_br.update(l_ind="33")]])
+        return ret

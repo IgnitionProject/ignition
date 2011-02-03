@@ -257,3 +257,13 @@ def test_5 ():
     eqn2 = s_t * r
 
     print assump_solve([eqn1, eqn2], [r, q])
+
+def test_numerator ():
+    a, b, c = map(lambda x: Tensor(x, rank=0), 'abc')
+    expr = (a + b) / c
+    sol = solve_vec_eqn(expr, a)
+    assert(sol == -b)
+
+def test_cyclic_solve ():
+    a, b = map(lambda x: Tensor(x, rank=0), 'ab')
+    assert(backward_sub([a + b], [], [a, b]) == (None, b))
