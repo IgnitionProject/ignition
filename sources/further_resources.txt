@@ -1,0 +1,13 @@
+-----------------
+Further Resources
+-----------------
+
+Papers
+------
+
+Andy R. Terrel. *From equations to code: Automated Scientific
+Computing*. Computing in Science and Engineering, 13 (March
+2011). :download:`Preprint <papers/Terrel2011.pdf>`
+
+Presentations
+-------------
