@@ -18,7 +18,8 @@ Contents:
 
    intro
    install
-   tutorial
+   tutorial/index
+   further_resources
    modules/index
    contributing
 

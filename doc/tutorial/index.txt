@@ -1,0 +1,27 @@
+Tutorial
+========
+
+This tutorial aims to cover a number of topics:
+
+ * What are DSL's and what might they be used for
+ * A simple example of the design of the DSL (IntGen)
+ * The FLAME programming model for partitioned loops
+ * The combination of the FLAME programming model and DSL's
+
+
+
+Contents:
+
+.. toctree::
+   :maxdepth: 1
+
+   dsl
+   int_gen
+   flame
+   extending
+
+As more features and languages are added to Ignition, you will be able to see
+simple demonstrations in ``demo`` directory.  Additionally, all supported
+features should have a test in the ``test`` directory where they are
+implemented.  Often looking at the tests are a good way to discover what can be
+done.
