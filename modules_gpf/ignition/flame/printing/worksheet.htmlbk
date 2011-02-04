@@ -49,12 +49,17 @@
   <h1>Source code for ignition.flame.printing.worksheet</h1><div class="highlight"><pre>
 <span class="sd">&quot;&quot;&quot;Worksheet printer class&quot;&quot;&quot;</span>
 
+<span class="kn">from</span> <span class="nn">ignition.flame.tensors.printers</span> <span class="kn">import</span> <span class="n">latex_print</span>
+
 <span class="kn">from</span> <span class="nn">printer</span> <span class="kn">import</span> <span class="n">TemplatePrinter</span>
 
 <div class="viewcode-block" id="WorksheetPrinter"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.printing.worksheet.WorksheetPrinter">[docs]</a><span class="k">class</span> <span class="nc">WorksheetPrinter</span> <span class="p">(</span><span class="n">TemplatePrinter</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Basic FLAME worksheet printer class&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gen_obj</span><span class="p">,</span> <span class="n">template</span><span class="o">=</span><span class="s">&quot;worksheet.mako&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+    <span class="n">_rule_print_attr</span> <span class="o">=</span> <span class="s">&quot;_str&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gen_obj</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">template</span><span class="o">=</span><span class="s">&quot;worksheet.mako&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot;WorksheetPrinter(gen_obj, &quot;</span> <span class="o">+</span> <span class="n">template</span> <span class="o">+</span> <span class="s">&quot;, &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;)&quot;</span>
         <span class="n">TemplatePrinter</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_gen_obj</span> <span class="o">=</span> <span class="n">gen_obj</span>
 
@@ -77,29 +82,50 @@
                 <span class="s">&quot;update&quot;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">,</span>
                 <span class="p">}</span>
 
+    <span class="k">def</span> <span class="nf">_tensor_print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expr</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_list_ten_print</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">l_o_t</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">l_o_t</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="s">&quot;[ &quot;</span> <span class="o">+</span> <span class="s">&quot; and &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_list_ten_print</span><span class="p">,</span> <span class="n">l_o_t</span><span class="p">))</span> <span class="o">+</span> <span class="s">&quot; ]&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tensor_print</span><span class="p">(</span><span class="n">l_o_t</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_print_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">part_dict</span><span class="p">,</span> <span class="n">rule_dict</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="n">ret_str</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">obj</span><span class="p">,</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">part_dict</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">rule_dict</span><span class="p">[</span><span class="n">obj</span><span class="p">]</span><span class="o">.</span><span class="n">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_rule_print_attr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">reverse</span><span class="p">:</span>
+                <span class="n">ret_str</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> &lt;- </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tensor_print</span><span class="p">(</span><span class="n">obj</span><span class="p">),</span> <span class="n">p</span><span class="p">(</span><span class="n">part</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ret_str</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> -&gt; </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tensor_print</span><span class="p">(</span><span class="n">obj</span><span class="p">),</span> <span class="n">p</span><span class="p">(</span><span class="n">part</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">ret_str</span>
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_after_update</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen_obj</span><span class="o">.</span><span class="n">aft_eqns</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_ten_print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen_obj</span><span class="o">.</span><span class="n">aft_eqns</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_before_update</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen_obj</span><span class="o">.</span><span class="n">b4_eqns</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_ten_print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen_obj</span><span class="o">.</span><span class="n">b4_eqns</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_invariant</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen_obj</span><span class="o">.</span><span class="n">loop_inv</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_ten_print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen_obj</span><span class="o">.</span><span class="n">loop_inv</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_guard</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s">&quot;&quot;</span> <span class="c">#str(self._gen_obj.guard)</span>
+        <span class="k">return</span> <span class="s">&quot; and &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tensor_print</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_obj</span><span class="o">.</span><span class="n">guard</span><span class="p">))</span> <span class="o">+</span> \
+               <span class="s">&quot; is/are not empty&quot;</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_fuse</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s">&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_print_rules</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen_obj</span><span class="o">.</span><span class="n">partition</span><span class="p">,</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">_gen_obj</span><span class="o">.</span><span class="n">fuse_fun</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_operation</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s">&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen_obj</span><span class="o">.</span><span class="n">op_applied</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_outputs</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -107,15 +133,16 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_precondition</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s">&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invariant</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_postcondition</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s">&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invariant</span> <span class="o">+</span> <span class="s">&quot; and &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_guard</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_partition</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s">&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_print_rules</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen_obj</span><span class="o">.</span><span class="n">partition</span><span class="p">,</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">_gen_obj</span><span class="o">.</span><span class="n">part_fun</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_partition_sizes</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -123,7 +150,8 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_repartition</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s">&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_print_rules</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen_obj</span><span class="o">.</span><span class="n">partition</span><span class="p">,</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">_gen_obj</span><span class="o">.</span><span class="n">repart_fun</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_reparition_sizes</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -135,12 +163,22 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_update</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gen_obj</span><span class="o">.</span><span class="n">update</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_obj</span><span class="o">.</span><span class="n">update</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&quot;UPDATES NOT DETERMINED.&quot;</span>
+        <span class="n">ret_str</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_obj</span><span class="o">.</span><span class="n">update</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="n">ret_str</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> = </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tensor_print</span><span class="p">(</span><span class="n">k</span><span class="p">),</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">_tensor_print</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">ret_str</span>
 </div>
 <span class="k">class</span> <span class="nc">LatexWorksheetPrinter</span> <span class="p">(</span><span class="n">WorksheetPrinter</span><span class="p">):</span>
 
+    <span class="n">_tensor_printer</span> <span class="o">=</span> <span class="n">latex_print</span>
+    <span class="n">_rule_print_attr</span> <span class="o">=</span> <span class="s">&quot;_latex&quot;</span>
+
+
     <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gen_obj</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="n">WorksheetPrinter</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gen_obj</span><span class="p">,</span> <span class="s">&quot;flatex.mako&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">WorksheetPrinter</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gen_obj</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="s">&quot;flatex.mako&quot;</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">template_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -148,6 +186,19 @@
         <span class="n">td</span><span class="p">[</span><span class="s">&quot;caption&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;None&quot;</span>
         <span class="n">td</span><span class="p">[</span><span class="s">&quot;label&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;none&quot;</span>
         <span class="k">return</span> <span class="n">td</span>
+
+    <span class="k">def</span> <span class="nf">_tensor_print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expr</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">latex_print</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_print_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">part_dict</span><span class="p">,</span> <span class="n">rule_dict</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="n">ret_str</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">obj</span><span class="p">,</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">part_dict</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">rule_dict</span><span class="p">[</span><span class="n">obj</span><span class="p">]</span><span class="o">.</span><span class="n">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_rule_print_attr</span><span class="p">)</span>
+            <span class="n">arrow</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\r</span><span class="s">ightarrow&quot;</span>
+            <span class="k">if</span> <span class="n">reverse</span><span class="p">:</span>
+                <span class="n">arrow</span> <span class="o">=</span> <span class="s">&quot;\leftarrow&quot;</span>
+            <span class="n">ret_str</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tensor_print</span><span class="p">(</span><span class="n">obj</span><span class="p">),</span> <span class="n">arrow</span><span class="p">,</span> <span class="n">p</span><span class="p">(</span><span class="n">part</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">ret_str</span>
 </pre></div>
 
           </div>

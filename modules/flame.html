@@ -114,26 +114,44 @@ after the loop updates.</dd>
 <p>Code generator for PME Language</p>
 <dl class="class">
 <dt id="ignition.flame.generator.PAlgGenerator">
-<em class="property">class </em><tt class="descclassname">ignition.flame.generator.</tt><tt class="descname">PAlgGenerator</tt><big>(</big><em>operation</em>, <em>*args</em>, <em>**kws</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/generator.html#PAlgGenerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.generator.PAlgGenerator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">ignition.flame.generator.</tt><tt class="descname">PAlgGenerator</tt><big>(</big><em>loop_inv_op</em>, <em>solver</em>, <em>*args</em>, <em>**kws</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/generator.html#PAlgGenerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.generator.PAlgGenerator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wrapper object for generating partitioned algorithms.</p>
 <p>operation: The operation to generate
 args: List of PObjs that are input for the operation.</p>
+<dl class="attribute">
+<dt id="ignition.flame.generator.PAlgGenerator.fuse">
+<tt class="descname">fuse</tt><a class="reference internal" href="../modules_gpf/ignition/flame/generator.html#PAlgGenerator.fuse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.generator.PAlgGenerator.fuse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fuse mapping</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ignition.flame.generator.PAlgGenerator.gen_update">
+<tt class="descname">gen_update</tt><big>(</big><em>filename=None</em>, <em>type=None</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/generator.html#PAlgGenerator.gen_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.generator.PAlgGenerator.gen_update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates the loop updates and pre/post conditions inside loop.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ignition.flame.generator.PAlgGenerator.partition">
+<tt class="descname">partition</tt><a class="reference internal" href="../modules_gpf/ignition/flame/generator.html#PAlgGenerator.partition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.generator.PAlgGenerator.partition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Partition mapping</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ignition.flame.generator.PAlgGenerator.repartition">
+<tt class="descname">repartition</tt><a class="reference internal" href="../modules_gpf/ignition/flame/generator.html#PAlgGenerator.repartition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.generator.PAlgGenerator.repartition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Repartition mapping</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="function">
 <dt id="ignition.flame.generator.generate">
-<tt class="descclassname">ignition.flame.generator.</tt><tt class="descname">generate</tt><big>(</big><em>filename=None</em>, <em>filetype=None</em>, <em>loop_inv=None</em>, <em>inv_args=</em><span class="optional">[</span><span class="optional">]</span>, <em>PME=None</em>, <em>updater=None</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/generator.html#generate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.generator.generate" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">ignition.flame.generator.</tt><tt class="descname">generate</tt><big>(</big><em>filename=None</em>, <em>filetype=None</em>, <em>op=None</em>, <em>loop_inv=None</em>, <em>inv_args=</em><span class="optional">[</span><span class="optional">]</span>, <em>PME=None</em>, <em>solver=None</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/generator.html#generate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.generator.generate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Utility function for generating a flame algorithm.</p>
 <p>Will create a generator object and write it to file, then return the
 generator object.</p>
 <p>For more complete documentation see the PAlgGenerator object and 
 the printing module.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="ignition.flame.generator.tensor_updater">
-<tt class="descclassname">ignition.flame.generator.</tt><tt class="descname">tensor_updater</tt><big>(</big><em>b4_eqns</em>, <em>aft_eqns</em>, <em>levels=-1</em>, <em>num_sols=1</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/generator.html#tensor_updater"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.generator.tensor_updater" title="Permalink to this definition">¶</a></dt>
-<dd><p>Updater calling tensor solvers.</p>
 </dd></dl>
 
 </div>
@@ -145,6 +163,18 @@ the printing module.</p>
 <div class="section" id="module-ignition.flame.tensors.tensor">
 <span id="tensor"></span><h3>Tensor<a class="headerlink" href="#module-ignition.flame.tensors.tensor" title="Permalink to this headline">¶</a></h3>
 <p>Rules for symbolic tensor algebra</p>
+<dl class="class">
+<dt id="ignition.flame.tensors.tensor.BasisVector">
+<em class="property">class </em><tt class="descclassname">ignition.flame.tensors.tensor.</tt><tt class="descname">BasisVector</tt><a class="reference internal" href="../modules_gpf/ignition/flame/tensors/tensor.html#BasisVector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.tensors.tensor.BasisVector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unit basis vector with 1 at given position r.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">e_0</span> <span class="o">=</span> <span class="n">BasisVector</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">A</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="s">&#39;A&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">A</span><span class="o">*</span><span class="n">e_0</span> 
+<span class="go">a[0]</span>
+</pre></div>
+</div>
+</dd></dl>
+
 <dl class="class">
 <dt id="ignition.flame.tensors.tensor.Tensor">
 <em class="property">class </em><tt class="descclassname">ignition.flame.tensors.tensor.</tt><tt class="descname">Tensor</tt><a class="reference internal" href="../modules_gpf/ignition/flame/tensors/tensor.html#Tensor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.tensors.tensor.Tensor" title="Permalink to this definition">¶</a></dt>
@@ -355,6 +385,12 @@ NotImplementedError if operation isn&#8217;t supported by routine</dd>
 </dd></dl>
 
 <dl class="function">
+<dt id="ignition.flame.tensors.solvers.tensor_solver">
+<tt class="descclassname">ignition.flame.tensors.solvers.</tt><tt class="descname">tensor_solver</tt><big>(</big><em>b4_eqns</em>, <em>aft_eqns</em>, <em>e_knowns=</em><span class="optional">[</span><span class="optional">]</span>, <em>levels=-1</em>, <em>num_sols=1</em>, <em>verbose=True</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/tensors/solvers.html#tensor_solver"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.tensors.solvers.tensor_solver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updater calling tensor solvers.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="ignition.flame.tensors.solvers.update_sol_dict_unk_sol">
 <tt class="descclassname">ignition.flame.tensors.solvers.</tt><tt class="descname">update_sol_dict_unk_sol</tt><big>(</big><em>sol_dict</em>, <em>unknowns</em>, <em>solved</em>, <em>curr_dict</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/tensors/solvers.html#update_sol_dict_unk_sol"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.tensors.solvers.update_sol_dict_unk_sol" title="Permalink to this definition">¶</a></dt>
 <dd><p>Upadates the solution dict, unknown list and solved list based on 
@@ -365,6 +401,24 @@ given solution dict (curr_dict)</p>
 <div class="section" id="module-ignition.flame.tensors.tensor_names">
 <span id="tensor-names"></span><h3>Tensor Names<a class="headerlink" href="#module-ignition.flame.tensors.tensor_names" title="Permalink to this headline">¶</a></h3>
 <p>Module for manipulating tensor names according to Householder notation</p>
+<dl class="function">
+<dt id="ignition.flame.tensors.tensor_names.add_idx">
+<tt class="descclassname">ignition.flame.tensors.tensor_names.</tt><tt class="descname">add_idx</tt><big>(</big><em>name</em>, <em>idx</em>, <em>latex=False</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/tensors/tensor_names.html#add_idx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.tensors.tensor_names.add_idx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a name with an added index.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">add_idx</span><span class="p">(</span><span class="s">&quot;a&quot;</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span>
+<span class="go">&quot;a[r]&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">add_idx</span><span class="p">(</span><span class="s">&quot;a_0^2&quot;</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span>
+<span class="go">&quot;a[r]_0^2&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">add_idx</span><span class="p">(</span><span class="s">&quot;a[r]&quot;</span><span class="p">,</span> <span class="s">&quot;n&quot;</span><span class="p">)</span>
+<span class="go">&quot;a[r][n]&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">add_idx</span><span class="p">(</span><span class="s">&quot;a&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">&quot;a[3]&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">add_idx</span><span class="p">(</span><span class="s">&quot;a_02&quot;</span><span class="p">,</span> <span class="s">&quot;delta&quot;</span><span class="p">,</span> <span class="n">latex</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="go">&quot;a[\delta]_{02}</span>
+</pre></div>
+</div>
+</dd></dl>
+
 <dl class="function">
 <dt id="ignition.flame.tensors.tensor_names.convert_name">
 <tt class="descclassname">ignition.flame.tensors.tensor_names.</tt><tt class="descname">convert_name</tt><big>(</big><em>name</em>, <em>rank</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/tensors/tensor_names.html#convert_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.tensors.tensor_names.convert_name" title="Permalink to this definition">¶</a></dt>
@@ -429,9 +483,22 @@ given solution dict (curr_dict)</p>
 <span id="printers"></span><h3>Printers<a class="headerlink" href="#module-ignition.flame.tensors.printers" title="Permalink to this headline">¶</a></h3>
 <p>Simple printers for tensor expressions</p>
 <dl class="function">
+<dt id="ignition.flame.tensors.printers.latex_print">
+<tt class="descclassname">ignition.flame.tensors.printers.</tt><tt class="descname">latex_print</tt><big>(</big><em>expr</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/tensors/printers.html#latex_print"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.tensors.printers.latex_print" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a tensor expression in Latex.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="ignition.flame.tensors.printers.numpy_print">
 <tt class="descclassname">ignition.flame.tensors.printers.</tt><tt class="descname">numpy_print</tt><big>(</big><em>expr</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/tensors/printers.html#numpy_print"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.tensors.printers.numpy_print" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints a tensor expression in Python using numpy.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ignition.flame.tensors.printers.print_visitor">
+<tt class="descclassname">ignition.flame.tensors.printers.</tt><tt class="descname">print_visitor</tt><big>(</big><em>expr_to_print</em>, <em>str_dict</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/tensors/printers.html#print_visitor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.tensors.printers.print_visitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a tensor expression in with predefined strings in string dict.</p>
+<p>See default_strs for str_dict keys.</p>
 </dd></dl>
 
 </div>
@@ -460,7 +527,7 @@ given solution dict (curr_dict)</p>
 <p>Worksheet printer class</p>
 <dl class="class">
 <dt id="ignition.flame.printing.worksheet.WorksheetPrinter">
-<em class="property">class </em><tt class="descclassname">ignition.flame.printing.worksheet.</tt><tt class="descname">WorksheetPrinter</tt><big>(</big><em>gen_obj</em>, <em>template='worksheet.mako'</em>, <em>filename=None</em>, <em>**kws</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/printing/worksheet.html#WorksheetPrinter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.printing.worksheet.WorksheetPrinter" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">ignition.flame.printing.worksheet.</tt><tt class="descname">WorksheetPrinter</tt><big>(</big><em>gen_obj</em>, <em>filename=None</em>, <em>template='worksheet.mako'</em>, <em>**kws</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/printing/worksheet.html#WorksheetPrinter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.printing.worksheet.WorksheetPrinter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Basic FLAME worksheet printer class</p>
 </dd></dl>
 
@@ -475,16 +542,11 @@ given solution dict (curr_dict)</p>
         </div>
         <div class="sidebar">
           <h3>Table Of Contents</h3>
-          <ul class="current">
+          <ul>
 <li class="toctree-l1"><a class="reference internal" href="../intro.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="index.html">Ignition Modules Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="int_gen.html">Ignition IntGen</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="">Ignition FLAME</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utils.html">Ignition Utils</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Ignition Modules Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
 </ul>
 

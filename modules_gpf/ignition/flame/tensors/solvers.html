@@ -50,13 +50,18 @@
 <span class="sd">&quot;&quot;&quot;Several solvers for overdetermined tensor systems.&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
+<span class="kn">import</span> <span class="nn">pprint</span>
 <span class="kn">from</span> <span class="nn">sympy</span> <span class="kn">import</span> <span class="n">Add</span><span class="p">,</span> <span class="n">expand</span><span class="p">,</span> <span class="n">Mul</span><span class="p">,</span> <span class="n">S</span>
 <span class="kn">from</span> <span class="nn">sympy.utilities.iterables</span> <span class="kn">import</span> <span class="n">postorder_traversal</span>
 
-<span class="kn">from</span> <span class="nn">tensor_expr</span> <span class="kn">import</span> <span class="n">expr_rank</span>
-<span class="kn">from</span> <span class="nn">ignition.utils.iterators</span> <span class="kn">import</span> <span class="n">UpdatingPermutationIterator</span>
+<span class="kn">from</span> <span class="nn">tensor_expr</span> <span class="kn">import</span> <span class="n">expr_coeff</span><span class="p">,</span> <span class="n">expr_rank</span>
 <span class="kn">from</span> <span class="nn">ignition</span> <span class="kn">import</span> <span class="n">IGNITION_DEBUG</span> <span class="k">as</span> <span class="n">DEBUG</span>
+<span class="kn">from</span> <span class="nn">ignition.utils</span> <span class="kn">import</span> <span class="n">flatten</span><span class="p">,</span> <span class="n">UpdatingPermutationIterator</span>
+<span class="kn">from</span> <span class="nn">ignition.flame.tensors.constants</span> <span class="kn">import</span> <span class="n">CONSTANTS</span>
+<span class="kn">from</span> <span class="nn">ignition.flame.tensors.basic_operators</span> <span class="kn">import</span> <span class="n">Inner</span><span class="p">,</span> <span class="n">NotInvertibleError</span><span class="p">,</span> \
+    <span class="n">Inverse</span>
 
+<span class="c">#DEBUG = 1</span>
 
 <span class="k">class</span> <span class="nc">NonLinearEqnError</span> <span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
     <span class="k">pass</span>
@@ -64,6 +69,36 @@
 <span class="k">class</span> <span class="nc">UnsolvableEqnsError</span> <span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
     <span class="k">pass</span>
 
+
+<div class="viewcode-block" id="tensor_solver"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.solvers.tensor_solver">[docs]</a><span class="k">def</span> <span class="nf">tensor_solver</span> <span class="p">(</span><span class="n">b4_eqns</span><span class="p">,</span> <span class="n">aft_eqns</span><span class="p">,</span> <span class="n">e_knowns</span><span class="o">=</span><span class="p">[],</span> <span class="n">levels</span><span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_sols</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Updater calling tensor solvers.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">verbose</span> <span class="ow">or</span> <span class="n">DEBUG</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;tensor_solver:&quot;</span>
+        <span class="k">print</span> <span class="s">&quot;  b4_eqns:&quot;</span><span class="p">,</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">(</span><span class="n">b4_eqns</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;  aft_eqns:&quot;</span><span class="p">,</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">(</span><span class="n">aft_eqns</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;  e_knowns:&quot;</span><span class="p">,</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">(</span><span class="n">e_knowns</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+    <span class="n">knowns</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">flatten</span><span class="p">([</span><span class="n">eqn</span><span class="o">.</span><span class="n">atoms</span><span class="p">()</span> <span class="k">for</span> <span class="n">eqn</span> <span class="ow">in</span> <span class="n">b4_eqns</span><span class="p">]))</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">e_knowns</span><span class="p">))</span>
+    <span class="n">knowns</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">CONSTANTS</span><span class="p">)</span>
+    <span class="n">eqns</span> <span class="o">=</span> <span class="n">aft_eqns</span> <span class="o">+</span> <span class="n">b4_eqns</span>
+    <span class="k">if</span> <span class="n">verbose</span> <span class="ow">or</span> <span class="n">DEBUG</span> <span class="ow">or</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">80</span>
+        <span class="k">print</span> <span class="s">&quot;Calling Generator with following:&quot;</span>
+        <span class="k">print</span> <span class="s">&quot;*&quot;</span> <span class="o">*</span> <span class="mi">80</span>
+        <span class="k">print</span> <span class="s">&quot;Knowns:&quot;</span><span class="p">,</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">(</span><span class="n">knowns</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">80</span>
+        <span class="n">unknown</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">flatten</span><span class="p">([</span><span class="n">eqn</span><span class="o">.</span><span class="n">atoms</span><span class="p">()</span> <span class="k">for</span> <span class="n">eqn</span> <span class="ow">in</span> <span class="n">aft_eqns</span><span class="p">]))</span> <span class="o">-</span> <span class="n">knowns</span>
+        <span class="k">print</span> <span class="s">&quot;Unknowns:&quot;</span><span class="p">,</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">(</span><span class="n">unknown</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">80</span>
+        <span class="k">print</span> <span class="s">&quot;eqns:&quot;</span><span class="p">,</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">80</span>
+    <span class="n">sol_dicts</span> <span class="o">=</span> <span class="n">all_back_sub</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">,</span> <span class="n">levels</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">verbose</span> <span class="ow">or</span> <span class="n">DEBUG</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;Sol dicts: &quot;</span><span class="p">,</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">(</span><span class="n">sol_dicts</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+    <span class="n">sol_dicts</span> <span class="o">=</span> <span class="n">sol_dicts</span><span class="p">[:</span><span class="n">num_sols</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">sol_dicts</span>
+
+</div>
 <div class="viewcode-block" id="solve_vec_eqn"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.solvers.solve_vec_eqn">[docs]</a><span class="k">def</span> <span class="nf">solve_vec_eqn</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">var</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns the solution to a linear equation containing Tensors</span>
 <span class="sd">    </span>
@@ -79,30 +114,23 @@
     <span class="k">if</span> <span class="n">eqn</span><span class="o">.</span><span class="n">as_poly</span><span class="p">(</span><span class="n">var</span><span class="p">)</span><span class="o">.</span><span class="n">degree</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">NonLinearEqnError</span><span class="p">()</span>
 
+    <span class="k">def</span> <span class="nf">_only_solve_numerator</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Mul</span><span class="p">)</span> <span class="ow">and</span> \
+            <span class="nb">len</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Inverse</span><span class="p">)</span> <span class="ow">and</span> \
+            <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
     <span class="k">def</span> <span class="nf">_solve_recur</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">rhs</span><span class="o">=</span><span class="n">S</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
-        <span class="n">expr</span> <span class="o">=</span> <span class="n">expand</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">expr</span> <span class="o">==</span> <span class="n">var</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">rhs</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Mul</span><span class="p">):</span>
+        <span class="n">expr</span> <span class="o">=</span> <span class="n">expand</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Mul</span><span class="p">):</span>
             <span class="n">lhs</span> <span class="o">=</span> <span class="n">S</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
             <span class="c"># Try by rank</span>
-            <span class="n">coeff</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">coeff</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
-            <span class="n">coeff_rank</span> <span class="o">=</span> <span class="n">expr_rank</span><span class="p">(</span><span class="n">coeff</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">coeff_rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">rhs</span> <span class="o">/=</span> <span class="n">coeff</span>
-                <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">arg</span><span class="p">:</span>
-                        <span class="n">lhs</span> <span class="o">*=</span> <span class="n">arg</span>
-            <span class="k">elif</span> <span class="n">coeff_rank</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">NotInvertibleError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">coeff</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; of &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">expr</span><span class="p">))</span>
-            <span class="k">elif</span> <span class="n">coeff_rank</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">arg</span><span class="p">:</span>
-                        <span class="n">lhs</span> <span class="o">*=</span> <span class="n">arg</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">rhs</span> <span class="o">/=</span> <span class="n">arg</span>
+            <span class="n">l_coeff</span><span class="p">,</span> <span class="n">var_expr</span><span class="p">,</span> <span class="n">r_coeff</span> <span class="o">=</span> <span class="n">expr_coeff</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">var</span><span class="p">)</span>
+            <span class="n">lhs</span> <span class="o">=</span> <span class="n">var_expr</span>
+            <span class="n">rhs</span> <span class="o">=</span> <span class="n">Inverse</span><span class="p">(</span><span class="n">l_coeff</span><span class="p">)</span> <span class="o">*</span> <span class="n">rhs</span> <span class="o">*</span> <span class="n">Inverse</span><span class="p">(</span><span class="n">r_coeff</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">_solve_recur</span><span class="p">(</span><span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Add</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Add</span><span class="p">):</span>
             <span class="n">lhs</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">arg</span><span class="p">:</span>
@@ -115,11 +143,12 @@
                     <span class="n">rhs</span> <span class="o">/=</span> <span class="n">coeff</span>
                     <span class="n">lhs</span> <span class="o">=</span> <span class="n">var</span>
             <span class="k">return</span> <span class="n">_solve_recur</span><span class="p">(</span><span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Can&#39;t handle expr of type </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">expr</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">_solve_recur</span><span class="p">(</span><span class="n">expand</span><span class="p">(</span><span class="n">eqn</span><span class="p">))</span>
-
-
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Can&#39;t handle expr of type </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">expr</span><span class="p">))</span>
+    <span class="c"># Check if expr is of the form (a + b) / c with rank(c) == 0</span>
+    <span class="c"># then solve just the numerator</span>
+    <span class="k">if</span> <span class="n">_only_solve_numerator</span><span class="p">(</span><span class="n">eqn</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_solve_recur</span><span class="p">(</span><span class="n">eqn</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">_solve_recur</span><span class="p">(</span><span class="n">eqn</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="get_eqns_unk"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.solvers.get_eqns_unk">[docs]</a><span class="k">def</span> <span class="nf">get_eqns_unk</span> <span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns the list of unknowns, given the knowns, from a list of equations&quot;&quot;&quot;</span>
@@ -384,11 +413,13 @@
     <span class="k">return</span> <span class="n">unique_dicts</span>
 
 </div>
-<span class="k">def</span> <span class="nf">backward_sub</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">,</span> <span class="n">unknowns</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">multiple_sols</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">sub_all</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">backward_sub</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">,</span> <span class="n">unknowns</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">multiple_sols</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">sub_all</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">unknowns</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
         <span class="n">unknowns</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">unknowns</span> <span class="o">=</span> <span class="n">unknowns</span> <span class="o">+</span> \
         <span class="p">[</span><span class="n">u</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">get_eqns_unk</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">)</span> <span class="k">if</span> <span class="n">u</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">unknowns</span><span class="p">]</span>
+
+    <span class="n">constraints</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">Mul</span><span class="p">,</span> <span class="n">Inner</span><span class="p">)),</span> <span class="n">eqns</span><span class="p">)</span>
 
     <span class="n">sol_dict</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">unk</span> <span class="ow">in</span> <span class="n">unknowns</span><span class="p">:</span>
@@ -398,13 +429,16 @@
             <span class="n">sol_dict</span><span class="p">[</span><span class="n">unk</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
 
     <span class="n">all_eqns</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">eqns</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">unk</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">unknowns</span><span class="p">):</span>
+    <span class="n">solved</span> <span class="o">=</span> <span class="p">[]</span> <span class="c"># Maintain a list of solved vars that can&#39;t be referenced in new</span>
+                <span class="c"># solutions.</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">unknowns</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">unk</span> <span class="o">=</span> <span class="n">unknowns</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
             <span class="k">print</span> <span class="s">&quot;Searching for unk:&quot;</span><span class="p">,</span> <span class="n">unk</span>
         <span class="k">for</span> <span class="n">eqn</span> <span class="ow">in</span> <span class="n">all_eqns</span><span class="p">:</span>
             <span class="n">sol</span> <span class="o">=</span> <span class="bp">None</span>
 <span class="c">#            print &quot;eqn:&quot;, eqn, &quot;eqn.atoms():&quot;, eqn.atoms(), &quot;eqn.atoms().intersection(unknowns[n:1]):&quot;, eqn.atoms().intersection(unknowns[n:1])</span>
-            <span class="k">if</span>  <span class="n">unk</span> <span class="ow">in</span> <span class="n">eqn</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">unk</span> <span class="ow">in</span> <span class="n">eqn</span> <span class="ow">and</span>  <span class="nb">all</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="n">u</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">eqn</span><span class="p">,</span> <span class="n">solved</span><span class="p">)):</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">sol</span> <span class="o">=</span> <span class="n">solve_vec_eqn</span><span class="p">(</span><span class="n">eqn</span><span class="p">,</span> <span class="n">unk</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">inst</span><span class="p">:</span>
@@ -426,15 +460,28 @@
         <span class="k">if</span> <span class="n">sol_dict</span><span class="p">[</span><span class="n">unk</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="p">(</span><span class="n">multiple_sols</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">sol_dict</span><span class="p">[</span><span class="n">unk</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
             <span class="k">return</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="n">unk</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="n">solved</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">unk</span><span class="p">)</span>
             <span class="n">new_eqns</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">eqn</span> <span class="ow">in</span> <span class="n">all_eqns</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">multiple_sols</span><span class="p">:</span>
                     <span class="n">sols</span> <span class="o">=</span> <span class="n">sol_dict</span><span class="p">[</span><span class="n">unk</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">sols</span> <span class="o">=</span> <span class="p">[</span><span class="n">sol_dict</span><span class="p">[</span><span class="n">unk</span><span class="p">]]</span>
-                <span class="n">new_eqns</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">sol</span><span class="p">:</span> <span class="n">expand</span><span class="p">(</span><span class="n">eqn</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">unk</span><span class="p">,</span> <span class="n">sol</span><span class="p">)),</span>
-                                    <span class="n">sols</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">sol</span> <span class="ow">in</span> <span class="n">sols</span><span class="p">:</span>
+                    <span class="c"># FIXME: This a hack, if the substitution raised a </span>
+                    <span class="c">#        NotInvertibleError then the equation is jacked up</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">sub_sol</span> <span class="o">=</span> <span class="n">eqn</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">unk</span><span class="p">,</span> <span class="n">sol</span><span class="p">)</span>
+                        <span class="n">new_eqns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">expand</span><span class="p">(</span><span class="n">sub_sol</span><span class="p">))</span>
+                    <span class="k">except</span> <span class="n">NotInvertibleError</span><span class="p">:</span>
+                        <span class="k">pass</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">new_eqns</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">new_eqns</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">constraints</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">for</span> <span class="n">cnstrt</span> <span class="ow">in</span> <span class="n">constraints</span><span class="p">:</span>
+                        <span class="n">new_eqns</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_eqns</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">cnstrt</span><span class="p">,</span> <span class="n">S</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
             <span class="n">new_eqns</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span> <span class="o">!=</span> <span class="n">S</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="nb">set</span><span class="p">(</span><span class="n">new_eqns</span><span class="p">))</span>
+<span class="c">#            print &quot;New Eqns:&quot;, pprint.pformat(new_eqns, 5, 80)</span>
             <span class="k">if</span> <span class="n">sub_all</span><span class="p">:</span>
                 <span class="n">all_eqns</span> <span class="o">=</span> <span class="n">new_eqns</span>
             <span class="k">else</span><span class="p">:</span>
@@ -443,36 +490,40 @@
 
 <span class="k">def</span> <span class="nf">all_back_sub</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">multiple_sols</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">sub_all</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
     <span class="n">unks</span> <span class="o">=</span> <span class="n">get_eqns_unk</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&quot;Knowns:&quot;</span><span class="p">,</span> <span class="n">knowns</span>
+    <span class="k">print</span> <span class="s">&quot;Unknowns:&quot;</span><span class="p">,</span> <span class="n">unks</span>
     <span class="n">ord_unk_iter</span> <span class="o">=</span> <span class="n">UpdatingPermutationIterator</span><span class="p">(</span><span class="n">unks</span><span class="p">,</span>
                                        <span class="n">levels</span> <span class="k">if</span> <span class="n">levels</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="n">unks</span><span class="p">))</span>
     <span class="n">sols</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">tot_to_test</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">ord_unk_iter</span><span class="p">))</span>
     <span class="k">print</span> <span class="s">&quot;Searching a possible </span><span class="si">%d</span><span class="s"> orders&quot;</span> <span class="o">%</span> <span class="n">tot_to_test</span>
+    <span class="k">print</span> <span class="s">&quot;Hit control-C to stop searching and return solutions already found.&quot;</span>
     <span class="n">ord_unk_iter</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
     <span class="n">num_tested</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">ord_unks</span> <span class="ow">in</span> <span class="n">ord_unk_iter</span><span class="p">:</span>
-<span class="c">#        print &quot;Testing order:&quot;, ord_unks</span>
-        <span class="n">num_tested</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">if</span> <span class="n">num_tested</span> <span class="o">%</span> <span class="p">(</span><span class="n">tot_to_test</span> <span class="o">/</span> <span class="mi">10</span> <span class="k">if</span> <span class="n">tot_to_test</span> <span class="o">&gt;</span> <span class="mi">10</span> <span class="k">else</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s">&quot;Tested &quot;</span><span class="p">,</span> <span class="n">num_tested</span>
-        <span class="n">sol_dict</span><span class="p">,</span> <span class="n">failed_var</span> <span class="o">=</span> <span class="n">backward_sub</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">,</span> <span class="n">ord_unks</span><span class="p">,</span>
-                                            <span class="n">multiple_sols</span><span class="p">,</span> <span class="n">sub_all</span><span class="p">)</span>
-<span class="c">#        print &quot;  result:&quot;, sol_dict, failed_var</span>
-        <span class="k">if</span> <span class="n">sol_dict</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">failed_var</span> <span class="ow">in</span> <span class="n">ord_unks</span><span class="p">:</span>
-                <span class="n">ord_unk_iter</span><span class="o">.</span><span class="n">bad_pos</span><span class="p">(</span><span class="n">ord_unks</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">failed_var</span><span class="p">))</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">sols</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">sol_dict</span><span class="p">,</span> <span class="n">ord_unks</span><span class="p">))</span>
+        <span class="k">try</span><span class="p">:</span>
+    <span class="c">#        print &quot;Testing order:&quot;, ord_unks</span>
+            <span class="n">num_tested</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">num_tested</span> <span class="o">%</span> <span class="p">(</span><span class="n">tot_to_test</span> <span class="o">/</span> <span class="mi">10</span> <span class="k">if</span> <span class="n">tot_to_test</span> <span class="o">&gt;</span> <span class="mi">10</span> <span class="k">else</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&quot;Tested: &quot;</span><span class="p">,</span> <span class="n">num_tested</span><span class="p">,</span> <span class="s">&quot;, Solutions:&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">sols</span><span class="p">)</span>
+            <span class="n">sol_dict</span><span class="p">,</span> <span class="n">failed_var</span> <span class="o">=</span> <span class="n">backward_sub</span><span class="p">(</span><span class="n">eqns</span><span class="p">,</span> <span class="n">knowns</span><span class="p">,</span> <span class="n">ord_unks</span><span class="p">,</span>
+                                                <span class="n">multiple_sols</span><span class="p">,</span> <span class="n">sub_all</span><span class="p">)</span>
+    <span class="c">#        print &quot;  result:&quot;, sol_dict, failed_var</span>
+            <span class="k">if</span> <span class="n">sol_dict</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">failed_var</span> <span class="ow">in</span> <span class="n">ord_unks</span><span class="p">:</span>
+                    <span class="n">ord_unk_iter</span><span class="o">.</span><span class="n">bad_pos</span><span class="p">(</span><span class="n">ord_unks</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">failed_var</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+<span class="c">#                for var in sol_dict:</span>
+<span class="c">#                    sol_dict[var] = sol_dict[var].expand()</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">sol_dict</span><span class="p">,</span> <span class="n">sols</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">sols</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">sol_dict</span><span class="p">,</span> <span class="n">ord_unks</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+            <span class="k">break</span>
     <span class="k">print</span> <span class="s">&quot;Tested </span><span class="si">%d</span><span class="s"> orders&quot;</span> <span class="o">%</span> <span class="n">num_tested</span>
-    <span class="k">print</span> <span class="s">&quot;Filtering for unique solutions&quot;</span>
-    <span class="n">uniq_sols</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">sol_dict</span><span class="p">,</span> <span class="n">ord_unks</span> <span class="ow">in</span> <span class="n">sols</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">sol_dict</span><span class="p">,</span> <span class="n">uniq_sols</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">uniq_sols</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">sol_dict</span><span class="p">,</span> <span class="n">ord_unks</span><span class="p">))</span>
-    <span class="k">print</span> <span class="s">&quot;Found </span><span class="si">%d</span><span class="s"> unique solutions&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">uniq_sols</span><span class="p">)</span>
-    <span class="n">uniq_sols</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">postorder_traversal</span><span class="p">(</span><span class="n">v</span><span class="p">)))</span> \
+    <span class="k">print</span> <span class="s">&quot;Found </span><span class="si">%d</span><span class="s"> unique solutions&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">sols</span><span class="p">)</span>
+    <span class="n">sols</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">postorder_traversal</span><span class="p">(</span><span class="n">v</span><span class="p">)))</span> \
                                       <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()]))</span>
-    <span class="k">return</span> <span class="n">uniq_sols</span>
+    <span class="k">return</span> <span class="n">sols</span>
 </pre></div>
 
           </div>

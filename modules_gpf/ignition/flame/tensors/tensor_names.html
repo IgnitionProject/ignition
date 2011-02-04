@@ -105,6 +105,24 @@
             <span class="n">ret_val</span> <span class="o">+=</span> <span class="n">upper</span>
     <span class="k">return</span> <span class="n">ret_val</span>
 </div>
+<div class="viewcode-block" id="add_idx"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.tensor_names.add_idx">[docs]</a><span class="k">def</span> <span class="nf">add_idx</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">latex</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a name with an added index.</span>
+<span class="sd">    </span>
+<span class="sd">    &gt;&gt;&gt; add_idx(&quot;a&quot;, &quot;r&quot;)</span>
+<span class="sd">    &quot;a[r]&quot;</span>
+<span class="sd">    &gt;&gt;&gt; add_idx(&quot;a_0^2&quot;, &quot;r&quot;)</span>
+<span class="sd">    &quot;a[r]_0^2&quot;</span>
+<span class="sd">    &gt;&gt;&gt; add_idx(&quot;a[r]&quot;, &quot;n&quot;)</span>
+<span class="sd">    &quot;a[r][n]&quot;</span>
+<span class="sd">    &gt;&gt;&gt; add_idx(&quot;a&quot;, 3)</span>
+<span class="sd">    &quot;a[3]&quot;</span>
+<span class="sd">    &gt;&gt;&gt; add_idx(&quot;a_02&quot;, &quot;delta&quot;, latex=True)</span>
+<span class="sd">    &quot;a[\delta]_{02}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">b</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">u</span> <span class="o">=</span> <span class="n">split_name</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">b</span> <span class="o">+</span> <span class="s">&quot;[&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;]&quot;</span>
+    <span class="k">return</span> <span class="n">join_name</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">latex</span><span class="p">)</span>
+</div>
 <div class="viewcode-block" id="to_latex"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.tensor_names.to_latex">[docs]</a><span class="k">def</span> <span class="nf">to_latex</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns name for latex printing.</span>
 <span class="sd">    </span>
@@ -202,12 +220,12 @@
     <span class="k">if</span> <span class="n">base</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;0&#39;</span><span class="p">,</span> <span class="s">&#39;1&#39;</span><span class="p">]:</span>
         <span class="k">return</span> <span class="n">name</span>
     <span class="k">elif</span> <span class="n">name_rank</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">r_1</span> <span class="o">=</span> <span class="n">join_name</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">low</span><span class="p">,</span> <span class="n">up</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">rank</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">join_name</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">low</span><span class="p">,</span> <span class="n">up</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">r_1</span>
         <span class="k">elif</span> <span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">sca_name</span> <span class="o">=</span> <span class="n">RM_2_GREEK</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="bp">None</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">sca_name</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">join_name</span><span class="p">(</span><span class="n">sca_name</span><span class="p">,</span> <span class="n">low</span><span class="p">,</span> <span class="n">up</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">convert_name</span><span class="p">(</span><span class="n">r_1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
     <span class="k">elif</span> <span class="n">name_rank</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">rank</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">join_name</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="n">low</span><span class="p">,</span> <span class="n">up</span><span class="p">)</span>
@@ -215,18 +233,24 @@
             <span class="n">sca_name</span> <span class="o">=</span> <span class="n">RM_2_GREEK</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">sca_name</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">join_name</span><span class="p">(</span><span class="n">sca_name</span><span class="p">,</span> <span class="n">low</span><span class="p">,</span> <span class="n">up</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">join_name</span><span class="p">(</span><span class="s">&quot;s&quot;</span> <span class="o">+</span> <span class="n">base</span><span class="p">,</span> <span class="n">low</span><span class="p">,</span> <span class="n">up</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">name_rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">alpha_name</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">RM_2_GREEK</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="n">base</span><span class="p">:</span>
-                <span class="n">alpha_name</span> <span class="o">=</span> <span class="n">k</span>
-                <span class="k">break</span>
+        <span class="k">if</span> <span class="n">base</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;s&#39;</span><span class="p">:</span>
+            <span class="n">alpha_name</span> <span class="o">=</span> <span class="n">base</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">RM_2_GREEK</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="n">base</span><span class="p">:</span>
+                    <span class="n">alpha_name</span> <span class="o">=</span> <span class="n">k</span>
+                    <span class="k">break</span>
         <span class="k">if</span> <span class="n">alpha_name</span><span class="p">:</span>
+            <span class="n">r_1</span> <span class="o">=</span> <span class="n">join_name</span><span class="p">(</span><span class="n">alpha_name</span><span class="p">,</span> <span class="n">low</span><span class="p">,</span> <span class="n">up</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">rank</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">join_name</span><span class="p">(</span><span class="n">alpha_name</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="n">low</span><span class="p">,</span> <span class="n">up</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">convert_name</span><span class="p">(</span><span class="n">r_1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">rank</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">join_name</span><span class="p">(</span><span class="n">alpha_name</span><span class="p">,</span> <span class="n">low</span><span class="p">,</span> <span class="n">up</span><span class="p">)</span>
-    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Unable to convert name.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">r_1</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Unable to convert name: </span><span class="si">%s</span><span class="s">.&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
 </div>
 <span class="k">def</span> <span class="nf">rank_from_name</span> <span class="p">(</span><span class="n">name</span><span class="p">):</span>
     <span class="n">base</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">split_name</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>

@@ -2,10 +2,11 @@ Introduction
 ============
 
 Ignition is a research code for defining domain specific languages useful for
-high performance computing (HPC).  The goal of the project is to lower the
-barriers-of-entry for non-experts who want to use the power of the HPC
-resources.
-
+high performance computing (HPC).  By providinging utilities and examples
+Ignition enables a users to build both languages and code generators. The goal
+of the project is to allow a separation of concerns between domain experts and
+performance experts. The hope is by lowering the barriers-of-entry for non-HPC
+experts HPC systems can be utilized by a wider audience.
 
 -----------------
 Current languages
@@ -25,7 +26,7 @@ domain specific language can be used to speed up numerical code.
 
 Using IntGen's expressions a user defines an integration expression that can
 combine both symbolics and discrete functions.  From this integration
-expression, code generated is generated that efficiently evaluates the integral
+expression, code is generated that efficiently evaluates the integral
 and provides the user with quadrature points and weight according to the
 specification given by the user.
 

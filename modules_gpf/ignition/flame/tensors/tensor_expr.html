@@ -47,7 +47,10 @@
           <div class="body">
             
   <h1>Source code for ignition.flame.tensors.tensor_expr</h1><div class="highlight"><pre>
-<span class="kn">from</span> <span class="nn">sympy</span> <span class="kn">import</span> <span class="n">Add</span><span class="p">,</span> <span class="n">Expr</span><span class="p">,</span> <span class="n">Number</span><span class="p">,</span> <span class="n">Mul</span><span class="p">,</span> <span class="n">Pow</span><span class="p">,</span> <span class="n">Symbol</span>
+<span class="kn">import</span> <span class="nn">operator</span>
+
+<span class="kn">from</span> <span class="nn">sympy</span> <span class="kn">import</span> <span class="n">Add</span><span class="p">,</span> <span class="n">Expr</span><span class="p">,</span> <span class="n">Number</span><span class="p">,</span> <span class="n">Mul</span><span class="p">,</span> <span class="n">Pow</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">Symbol</span>
+<span class="kn">from</span> <span class="nn">sympy.core.decorators</span> <span class="kn">import</span> <span class="n">call_highest_priority</span>
 
 <span class="c"># from tensor import Tensor /* cyclic */</span>
 <span class="c"># from functions import Inner, Inverse, Transpose /* cyclic */</span>
@@ -84,6 +87,7 @@
             <span class="k">if</span> <span class="n">other_is_one</span> <span class="ow">and</span> <span class="n">ero</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span>
 
+    <span class="nd">@call_highest_priority</span><span class="p">(</span><span class="s">&#39;__rmul__&#39;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__mul__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="n">is_mul_conforming_or_die</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">is_zero</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_zero</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
@@ -95,6 +99,7 @@
             <span class="k">return</span> <span class="n">mul_by_one</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">TensorExpr</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__mul__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
 
+    <span class="nd">@call_highest_priority</span><span class="p">(</span><span class="s">&#39;__mul__&#39;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__rmul__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="n">is_mul_conforming_or_die</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">is_zero</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_zero</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
@@ -106,6 +111,7 @@
             <span class="k">return</span> <span class="n">mul_by_one</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">TensorExpr</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__rmul__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
 
+    <span class="nd">@call_highest_priority</span><span class="p">(</span><span class="s">&#39;__radd__&#39;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__add__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="n">is_add_conforming_or_die</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">is_zero</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -114,12 +120,14 @@
             <span class="k">return</span> <span class="bp">self</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">TensorExpr</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__add__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
 
+    <span class="nd">@call_highest_priority</span><span class="p">(</span><span class="s">&#39;__add__&#39;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__radd__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="n">is_add_conforming_or_die</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;0&#39;</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">other</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">TensorExpr</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__radd__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
 
+    <span class="nd">@call_highest_priority</span><span class="p">(</span><span class="s">&#39;__rsub__&#39;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__sub__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">is_zero</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">return</span> <span class="o">-</span> <span class="n">other</span>
@@ -127,6 +135,7 @@
             <span class="k">return</span> <span class="bp">self</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">TensorExpr</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__sub__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
 
+    <span class="nd">@call_highest_priority</span><span class="p">(</span><span class="s">&#39;__sub__&#39;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__rsub__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">is_zero</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">other</span>
@@ -134,6 +143,7 @@
             <span class="k">return</span> <span class="o">-</span> <span class="bp">self</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">TensorExpr</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__rsub__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
 
+    <span class="nd">@call_highest_priority</span><span class="p">(</span><span class="s">&#39;__rdiv__&#39;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__div__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">is_zero</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ZeroDivisionError</span><span class="p">()</span>
@@ -141,19 +151,24 @@
             <span class="k">return</span> <span class="n">Mul</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Inverse</span><span class="p">(</span><span class="n">other</span><span class="p">))</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">TensorExpr</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__div__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
 
+    <span class="nd">@call_highest_priority</span><span class="p">(</span><span class="s">&#39;__div__&#39;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__rdiv__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">is_zero</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ZeroDivisionError</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">Mul</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
 
+    <span class="nd">@call_highest_priority</span><span class="p">(</span><span class="s">&#39;__rpow__&#39;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__pow__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">is_zero</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">is_one</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">other</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">Inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">other</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">Pow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
 
+    <span class="nd">@call_highest_priority</span><span class="p">(</span><span class="s">&#39;__pow__&#39;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">__rpow__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Can&#39;t raise to the tensor power.&quot;</span><span class="p">)</span>
 
@@ -168,6 +183,8 @@
         <span class="k">return</span> <span class="n">expr</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;0&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Transpose</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">is_zero</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">expr</span> <span class="o">==</span> <span class="n">S</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">True</span>
 </div>
 <div class="viewcode-block" id="is_one"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.tensor_expr.is_one">[docs]</a><span class="k">def</span> <span class="nf">is_one</span> <span class="p">(</span><span class="n">expr</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns True, False, or None&quot;&quot;&quot;</span>
@@ -175,7 +192,8 @@
         <span class="k">return</span> <span class="n">expr</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;1&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Transpose</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">is_one</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-
+    <span class="k">if</span> <span class="n">expr</span> <span class="o">==</span> <span class="n">S</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">True</span>
 </div>
 <span class="k">def</span> <span class="nf">is_outer</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
     <span class="n">esa</span> <span class="o">=</span> <span class="n">expr_shape</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
@@ -201,6 +219,8 @@
     <span class="k">return</span> <span class="bp">True</span>
 
 <span class="k">def</span> <span class="nf">is_add_conforming_or_die</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">a</span> <span class="ow">in</span> <span class="p">[</span><span class="n">S</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">S</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="ow">or</span> <span class="n">b</span> <span class="ow">in</span> <span class="p">[</span><span class="n">S</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">S</span><span class="p">(</span><span class="mi">1</span><span class="p">)]:</span>
+        <span class="k">return</span> <span class="bp">True</span>
     <span class="k">if</span> <span class="n">expr_rank</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">!=</span> <span class="n">expr_rank</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="ow">and</span> <span class="n">expr_shape</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">!=</span> <span class="n">expr_shape</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
         <span class="k">raise</span> <span class="n">ConformityError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> + </span><span class="si">%s</span><span class="se">\n\t</span><span class="s">ranks </span><span class="si">%d</span><span class="s">, </span><span class="si">%d</span><span class="se">\n\t</span><span class="s">shapes </span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">&quot;</span>\
                               <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">b</span><span class="p">),</span> <span class="n">expr_rank</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">expr_rank</span><span class="p">(</span><span class="n">b</span><span class="p">),</span>
@@ -292,8 +312,21 @@
                 <span class="k">return</span> <span class="mi">1</span>
     <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;expr_rank can&#39;t handle: </span><span class="si">%s</span><span class="s"> of type: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> \
                               <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">expr</span><span class="p">),</span> <span class="nb">type</span><span class="p">(</span><span class="n">expr</span><span class="p">)))</span>
-
 </div>
+<span class="k">def</span> <span class="nf">expr_coeff</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">var</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Mul</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">expr</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">x</span><span class="p">,</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Can&#39;t handle eqns with more than one of var, given </span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">&quot;</span>\
+                         <span class="o">%</span> <span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">var</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">break</span>
+    <span class="n">lhs</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[:</span><span class="n">idx</span><span class="p">]</span>
+    <span class="n">rhs</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">[]</span>
+    <span class="k">return</span> <span class="nb">reduce</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">,</span> <span class="n">lhs</span><span class="p">,</span> <span class="n">S</span><span class="p">(</span><span class="mi">1</span><span class="p">)),</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="nb">reduce</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">,</span> <span class="n">rhs</span><span class="p">,</span> <span class="n">S</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+
+
 <span class="kn">from</span> <span class="nn">tensor</span> <span class="kn">import</span> <span class="n">Tensor</span> <span class="c">#/* cyclic */</span>
 <span class="kn">from</span> <span class="nn">basic_operators</span> <span class="kn">import</span> <span class="n">Inner</span><span class="p">,</span> <span class="n">Inverse</span><span class="p">,</span> <span class="n">Transpose</span>
 </pre></div>

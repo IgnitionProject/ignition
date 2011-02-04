@@ -50,61 +50,93 @@
 <span class="sd">&quot;&quot;&quot;Simple printers for tensor expressions&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">operator</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
 <span class="kn">from</span> <span class="nn">sympy</span> <span class="kn">import</span> <span class="n">Add</span><span class="p">,</span> <span class="n">Number</span><span class="p">,</span> <span class="n">Mul</span><span class="p">,</span> <span class="n">Pow</span><span class="p">,</span> <span class="n">S</span>
 
 <span class="kn">from</span> <span class="nn">tensor_expr</span> <span class="kn">import</span> <span class="n">expr_rank</span>
 <span class="kn">from</span> <span class="nn">tensor</span> <span class="kn">import</span> <span class="n">Tensor</span>
 <span class="kn">from</span> <span class="nn">basic_operators</span> <span class="kn">import</span> <span class="n">Inner</span><span class="p">,</span> <span class="n">Inverse</span><span class="p">,</span> <span class="n">Transpose</span>
 
+<span class="n">defaults</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;add&quot;</span> <span class="p">:</span> <span class="s">&quot; + &quot;</span><span class="p">,</span>
+            <span class="s">&quot;div_under_one&quot;</span><span class="p">:</span> <span class="s">&quot;1.0 / (</span><span class="si">%s</span><span class="s">)&quot;</span><span class="p">,</span>
+            <span class="s">&quot;dot&quot;</span> <span class="p">:</span> <span class="s">&quot;(</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">)&quot;</span><span class="p">,</span>
+            <span class="s">&quot;inverse&quot;</span> <span class="p">:</span> <span class="s">&quot;(</span><span class="si">%s</span><span class="s">)**-1&quot;</span><span class="p">,</span>
+            <span class="s">&quot;neg&quot;</span> <span class="p">:</span> <span class="s">&quot;-&quot;</span><span class="p">,</span>
+            <span class="s">&quot;name_attr&quot;</span> <span class="p">:</span> <span class="s">&quot;name&quot;</span><span class="p">,</span>
+            <span class="s">&quot;pow&quot;</span> <span class="p">:</span> <span class="s">&quot;(</span><span class="si">%s</span><span class="s">)**</span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span>
+            <span class="s">&quot;transpose&quot;</span> <span class="p">:</span> <span class="s">&quot;T(</span><span class="si">%s</span><span class="s">)&quot;</span><span class="p">,</span>
+            <span class="p">}</span>
+
+<div class="viewcode-block" id="print_visitor"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.printers.print_visitor">[docs]</a><span class="k">def</span> <span class="nf">print_visitor</span><span class="p">(</span><span class="n">expr_to_print</span><span class="p">,</span> <span class="n">str_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Prints a tensor expression in with predefined strings in string dict.</span>
+<span class="sd">    </span>
+<span class="sd">    See default_strs for str_dict keys.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">_visit</span> <span class="p">(</span><span class="n">expr</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">expr</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&quot;&quot;</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="p">(</span><span class="n">Number</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Mul</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="n">S</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">str_dict</span><span class="p">[</span><span class="s">&quot;neg&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">_visit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">expr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">str_dict</span><span class="p">[</span><span class="s">&quot;dot&quot;</span><span class="p">]</span> <span class="o">%</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">_visit</span><span class="p">,</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">str_dict</span><span class="p">[</span><span class="s">&quot;dot&quot;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="n">_visit</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                                          <span class="n">_visit</span><span class="p">(</span><span class="nb">reduce</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">,</span>
+                                                               <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:])))</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Add</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">str_dict</span><span class="p">[</span><span class="s">&quot;add&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">_visit</span><span class="p">,</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Pow</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">S</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">str_dict</span><span class="p">[</span><span class="s">&quot;div_under_one&quot;</span><span class="p">]</span> <span class="o">%</span> <span class="n">_visit</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">expr_rank</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">expr_rank</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">str_dict</span><span class="p">[</span><span class="s">&quot;pow&quot;</span><span class="p">]</span> <span class="o">%</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">_visit</span><span class="p">,</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Unable to print: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">expr</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Inner</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">str_dict</span><span class="p">[</span><span class="s">&quot;dot&quot;</span><span class="p">]</span> <span class="o">%</span> <span class="p">(</span><span class="n">_visit</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                                      <span class="n">_visit</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Transpose</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">expr_rank</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">_visit</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">str_dict</span><span class="p">[</span><span class="s">&quot;transpose&quot;</span><span class="p">]</span> <span class="o">%</span> <span class="n">_visit</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Inverse</span><span class="p">):</span>
+            <span class="n">er</span> <span class="o">=</span> <span class="n">expr_rank</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">er</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">str_dict</span><span class="p">[</span><span class="s">&quot;div_under_one&quot;</span><span class="p">]</span> <span class="o">%</span> <span class="n">_visit</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">er</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">str_dict</span><span class="p">[</span><span class="s">&quot;inverse&quot;</span><span class="p">]</span> <span class="o">%</span> <span class="n">_visit</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">expr</span><span class="o">.</span><span class="n">__getattribute__</span><span class="p">(</span><span class="n">str_dict</span><span class="p">[</span><span class="s">&quot;name_attr&quot;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    <span class="k">return</span> <span class="n">_visit</span><span class="p">(</span><span class="n">expr_to_print</span><span class="p">)</span>
+
+</div>
 <div class="viewcode-block" id="numpy_print"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.printers.numpy_print">[docs]</a><span class="k">def</span> <span class="nf">numpy_print</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Prints a tensor expression in Python using numpy.&quot;&quot;&quot;</span>
-    <span class="n">dot_str</span> <span class="o">=</span> <span class="s">&quot;dot(</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">)&quot;</span>
-<span class="c">#    print &quot;numpy_print: &quot;, expr, type(expr)</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="p">(</span><span class="n">Number</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
-        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Mul</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="n">S</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
-            <span class="k">return</span> <span class="s">&quot;-&quot;</span> <span class="o">+</span> <span class="n">numpy_print</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">expr</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">dot_str</span> <span class="o">%</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">numpy_print</span><span class="p">,</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">dot_str</span> <span class="o">%</span> <span class="p">(</span><span class="n">numpy_print</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
-                              <span class="n">numpy_print</span><span class="p">(</span><span class="nb">reduce</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">mul</span><span class="p">,</span>
-                                                 <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:])))</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Add</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s">&quot; + &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">numpy_print</span><span class="p">,</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Pow</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">S</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
-            <span class="k">return</span> <span class="s">&quot;1.0 / </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">numpy_print</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">if</span> <span class="n">expr_rank</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s">&quot;(</span><span class="si">%s</span><span class="s">)**</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">numpy_print</span><span class="p">,</span> <span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Inner</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Transpose</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">dot_str</span> <span class="o">%</span> <span class="p">(</span><span class="n">numpy_print</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
-                              <span class="n">numpy_print</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">dot_str</span> <span class="o">%</span> <span class="p">(</span><span class="n">numpy_print</span><span class="p">(</span><span class="n">Transpose</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])),</span>
-                              <span class="n">numpy_print</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Transpose</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">expr_rank</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">numpy_print</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s">&quot;(</span><span class="si">%s</span><span class="s">).transpose()&quot;</span> <span class="o">%</span> <span class="n">numpy_print</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Inverse</span><span class="p">):</span>
-        <span class="n">er</span> <span class="o">=</span> <span class="n">expr_rank</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">er</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s">&quot;(1.0/</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">numpy_print</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">elif</span> <span class="n">er</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s">&quot;inv(</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">numpy_print</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">expr</span><span class="o">.</span><span class="n">name</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
-</pre></div>
+    <span class="n">my_strs</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">defaults</span><span class="p">)</span>
+    <span class="n">my_strs</span><span class="p">[</span><span class="s">&quot;dot&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;dot(</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">)&quot;</span>
+    <span class="n">my_strs</span><span class="p">[</span><span class="s">&quot;transpose&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;(</span><span class="si">%s</span><span class="s">).transpose()&quot;</span>
+    <span class="n">my_strs</span><span class="p">[</span><span class="s">&quot;inverse&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;inv(</span><span class="si">%s</span><span class="s">)&quot;</span>
+    <span class="k">return</span> <span class="n">print_visitor</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">my_strs</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="latex_print"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.printers.latex_print">[docs]</a><span class="k">def</span> <span class="nf">latex_print</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Prints a tensor expression in Latex.&quot;&quot;&quot;</span>
+    <span class="n">my_strs</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">defaults</span><span class="p">)</span>
+    <span class="n">my_strs</span><span class="p">[</span><span class="s">&quot;dot&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span>
+    <span class="n">my_strs</span><span class="p">[</span><span class="s">&quot;inverse&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;{</span><span class="si">%s</span><span class="s">}^{-1}&quot;</span>
+    <span class="n">my_strs</span><span class="p">[</span><span class="s">&quot;name_attr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;latex&quot;</span>
+    <span class="n">my_strs</span><span class="p">[</span><span class="s">&quot;transpose&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;{</span><span class="si">%s</span><span class="s">}^t&quot;</span>
+    <span class="n">my_strs</span><span class="p">[</span><span class="s">&quot;pow&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;{</span><span class="si">%s</span><span class="s">}^{</span><span class="si">%s</span><span class="s">}&quot;</span>
+    <span class="k">return</span> <span class="n">print_visitor</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">my_strs</span><span class="p">)</span>
+</pre></div></div>
 
           </div>
         </div>
