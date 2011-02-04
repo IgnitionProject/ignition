@@ -5,10 +5,10 @@ Installation
 Requirements
 ------------
 
-Currently the Ignition project relies on `SymPy`_ v0.6.7 for symbolic algebra
-and `Mako`_ v0.3.6 for printing.  Before installing Ignition, it is recommended
-to get the `development version of SymPy`_, but Mako can be installed with
-``easy_install mako``.
+Currently the Ignition project relies on `SymPy`_ for symbolic algebra,
+`Numpy`_ for the FLAME language, `Mako`_ for printing.  Before installing
+Ignition, it is recommended to get the `development version of SymPy`_, but
+Mako can be installed with ``easy_install mako``.
 
 --------
 Download
@@ -41,6 +41,7 @@ this option.
 
 
 .. _SymPy: http://www.sympy.org/
+.. _Numpy: http:/numpy.scipy.org/
 .. _Mako: http://www.makotemplates.org/
 .. _development version of SymPy: https://github.com/sympy/sympy
 .. _Project Page: https://github.com/aterrel/ignition
