@@ -88,4 +88,11 @@ def latex_print(expr):
     my_strs["pow"] = "{%s}^{%s}"
     return print_visitor(expr, my_strs)
 
-
+def update_dict_to_latex(update_dict, order):
+    """Returns update dictionary and order as latex string."""
+    ret_val = "\\begin{array}{l}\n"
+    for v in reversed(order):
+        ret_val += latex_print(v) + " = " + latex_print(update_dict[v]) + \
+            "\\\\\n"
+    ret_val += "\\end{array}"
+    return ret_val

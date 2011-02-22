@@ -2,7 +2,7 @@
 
 from copy import copy
 import pprint
-from sympy import Add, expand, Mul, S
+from sympy import Add, cse, expand, Mul, S
 from sympy.utilities.iterables import postorder_traversal
 
 from tensor_expr import expr_coeff, expr_rank
@@ -11,8 +11,10 @@ from ignition.utils import flatten, UpdatingPermutationIterator
 from ignition.flame.tensors.constants import CONSTANTS
 from ignition.flame.tensors.basic_operators import Inner, NotInvertibleError, \
     Inverse
+from ignition.flame.tensors.printers import update_dict_to_latex
 
 #DEBUG = 1
+LATEX = 1
 
 class NonLinearEqnError (Exception):
     pass
@@ -44,10 +46,27 @@ def tensor_solver (b4_eqns, aft_eqns, e_knowns=[], levels= -1, num_sols=1,
         print "eqns:", pprint.pformat(eqns, 4, 80)
         print "=" * 80
     sol_dicts = all_back_sub(eqns, knowns, levels, False, True)
+    #sol_dicts = map(sol_cse, sol_dicts)
     if verbose or DEBUG:
-        print "Sol dicts: ", pprint.pformat(sol_dicts, 4, 80)
+        if LATEX:
+            print "Sol_dicts: \n"
+            print "="*80
+            for dict_ord in sol_dicts:
+                print update_dict_to_latex(*dict_ord)
+                print "-"*80
+        else:
+            print "Sol dicts: ", pprint.pformat(sol_dicts, 4, 80)
     sol_dicts = sol_dicts[:num_sols]
     return sol_dicts
+
+
+def sol_cse (sol_dict):
+    update, ord = sol_dict
+    new_sym, new_exprs = cse(update.values())
+    ret_dict = dict(new_sym)
+    for n, k in enumerate(update.keys()):
+        ret_dict[k] = new_exprs[n]
+    return ret_dict, ord
 
 
 def solve_vec_eqn(eqn, var):
