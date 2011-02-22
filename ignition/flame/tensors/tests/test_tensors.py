@@ -1,4 +1,5 @@
-from sympy import raises, S, Symbol
+from sympy import S, Symbol
+from sympy.utilities.pytest import raises
 from ignition.flame.tensors import (ConformityError, numpy_print, T, Tensor,
                                    solve_vec_eqn)
 
