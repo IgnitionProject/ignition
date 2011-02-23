@@ -2,7 +2,7 @@
 
 import operator
 from copy import copy
-from sympy import Add, Number, Mul, Pow, S
+from sympy import Add, Number, Mul, latex, Pow, S
 
 from tensor_expr import expr_rank
 from tensor import Tensor
@@ -80,19 +80,43 @@ def numpy_print(expr):
 
 def latex_print(expr):
     """Prints a tensor expression in Latex."""
-    my_strs = copy(defaults)
-    my_strs["dot"] = "%s %s"
-    my_strs["inverse"] = "{%s}^{-1}"
-    my_strs["name_attr"] = "latex"
-    my_strs["transpose"] = "{%s}^t"
-    my_strs["pow"] = "{%s}^{%s}"
-    return print_visitor(expr, my_strs)
+#    my_strs = copy(defaults)
+#    my_strs["dot"] = "%s %s"
+#    my_strs["inverse"] = "{%s}^{-1}"
+#    my_strs["name_attr"] = "latex"
+#    my_strs["transpose"] = "{%s}^t"
+#    my_strs["pow"] = "{%s}^{%s}"
+#    my_strs["div_under_one"] = "{%s}^{-1}"
+#    return print_visitor(expr, my_strs)
+    return latex(expr)
+
+def wrap_long_latex_line(line, length=120):
+    ret_val = ""
+    while (len(line) > length):
+        i = min(line.find(' + ', length), line.find(' - ', length))
+        if i == -1:
+            break
+        nl = line[:i]
+        line = line[i:]
+        paren_mismatch = nl.count("\\left(") - nl.count("\\right)")
+        if paren_mismatch > 0:
+            nl += "\\right." * paren_mismatch
+            line = "\\left." * paren_mismatch + line
+        if paren_mismatch < 0:
+            print "Unmatched parens somewhere."
+
+        ret_val += nl
+        ret_val += "\\\\\n  & &"
+    return ret_val + line
 
 def update_dict_to_latex(update_dict, order):
     """Returns update dictionary and order as latex string."""
-    ret_val = "\\begin{array}{l}\n"
+    ret_val = "\\begin{eqnarray*}\n"
     for v in reversed(order):
-        ret_val += latex_print(v) + " = " + latex_print(update_dict[v]) + \
-            "\\\\\n"
-    ret_val += "\\end{array}"
+        ret_val += latex_print(v) + " &=& " + \
+            wrap_long_latex_line(latex_print(update_dict[v]) + "\\\\\n")
+    ret_val += "\\end{eqnarray*}\n"
+#    ret_val = ret_val.replace('(', '\\left(')
+#    ret_val = ret_val.replace(')', '\\right)')
+#    ret_val = ret_val.replace('--', '')
     return ret_val

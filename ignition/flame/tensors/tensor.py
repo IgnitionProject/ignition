@@ -94,6 +94,9 @@ class Tensor (TensorExpr, Symbol):
     def latex (self):
         return to_latex(self.name)
 
+    def _latex(self, printer):
+        return self.latex
+
     def update (self, name=None, l_ind=None, u_ind=None, rank=None,
              has_inverse=None, shape=None, conform_name=True):
         """Forms a new Tensor with only the listed attributes changed"""

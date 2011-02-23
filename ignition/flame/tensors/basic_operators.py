@@ -64,7 +64,13 @@ class Inverse (TensorExpr, Function):
     has_inverse = True
 
     def _sympystr(self, printer):
-        return "(" + str(self.args[0]) + "**-1)"
+        return "(%s)**-1" % str(self.args[0])
+
+    def _latex(self, printer):
+        if len(self.args[0].args) <= 1:
+            return latex(self.args[0]) + "^{-1}"
+        else:
+            return "\\left(%s\\right)^{-1}" % latex(self.args[0])
 
     def _eval_expand_basic(self, deep=True, **hints):
         if isinstance(self.args[0], Mul):
@@ -197,7 +203,10 @@ class Inner (TensorExpr, Function):
         return True
 
     def _sympystr(self, printer):
-        return "(" + str(self.args[0]) + '*' + str(self.args[1]) + ")"
+        return "(%s*%s)" % tuple(map(latex, self.args))
+
+    def _latex(self, printer):
+        return "%s %s" % tuple(map(latex, self.args))
 
     def _eval_expand_basic(self, deep=True, **hints):
         arg0 = expand(self.args[0])
