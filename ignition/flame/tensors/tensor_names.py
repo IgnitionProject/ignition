@@ -3,7 +3,7 @@
 RM_2_GREEK = {"a":"alpha", "b":"beta", "c":"gamma", "d":"delta",
             "e":"epsilon", "h":"eta", "i":"iota", "k":"kappa", "l":"lambda",
             "m":"mu", "n":"nu", "o":"omicron", "p":"pi", "r":"rho",
-            "s":"sigma", "t":"tau", "v":"upsilon", "x":"chi", "z":"zeta"}
+            "s":"sigma", "t":"tau", "u":"upsilon", "x":"chi", "z":"zeta"}
 GREEK_ALPHA = ["theta", "xi", "phi", "psi", "omega"] + RM_2_GREEK.values()
 RM_ALPHA = []
 
