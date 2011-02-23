@@ -12,7 +12,7 @@ defaults = {"add" : " + ",
             "div_under_one": "1.0 / (%s)",
             "dot" : "(%s, %s)",
             "inverse" : "(%s)**-1",
-            "neg" : "-",
+            "neg" : "-%s",
             "name_attr" : "name",
             "pow" : "(%s)**%s",
             "transpose" : "T(%s)",
@@ -30,18 +30,18 @@ def print_visitor(expr_to_print, str_dict):
             return str(expr)
         elif isinstance(expr, Mul):
             if expr.args[0] is S(-1):
-                return str_dict["neg"] + _visit(-1 * expr)
+                return str_dict["neg"] % _wrap_parens(-1 * expr)
             if len(expr.args) == 2:
-                return str_dict["dot"] % tuple(map(_visit, expr.args))
+                return str_dict["dot"] % tuple(map(_wrap_parens, expr.args))
             else:
-                return str_dict["dot"] % (_visit(expr.args[0]),
-                                          _visit(reduce(operator.mul,
+                return str_dict["dot"] % (_wrap_parens(expr.args[0]),
+                                          _wrap_parens(reduce(operator.mul,
                                                                expr.args[1:])))
         elif isinstance(expr, Add):
             return str_dict["add"].join(map(_visit, expr.args))
         elif isinstance(expr, Pow):
             if expr.args[1] == S(-1):
-                return str_dict["div_under_one"] % _visit(expr.args[0])
+                return str_dict["div_under_one"] % _wrap_parens(expr.args[0])
             if expr_rank(expr.args[1]) == 0 or expr_rank(expr) == 0:
                 return str_dict["pow"] % tuple(map(_visit, expr.args))
             else:
@@ -53,19 +53,27 @@ def print_visitor(expr_to_print, str_dict):
             if expr_rank(expr) == 0:
                 return _visit(expr.args[0])
             else:
-                return str_dict["transpose"] % _visit(expr.args[0])
+                return str_dict["transpose"] % _wrap_parens(expr.args[0])
         elif isinstance(expr, Inverse):
             er = expr_rank(expr)
             if er == 0:
-                return str_dict["div_under_one"] % _visit(expr.args[0])
+                return str_dict["div_under_one"] % _wrap_parens(expr.args[0])
             elif er == 2:
-                return str_dict["inverse"] % _visit(expr.args[0])
+                return str_dict["inverse"] % _wrap_parens(expr.args[0])
             else:
                 raise NotImplementedError
         elif isinstance(expr, Tensor):
             return expr.__getattribute__(str_dict["name_attr"])
         else:
             raise NotImplementedError
+
+    def _wrap_parens(expr):
+        s = _visit(expr)
+        if len(expr.args) <= 1 or (s[0] == '(' and s[-1] == ')'):
+            return  s
+        else:
+            return "(%s)" % s
+
     return _visit(expr_to_print)
 
 
