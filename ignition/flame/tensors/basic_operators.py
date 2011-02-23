@@ -2,7 +2,7 @@
 
 import operator
 from numpy import matrix
-from sympy import Add, Basic, expand, Function, Mul, Pow, S
+from sympy import Add, Basic, expand, Function, latex, Mul, Pow, S
 
 from tensor_expr import expr_rank, expr_shape, TensorExpr
 from tensor import Tensor, n
@@ -136,6 +136,13 @@ class Transpose (TensorExpr, Function):
 
     def _sympystr(self, printer):
         return "T(" + str(self.args[0]) + ")"
+
+    def _latex(self, printer):
+        if len(self.args[0].args) <= 1:
+            return latex(self.args[0]) + "^t"
+        else:
+            return "\\left(%s)\\right)^t" % latex(self.args[0])
+
 
     def _eval_expand_basic(self, deep=True, **hints):
         if isinstance(self.args[0], Mul):
