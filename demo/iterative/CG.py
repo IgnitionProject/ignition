@@ -79,4 +79,4 @@ O = iterative_arg ("O", rank=2, part_suffix="1x3", arg_src="Computed")
 # Generate the algorithm
 generate(op=CG_Op, loop_inv=CG_Inv, solver=tensor_solver,
          inv_args=[A, X, P, I, U, J, D, R, O], filetype="latex",
-         solution_file="/Users/aterrel/workspace/flame/tacc/flame-it/ignition/cg_updates.tex")
+         solution_file="cg_updates.tex")
