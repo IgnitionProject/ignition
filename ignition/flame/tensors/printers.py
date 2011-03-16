@@ -98,7 +98,7 @@ def latex_print(expr):
 #    return print_visitor(expr, my_strs)
     return latex(expr)
 
-def wrap_long_latex_line(line, length=120):
+def wrap_long_latex_line(line, length=100):
     ret_val = ""
     while (len(line) > length):
         i = min(line.find(' + ', length), line.find(' - ', length))
@@ -120,9 +120,19 @@ def wrap_long_latex_line(line, length=120):
 def update_dict_to_latex(update_dict, order):
     """Returns update dictionary and order as latex string."""
     ret_val = "\\begin{eqnarray*}\n"
+    get_line = lambda obj: wrap_long_latex_line(latex_print(obj) + "\\\\\n")
     for v in reversed(order):
-        ret_val += latex_print(v) + " &=& " + \
-            wrap_long_latex_line(latex_print(update_dict[v]) + "\\\\\n")
+        ret_val += latex_print(v) + " &=& "
+        if isinstance(update_dict[v], set):
+            if len(update_dict[v]) == 1:
+                ret_val += get_line(list(update_dict[v])[0])
+            else:
+                for n, eq in enumerate(update_dict[v]):
+                    ret_val += get_line(eq)
+                    if n != len(update_dict[v]) - 1:
+                        ret_val += " &||& "
+        else:
+            ret_val += get_line(update_dict[v])
     ret_val += "\\end{eqnarray*}\n"
 #    ret_val = ret_val.replace('(', '\\left(')
 #    ret_val = ret_val.replace(')', '\\right)')

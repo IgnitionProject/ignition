@@ -91,14 +91,14 @@ class PAlgGenerator (object):
     def _guard(self):
         return map(lambda o:o.part[-1], self.outputs)
 
-    def gen_update (self, filename=None, type=None, solution_file=None):
+    def gen_update (self, filename=None, type=None, **solve_kws):
         """Generates the loop updates and pre/post conditions inside loop."""
         self.loop_inv = self._loop_invariant()
         self.b4_eqns, kb4 = self._repart_invariant()
         self.aft_eqns, kaft = self._fuse_invariant()
         self.guard = self._guard()
         self.update_tups = self.solver(self.b4_eqns, self.aft_eqns,
-                                        e_knowns=kb4 + kaft, solution_file=solution_file)
+                                        e_knowns=kb4 + kaft, **solve_kws)
         if len(self.update_tups) == 0:
             print "PAlgGenerator.generate: no updates found."
             self.update = None
@@ -106,7 +106,7 @@ class PAlgGenerator (object):
             self.update = self.update_tups[0][0]
 
 def generate (filename=None, filetype=None, op=None, loop_inv=None, inv_args=[],
-              PME=None, solver=None, solution_file=None):
+              PME=None, solver=None, **solve_kws):
     """Utility function for generating a flame algorithm.
     
     Will create a generator object and write it to file, then return the
@@ -116,7 +116,7 @@ def generate (filename=None, filetype=None, op=None, loop_inv=None, inv_args=[],
     the printing module.
     """
     gen_obj = PAlgGenerator(loop_inv, solver, *inv_args, op=op)
-    gen_obj.gen_update(filename, filetype, solution_file)
+    gen_obj.gen_update(filename, filetype, **solve_kws)
     get_printer(gen_obj, filename, filetype).write()
     return gen_obj
 

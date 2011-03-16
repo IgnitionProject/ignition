@@ -24,7 +24,7 @@ class UnsolvableEqnsError (Exception):
 
 
 def tensor_solver (b4_eqns, aft_eqns, e_knowns=[], levels= -1, num_sols=1,
-                    verbose=True, solution_file=None):
+                   verbose=True, solution_file=None, logic_files=None):
     """Updater calling tensor solvers."""
     if verbose or DEBUG:
         print "tensor_solver:"
@@ -45,7 +45,9 @@ def tensor_solver (b4_eqns, aft_eqns, e_knowns=[], levels= -1, num_sols=1,
         print "-" * 80
         print "eqns:", pprint.pformat(eqns, 4, 80)
         print "=" * 80
-    sol_dicts = all_back_sub(eqns, knowns, levels, False, True)
+    multiple_sols = True
+    sub_all = True
+    sol_dicts = all_back_sub(eqns, knowns, levels, multiple_sols, sub_all)
     #sol_dicts = map(sol_cse, sol_dicts)
     if solution_file:
         fp = open(solution_file, 'w')
@@ -56,6 +58,13 @@ def tensor_solver (b4_eqns, aft_eqns, e_knowns=[], levels= -1, num_sols=1,
             fp.write("Algorithm %d\n\n" % (n + 1))
             fp.write(update_dict_to_latex(*dict_ord))
             fp.write("\n\n")
+    if logic_files:
+        print "Writing out logic files to %s_{0--%d}.out" % \
+            (logic_files, len(sol_dicts))
+        for n, dict_ord in enumerate(sol_dicts):
+            fp = open("%s_%d.out" % (logic_files, n), 'w')
+            backward_sub(eqns, knowns, dict_ord[1], multiple_sols, sub_all, fp)
+            fp.close()
     sol_dicts = sol_dicts[:num_sols]
     return sol_dicts
 
@@ -383,13 +392,17 @@ def branching_assump_solve(eqns, knowns, levels= -1):
     return unique_dicts
 
 
-def backward_sub(eqns, knowns, unknowns=None, multiple_sols=False, sub_all=True):
+def backward_sub(eqns, knowns, unknowns=None, multiple_sols=False, sub_all=True,
+                 fp=None):
     if unknowns is None:
         unknowns = []
     unknowns = unknowns + \
         [u for u in get_eqns_unk(eqns, knowns) if u not in unknowns]
 
     constraints = filter(lambda x: isinstance(x, (Mul, Inner)), eqns)
+
+    if fp:
+        fp.write("Solving unknowns in following order:\n    %s\n" % unknowns)
 
     sol_dict = {}
     for unk in unknowns:
@@ -402,6 +415,10 @@ def backward_sub(eqns, knowns, unknowns=None, multiple_sols=False, sub_all=True)
     solved = [] # Maintain a list of solved vars that can't be referenced in new
                 # solutions.
     while len(unknowns) > 0:
+        if fp:
+            fp.write("\n%s\nCurrent equations:\n%s\n\n" % \
+                     ("="*80, pprint.pformat(all_eqns, 4, 80)))
+
         unk = unknowns.pop(0)
         if DEBUG:
             print "Searching for unk:", unk
@@ -422,6 +439,8 @@ def backward_sub(eqns, knowns, unknowns=None, multiple_sols=False, sub_all=True)
                         print "could not solve", eqn, "for", unk
                         print inst
                 if sol is not None:
+                    if fp:
+                        fp.write("Found %s = %s\n" % (str(unk), str(sol)))
                     if multiple_sols:
                         sol_dict[unk].add(sol)
                     else:
@@ -487,6 +506,7 @@ def all_back_sub(eqns, knowns, levels= -1, multiple_sols=False, sub_all=True):
 #                    sol_dict[var] = sol_dict[var].expand()
                 if len(filter(lambda x: x[0] == sol_dict, sols)) == 0:
                     sols.append((sol_dict, ord_unks))
+                    print "Found new solution:\n%s" % pprint.pformat(sol_dict, 4, 80)
         except KeyboardInterrupt:
             break
     print "Tested %d orders" % num_tested
