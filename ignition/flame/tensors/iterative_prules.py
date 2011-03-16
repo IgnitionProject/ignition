@@ -166,6 +166,55 @@ class Fuse_Upper_3x3 (TensorRepartFuseRule):
         ret[U_br] = matrix([[U_br.update(l_ind="33")]])
         return ret
 
+class Part_Upper_Bidiag_3x3 (TensorPartRule):
+    shape = (3, 3)
+    _latex_head = "\FLAThreeByThree"
+    def __call__(self, U):
+        return \
+          [[U.update(l_ind="tl"), U.update(l_ind="tm", rank=1), ZERO],
+           [T(Zero), zero, T(U.update(l_ind="mr", rank=1))],
+           [ZERO, Zero, U.update(l_ind="br")]]
+
+class Repart_Upper_Bidiag_3x3 (TensorRepartFuseRule):
+    shape = (3, 3)
+    reshape = (4, 4)
+    _latex_head = "\FLAFourByFour"
+    def __call__(self, U):
+        ret = {}
+        [[U_tl, u_tm, _],
+         [_, _, T_u_mr],
+         [_, _, U_br]] = U
+
+        ret[U_tl] = matrix([[U_tl.update(l_ind="00")]])
+        ret[u_tm] = matrix([[u_tm.update(l_ind="01")]])
+
+        ret[T_u_mr] = matrix([[u_tm.update(l_ind="12", rank=0),
+                                T(Zero)]])
+
+        ret[U_br] = matrix([[zero, T_u_mr.update(l_ind="23")],
+                            [Zero, U_br.update(l_ind="33")]])
+        return ret
+
+class Fuse_Upper_Bidiag_3x3 (TensorRepartFuseRule):
+    shape = (3, 3)
+    reshape = (4, 4)
+    _latex_head = "\FLAFourByFour"
+    def __call__(self, U):
+        ret = {}
+        [[U_tl, u_tm, _],
+         [_, _, T_u_mr],
+         [_, _, U_br]] = U
+
+        ret[U_tl] = matrix([[U_tl.update(l_ind="00"), u_tm.update(l_ind="01")],
+                            [T(Zero), zero]])
+        ret[u_tm] = matrix([[Zero],
+                            [u_tm.update(l_ind="12", rank=0)]])
+
+        ret[T_u_mr] = matrix([[T_u_mr.update(l_ind="23")]])
+
+        ret[U_br] = matrix([[U_br.update(l_ind="33")]])
+        return ret
+
 class Part_Diag_3x3 (TensorPartRule):
     shape = (3, 3)
     _latex_head = "\FLAThreeByThree"
