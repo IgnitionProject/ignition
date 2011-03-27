@@ -28,4 +28,3 @@ def generate(flux, conserved, filename=None):
     """Generates the kernel to file (or stdout if no filename given)"""
     Generator(flux, conserved).write_to_file(filename)
 
-flatte
