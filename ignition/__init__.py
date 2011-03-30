@@ -12,7 +12,7 @@ def __ignition_debug():
     return eval(os.getenv('IGNITION_DEBUG', 'False'))
 IGNITION_DEBUG = __ignition_debug()
 
-
-from flame import *
-from int_gen import *
 from utils import *
+import flame
+import int_gen
+import riemann
