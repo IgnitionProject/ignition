@@ -25,6 +25,7 @@ class Generator (object):
         conserved - The conserved field passed to the generated kernel.
         flux - The flux being solved.
         A - The jacobian of the flux.
+        constant_fields - Constant fields used by generate passed via aux_{l,r}.
         eig_method - Generation method for solving eigen decompostion of A.
         evaluation - The evaluation type for single kernel.
         jacobian_averaging - The method for averaging left and right values of
@@ -44,6 +45,15 @@ class Generator (object):
     @conserved.setter
     def conserved (self, value):
         self._kws["conserved"] = value
+
+    @property
+    def constant_fields (self):
+        """The conserved variable q of the hyperbolic system q_t + f(q)*q_x = 0."""
+        return self._kws.get("constant_fields", [])
+
+    @constant_fields.setter
+    def constant_fields (self, list_of_field_names):
+        self._kws["constant_fields"] = map(ConstantFields, list_of_field_names)
 
     @property
     def flux (self):
@@ -159,28 +169,24 @@ class Generator (object):
                 self.Rinv = self.R.inv()
                 if self.eig_method == "auto":
                     self.eig_method = "symbolic"
-                    print "Using symbolic eigen decomposition"
             except IndexError:
                 if self.eig_method == "symbolic":
                     raise SymbolicEigenDecompError()
                 elif self.eig_method == "auto":
-                    print "Symbolic eigen decomposition failed, generating numerical version"
                     self.eig_method = "numerical"
         if self.eig_method == "numerical":
             pass
         if self.eig_method not in ["symbolic", "numerical", "auto"]:
             raise ValueError("Unknown eig_method: %s" % self.eig_method)
 
-    @property
-    def constants(self):
-        """Constants inside jacobian evaluation"""
+    def used_constants(self):
+        """Constants used inside jacobian evaluation"""
         A = self.A
         atoms = set(flatten([x.atoms() for x in flatten(A.tolist())]))
         return filter(lambda a: isinstance(a, Constant), atoms)
 
-    @property
-    def constant_fields(self):
-        """Constant Fields inside jacobian evaluation"""
+    def used_constant_fields(self):
+        """Constant Fields used inside jacobian evaluation"""
         A = self.A
         atoms = set(flatten([x.atoms() for x in flatten(A.tolist())]))
         return filter(lambda a: isinstance(a, ConstantField), atoms)

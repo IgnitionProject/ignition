@@ -6,8 +6,6 @@ from ignition.utils import indent_code
 
 from riemann_printer import RiemannPrinter
 
-avg_eval = "%(f)s = (q_l[%(idx)d] + q_r[%(idx)d])/2.0\n"
-
 numerical_eigen_decomp = """
 # Numerically solve eigenvalue decomposition
 A = %s
@@ -27,7 +25,7 @@ lam = np.diag(eigen_vals)
 
 pointwise_kernel = """
 # Pointwise kernel
-alpha = Rinv*(q_r - q_l)
+alpha = np.dot(Rinv,(q_r - q_l))
 wave = R*np.diag(np.ravel(alpha))
 lam_neg = np.diag(map(lambda x: 0.0 if x > -1e-10 else x, eigen_vals))
 lam_pos = np.diag(map(lambda x: 0.0 if x < 1e-10 else x, eigen_vals))
@@ -35,7 +33,14 @@ amdq = wave*lam_neg
 apdq = wave*lam_pos
 """
 
-vectorized_avg_eval = "%(f)s = (q_l[%(idx)d,:] + q_r[%(idx)d,:])/2.0\n"
+vectorized_symbolic_eigen_decomp = """
+# Compute symbolic eigen decomposition
+A = np.array([%s for rp in xrange(nrp)])
+R = np.array([%s for rp in xrange(nrp)])
+Rinv = np.array([%s for rp in xrange(nrp)])
+eigen_vals = np.array([%s for rp in xrange(nrp)])
+lam = np.array([np.diag(eigen_vals) for rp in xrange(nrp)])
+"""
 
 vectorized_numerical_eigen_decomp = """
 # Numerically solve eigenvalue decomposition (vectorized version)
@@ -49,34 +54,36 @@ for i in xrange(nrp):
     R.append(r)
 """
 
-vectorized_kernel = """
+vectorized_shapes ="""
 # Array shapes
 meqn = %(meqn)d
 mwaves = %(mwaves)d
 nrp = np.size(q_l, 1)
+"""
 
+vectorized_kernel = """
 # Vectorized kernel
-alpha = Rinv*(q_r - q_l)
+dq = q_r - q_l
+alpha = np.array([np.dot(Rinv[rp], dq[:,rp]) for rp in xrange(nrp)]).transpose()
 #for rp in xrange(nrp):
 #    for eqn in xrange(meqn):
 #        wave[eqn, :, rp] = np.ravel(alpha[eqn,rp]*R[:,rp])
-wave = np.array([R*np.diag(np.ravel(alpha[:,rp])) for rp in xrange(nrp)]).transpose()
-
-s = np.array([eigen_vals for i in xrange(nrp)]).transpose()
+wave = np.array([R[rp]*np.diag(np.ravel(alpha[:,rp])) for rp in xrange(nrp)]).transpose()
 
 amdq = np.zeros( (meqn, nrp) )
 apdq = np.zeros( (meqn, nrp) )
-for n, e in enumerate(eigen_vals):
-    if e < 0:
-        amdq += e*wave[n,:,:]
-    elif e > 0:
-        apdq += e*wave[n,:,:]
+for rp, ev in enumerate(eigen_vals):
+    for n, e in enumerate(ev):
+        if e < 0:
+            amdq[:,rp] += e*wave[n,:,rp]
+        elif e > 0:
+            apdq[:, rp] += e*wave[n,:,rp]
 """
 
 func_decl = """def kernel(q_l, q_r, aux_l, aux_r, aux_global):
 """
 
-func_return = """return wave, s, amdq, apdq
+func_return = """return wave, eigen_vals, amdq, apdq
 """
 
 file_header = """from __future__ import division
@@ -105,28 +112,41 @@ class PyClawpackPrinter (RiemannPrinter):
         return indent_code(func_return, indent)
 
     def _print_jac_evals (self, indent=0):
+        if not self._generator._is_nonlinear():
+            return ""
+
         ret_code = ""
-        if self._generator._is_nonlinear():
-            if self._generator.jacobian_averaging == "arithmetic":
-                ret_code += "# Evaluate the averages of the conserved "\
-                            "quantities\n"
-                for n, f in enumerate(self._generator.conserved.fields()):
-                    ret_code += avg_eval % {"f":str(f), "idx":n}
-            else:
-                raise NotImplementedError("Unknown jacobian evaluation: %s" % \
-                                          self._generator.jacobian_averaging)
+        if self._generator.jacobian_averaging == "arithmetic":
+            ret_code += "# Evaluate the averages of the conserved "\
+                        "quantities\n"
+            for n, f in enumerate(self._generator.conserved.fields()):
+                ret_code += "%(f)s = (q_l[%(idx)d] + q_r[%(idx)d])/2.0\n" \
+                            % {"f":str(f), "idx":n}
+        else:
+            raise NotImplementedError("Unimplemented jacobian averaging: %s" %\
+                                      self._generator.jacobian_averaging)
         return indent_code(ret_code, indent)
 
     def _print_constants (self, indent=0):
-        ret_code = ""
-        for a in self._generator.constants:
+        ret_code = "\n# Evaluating Constants\n"
+        for a in self._generator.used_constants():
             ret_code += "%(c)s = aux_global['%(c)s']\n" % {"c": str(a)}
         return indent_code(ret_code, indent)
 
     def _print_constant_fields (self, indent=0):
-        ret_code = ""
-        for a in self._generator.constant_fields:
-            raise NotImplementedError()
+        used_cf = self._generator.used_constant_fields()
+        if len(used_cf) == 0:
+            return ""
+
+        ret_code = "\n# Evaluating Constant Fields\n"
+        if self._generator.jacobian_averaging == "arithmetic":
+            for n, cf in enumerate(self._generator.constant_fields):
+                if cf in used_cf:
+                    ret_code += "%(cf)s = (aux_l[%(n)d] + aux_r[%(n)d])" \
+                                "/2.0\n" % {"cf":str(cf), "n":n}
+        else:
+            raise NotImplementedError("Unimplemented jacobian averaging: %s" \
+                                      % self._generator.jacobian_averaging)
         return indent_code(ret_code, indent)
 
     def _print_evals (self, indent=0):
@@ -176,9 +196,26 @@ class VectorizedPyClawpackPrinter (PyClawpackPrinter):
         return self._sympy_mat_to_numpy_str(mat.subs(idx_field_subs))
 
     def _print_eigenvalues_numerical (self, indent=0):
+        sub_dict = {}
+        for f in self._generator.conserved.fields() + \
+                self._generator.used_constant_fields():
+            sub_dict[f] = sp.Symbol(str(f)+"[rp]")
         A_str = "[%s for i in xrange(nrp)]" % \
-                self._sympy_mat_to_vectorized_numpy_str(self._generator.A)
+                self._sympy_mat_to_vectorized_numpy_str( \
+                    self._generator.A.subs(sub_dict))
         ret_code = vectorized_numerical_eigen_decomp % A_str
+        return indent_code(ret_code, indent)
+
+    def _print_eigenvalues_symbolic (self, indent=0):
+        sub_dict = {}
+        for f in self._generator.conserved.fields() +\
+                self._generator.used_constant_fields():
+            sub_dict[f] = sp.Symbol(str(f)+"[rp]")
+        ret_code = vectorized_symbolic_eigen_decomp % \
+                   (self._sympy_mat_to_numpy_str(self._generator.A.subs(sub_dict)),
+                    self._sympy_mat_to_numpy_str(self._generator.R.subs(sub_dict)),
+                    self._sympy_mat_to_numpy_str(self._generator.Rinv.subs(sub_dict)),
+                    str([ev.subs(sub_dict) for ev in self._generator.eig_vals]))
         return indent_code(ret_code, indent)
 
     def _print_jac_evals (self, indent=0):
@@ -188,15 +225,43 @@ class VectorizedPyClawpackPrinter (PyClawpackPrinter):
                 ret_code += "# Evaluate the averages of the conserved "\
                             "quantities\n"
                 for n, f in enumerate(self._generator._conserved.fields()):
-                    ret_code += vectorized_avg_eval % {"f":str(f), "idx":n}
+                    ret_code += "%(f)s = (q_l[%(idx)d,:] + q_r[%(idx)d,:])" \
+                                "/2.0\n" % {"f":str(f), "idx":n}
             else:
-                raise NotImplementedError("Unknown jacobian evaluation: %s" % \
-                                          self._generator.jacobian_averaging)
+                raise NotImplementedError("Unknown jacobian evaluation: %s" \
+                                          % self._generator.jacobian_averaging)
+        return indent_code(ret_code, indent)
+
+    def _print_sizes (self, indent=0):
+        meqn = len(self._generator.conserved.fields())
+        mwaves = meqn
+        return indent_code(vectorized_shapes % {"meqn":meqn, "mwaves":mwaves},
+                           indent)
+
+    def _print_evals (self, indent=0):
+        ret_code = ""
+        ret_code += self._print_sizes(indent)
+        ret_code += self._print_constants(indent)
+        ret_code += self._print_constant_fields(indent)
+        ret_code += self._print_jac_evals(indent)
+        return ret_code
+
+    def _print_constant_fields (self, indent=0):
+        used_cf = self._generator.used_constant_fields()
+        if len(used_cf) == 0:
+            return ""
+
+        ret_code = "\n# Evaluating Constant Fields\n"
+        if self._generator.jacobian_averaging == "arithmetic":
+            for n, cf in enumerate(self._generator.constant_fields):
+                if cf in used_cf:
+                    ret_code += "%(cf)s = (aux_l[%(n)d,:] + aux_r[%(n)d,:])" \
+                                "/2.0\n" % {"cf":str(cf), "n":n}
+        else:
+            raise NotImplementedError("Unimplemented jacobian averaging: %s" \
+                                      % self._generator.jacobian_averaging)
         return indent_code(ret_code, indent)
 
     def _print_kernel (self, indent=0):
-        meqn = len(self._generator.conserved.fields())
-        mwaves = meqn
-        ret_code = vectorized_kernel % \
-                   {"meqn":meqn, "mwaves":mwaves}
+        ret_code = vectorized_kernel
         return indent_code(ret_code, indent)

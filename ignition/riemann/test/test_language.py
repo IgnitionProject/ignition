@@ -1,3 +1,5 @@
+import sympy
+
 from ignition.riemann.language import *
 
 def test_construction():
@@ -10,3 +12,5 @@ def test_construction():
     u = uh / h
     expr = u * uh + .5 * g * h ** 2
     assert(str(expr) == '0.5*h**2*g + uh**2/h')
+    assert(q.jacobian([uh, u*uh + .5*g*h**2]) == \
+           sympy.Matrix([[ 0, 1], [g*h - uh**2/h**2, 2*uh/h]])
