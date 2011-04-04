@@ -1,76 +1,226 @@
 """Generator for simple Riemann solver"""
+
+import numpy as np
+import sympy as sp
+
 from ignition.utils import flatten, indent_code
 
 from language import Conserved, Constant, ConstantField
-import pyclawpack_templates as pcp
+from riemann_printer import RiemannPrinter
+
+class SymbolicEigenDecompError (Exception):
+    pass
 
 class Generator (object):
-    """Main object for managing the code generation."""
+    """Manager of the code generation of Riemann problem kernels of the form:
 
-    def __init__ (self, flux, conserved):
-        self._flux = flux
-        self._conserved = conserved
-        self._eig_method = "numerical"
-        self._language = "python"
-        self._conserved_jac = None
+        q_t + f(q)*q_x = 0, or
+        q_t + A * q_x = 0
 
-    def _get_A (self):
-        if not self._conserved_jac:
-            self._conserved_jac = self._conserved.jacobian(self._flux)
-        return self._conserved_jac
+    The conserved variable (q) and either the flux (f) or the jacobian (A) must
+    be provided.  See either demos/Riemann or Riemann.language for defining
+    these variables.
 
-    def _gen_eigenvalues (self, indent=0):
-        ret_code = ""
-        A = self._get_A()
-        if self._eig_method == "numerical":
-            if self._language == "python":
-                A_str = "np.matrix(["
-                A_str += ", ".join(map(str, A.tolist()))
-                A_str += "])"
-                ret_code = pcp.numerical_eigen_decomp % A_str
-        return indent_code(ret_code, indent)
+    Parameters (see `help(Generator.parameter)` for more details):
+        conserved - The conserved field passed to the generated kernel.
+        flux - The flux being solved.
+        A - The jacobian of the flux.
+        eig_method - Generation method for solving eigen decompostion of A.
+        evaluation - The evaluation type for single kernel.
+        jacobian_averaging - The method for averaging left and right values of
+            a cell interface used in the kernel.
+        language - Language to generate.
 
-    def _gen_riemann_comp (self, indent=0):
-        if self._language == "python":
-            ret_code = pcp.pointwise_kernel
-        return indent_code(ret_code, indent)
+    """
 
-    def _gen_expand_constants (self, indent=0):
-        ret_code = ""
-        if self._language == "python":
-            for n, f in enumerate(self._conserved.fields()):
-                ret_code += "%(f)s = (q_l[%(idx)d] + q_r[%(idx)d])/2.0\n" % \
-                    {"f":str(f), "idx":n}
-        A = self._get_A()
+    def __init__ (self, **kws):
+        self._kws = kws
+
+    @property
+    def conserved (self):
+        """The conserved variable q of the hyperbolic system q_t + f(q)*q_x = 0."""
+        return self._kws.get("conserved", None)
+
+    @conserved.setter
+    def conserved (self, value):
+        self._kws["conserved"] = value
+
+    @property
+    def flux (self):
+        """The flux f(q) of the hyperbolic system q_t + f(q)*q_x = 0."""
+        return self._kws.get("flux", None)
+
+    @flux.setter
+    def flux (self, value):
+        self._kws["flux"] = value
+
+    @property
+    def A (self):
+        """The jacobian of f(q) of the hyperbolic system q_t + f(q)*q_x = 0.
+
+        If f is provided but not A, then A will be generated.
+        """
+        if self._kws.get("A", None) is None:
+            self._kws["A"] = self.conserved.jacobian(self.flux)
+        return self._kws["A"]
+
+    @A.setter
+    def A (self, value):
+        self._kws["A"] = value
+
+    @property
+    def eig_method (self):
+        """The method for the generating the eigen decomposition of A.
+
+        Options:
+            "analytic" - Using symbolic expression generate the analytic values
+                of the eigenvalue decomposition.  Throws SymbolicEigenvalueError
+                if unable to formulate the analytic eigen decomposition
+            "numerical" - Generates a simple eigenvalue decomposition algorithm
+                in the generated kernel.
+            "auto" (default) - Tries symbolic generation but if it fails it a
+                simple numerical eigen solver will be generated.
+        """
+        return self._kws.get("eig_method", "auto")
+
+    @eig_method.setter
+    def eig_method (self, value):
+        self._kws["eig_method"] = value
+
+    @property
+    def evaluation (self):
+        """The evaluation method of the generated kernel.
+
+        Options:
+            "pointwise" (default) - the kernel will expect a single point for
+                left and right values of a cell.
+            "vectorized" - the kernel will expect a vector of points for left
+                and right values of cells.
+        """
+        return self._kws.get("evaluation", "pointwise")
+
+    @evaluation.setter
+    def evaluation (self, value):
+        self._kws["evaluation"] = value
+
+    @property
+    def jacobian_averaging (self):
+        """The jacobian_averaging method of the generated kernel.
+
+        Options:
+            "arithmetic" (default) - Any evaluation over a cell interface
+                required by the jacobian will use an average of the left and
+                right states.
+            "LR_eigs" - A left and right jacobian will be formed and the
+                eigen decomposition of each will operate on the appropriate
+                plus or minus fluctuation (amdq or apdq).
+        """
+        return self._kws.get("jacobian_averaging", "arithmetic")
+
+    @jacobian_averaging.setter
+    def jacobian_averaging (self, value):
+        self._kws["jacobian_averaging"] = value
+
+    @property
+    def language (self):
+        """The language of the generated kernel.
+
+        Options:
+            "pyclawpack" - Code generated to the Python interface of CLAWPACK.
+        """
+        return self._kws.get("language", "pyclawpack")
+
+    @language.setter
+    def language (self, value):
+        self._kws["language"] = value
+
+    def _is_nonlinear (self):
+        """Simple check for non-linear fluxes"""
+        for field in self.conserved.fields():
+            for term in flatten(self.A.tolist()):
+                if field in term:
+                    return True
+        return False
+
+    def _gen_eigenvalues (self):
+        if self.eig_method in ["symbolic", "auto"]:
+            try:
+                eig_triples = self.A.eigenvects()
+                mat_size = eig_triples[0][2][0].shape[0]
+                R = np.empty((mat_size, mat_size), dtype=sp.Expr)
+                self.eig_vals = []
+                for col in xrange(len(eig_triples)):
+                    evect = eig_triples[col][2][0]
+                    for mult in xrange(eig_triples[col][1]):
+                        self.eig_vals.append(eig_triples[col][0])
+                        for row in xrange(mat_size):
+                            R[row, col + mult] = evect[row]
+                self.R = sp.Matrix(R)
+                self.Rinv = self.R.inv()
+                if self.eig_method == "auto":
+                    self.eig_method = "symbolic"
+                    print "Using symbolic eigen decomposition"
+            except IndexError:
+                if self.eig_method == "symbolic":
+                    raise SymbolicEigenDecompError()
+                elif self.eig_method == "auto":
+                    print "Symbolic eigen decomposition failed, generating numerical version"
+                    self.eig_method = "numerical"
+        if self.eig_method == "numerical":
+            pass
+        if self.eig_method not in ["symbolic", "numerical", "auto"]:
+            raise ValueError("Unknown eig_method: %s" % self.eig_method)
+
+    @property
+    def constants(self):
+        """Constants inside jacobian evaluation"""
+        A = self.A
         atoms = set(flatten([x.atoms() for x in flatten(A.tolist())]))
-        for a in atoms:
-            if isinstance(a, Constant):
-                ret_code += "%(c)s = aux_global['%(c)s']\n" % \
-                    {"c": str(a)}
-#            if isinstance(a, ConstantField):
-#                ret_code += "%(c)s = aux_r[%(idx)] - aux_l[%(idx)]\n"
-        return indent_code(ret_code, indent)
+        return filter(lambda a: isinstance(a, Constant), atoms)
 
-    def _gen_kernel_func (self, indent=0):
-        ret_code = ""
-        if self._language == "python":
-            ret_code = indent_code(pcp.func_decl, indent)
-            ret_code += self._gen_expand_constants(indent + 4)
-            ret_code += self._gen_eigenvalues(indent + 4)
-            ret_code += self._gen_riemann_comp(indent + 4)
-            ret_code += indent_code(pcp.func_return, indent + 4)
+    @property
+    def constant_fields(self):
+        """Constant Fields inside jacobian evaluation"""
+        A = self.A
+        atoms = set(flatten([x.atoms() for x in flatten(A.tolist())]))
+        return filter(lambda a: isinstance(a, ConstantField), atoms)
+
+    def info (self):
+        """Returns the parameters of the Riemann problem being generated."""
+        ret_code = "Riemann Kernel generated from:\n"
+        ret_code += " "*4 + "flux: %s\n" % str(self.flux)
+        ret_code += " "*4 + "conserved: %s\n" % str(self.conserved)
+        ret_code += " "*4 + "A: %s\n" % str(self.A)
+        ret_code += " "*4 + "eig_method: %s\n" % str(self.eig_method)
+        ret_code += " "*4 + "evaluation: %s\n" % str(self.evaluation)
+        ret_code += " "*4 + "language: %s\n" % str(self.language)
+        ret_code += " "*4 + "jacobian_averaging: %s\n" % \
+                    str(self.jacobian_averaging)
         return ret_code
 
-    def generate(self):
-        """Returns the generated kernel function."""
-        return self._gen_kernel_func()
+    def generate (self):
+        """Returns the code for the kernel function."""
+        self._gen_eigenvalues()
+        printer = RiemannPrinter.get_printer(self)
+        return printer.print_kernel_file()
 
-    def write_to_file(self, filename=None):
-        """Prints the generated kernel function to filename
-        (stdout if filname is None)"""
-        print self.generate()
+    def write (self, filename=None):
+        """Prints the generated kernel function to filename.
 
-def generate(f, flux, conserved, filename=None):
-    """Generates the kernel to file (or stdout if no filename given)"""
-    Generator(flux, conserved).write_to_file(filename)
+        If filename is None, the kernel is printed to stdout.
+        """
+        code = self.generate()
+        if filename:
+            print "Writing to file: %s" % filename
+            with open(filename, 'w') as fp:
+                fp.write(code)
+        else:
+            return code
+
+def generate (filename=None, **kws):
+    """Generates the kernel to file (or stdout if no filename given).
+
+    For required keywords (kws) please see help(Generator).
+    """
+    Generator(**kws).write(filename)
 

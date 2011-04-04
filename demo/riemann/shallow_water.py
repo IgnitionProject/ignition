@@ -8,4 +8,4 @@ g = Constant('g')
 f = [ uh ,
       u * uh + .5 * g * h ** 2]
 
-generate("shallow_water_kernel.py", f, q)
+generate(flux=f, conserved=q, filename = "shallow_water_kernel.py")

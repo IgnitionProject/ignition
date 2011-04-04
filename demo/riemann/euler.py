@@ -1,13 +1,18 @@
 from ignition.riemann import *
 
 q = Conserved('q')
-rho, rhou, E = q.fields(['rho','rhou','E'])
-u = rhou/rho
+rho, rhou, E = q.fields(['rho', 'rhou', 'E'])
+u = rhou / rho
 gamma = Constant('gamma')
-P = gamma*(E-.5*u*rhou)
+P = gamma * (E - .5 * u * rhou)
 
 f = [rhou,
-     P+u*rhou,
-     u*(E+p)]
+     P + u * rhou,
+     u * (E + P)]
 
-generate("euler_kernel.py",f,q)
+#generate(f, q, "euler_kernel.py")
+G = Generator()
+G.flux = f
+G.conserved = q
+G.eig_method = "numerical"
+G.write("euler_kernel.py")
