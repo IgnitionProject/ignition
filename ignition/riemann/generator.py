@@ -22,15 +22,24 @@ class Generator (object):
     these variables.
 
     Parameters (see `help(Generator.parameter)` for more details):
-        conserved - The conserved field passed to the generated kernel.
-        flux - The flux being solved.
-        A - The jacobian of the flux.
-        constant_fields - Constant fields used by generate passed via aux_{l,r}.
-        eig_method - Generation method for solving eigen decompostion of A.
-        evaluation - The evaluation type for single kernel.
-        jacobian_averaging - The method for averaging left and right values of
-            a cell interface used in the kernel.
-        language - Language to generate.
+
+        conserved
+            The conserved field passed to the generated kernel.
+        flux
+            The flux being solved.
+        A
+            The jacobian of the flux.
+        constant_fields
+            Constant fields used by generate passed via aux_{l,r}.
+        eig_method
+            Generation method for solving eigen decompostion of A.
+        evaluation
+            The evaluation type for single kernel.
+        jacobian_averaging
+            The method for averaging left and right values of a cell interface
+            used in the kernel.
+        language
+            Language to generate.
 
     """
 

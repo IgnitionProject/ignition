@@ -62,11 +62,14 @@ class Conserved (Symbol):
         return Matrix(flux).jacobian(self._fields)
 
 class Field (Symbol):
+    """Represents a field of the conserved quantity."""
     pass
 
 class ConstantField (Symbol):
+    """Represents a field of constants defined on cells."""
     pass
 
 class Constant (Symbol):
+    """Represents a global constant."""
     pass
 

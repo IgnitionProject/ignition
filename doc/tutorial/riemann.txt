@@ -1,0 +1,43 @@
+-------
+Riemann
+-------
+
+The Riemann module is a simple code generator for hyperbolic problems in the
+style of `CLAWPACK`.  Given either the flux (f) or the jacobian (A) of a
+hyperbolic equation as below:
+
+
+.. math::
+
+    q_t + f(q)*q_t = 0
+
+    q_t + A*q_t = 0
+
+Currently only 1D simple kernels are implemented.
+
+Using Riemann Generator
+-----------------------
+
+First you define your equation, for example an acoustic equation:
+
+.. code-block:: python
+
+    from ignition.riemann import *
+
+    q = Conserved('q')
+    p, u = q.fields(['p','u'])
+    rho = Constant('rho')
+    K = Constant('bulk')
+
+    f = [ K*u ,
+          p/rho]
+
+We pass this code to the generator:
+
+.. code-block:: python
+
+    generate(flux=f, conserved=q, filename="acoustics_kernel.py")
+
+For the full example see ``demo/riemann``.
+
+.. CLAWPACK: http://clawpack.org/

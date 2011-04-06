@@ -46,6 +46,14 @@ derived and allow for numerous variants to be produced.
 Ignition defines a language for specifying FLAME operation and generating the
 worksheets and code.  These operations are still under development.
 
+Riemann
+-------
+
+Riemann is a simple language for defining Riemann problems in the style of
+`CLAWPACK`_. It allows a user to symbolically define the flux (or jacobian)
+based on the variables of the conserved state and will generate the kernel to
+be run at the cell interfaces.
+
 ------
 Future
 ------
@@ -55,3 +63,4 @@ area of interest will most likely be finite element algorithms.
 
 
 .. _FLAME: http://z.cs.utexas.edu/wiki/flame.wiki/FrontPage
+.. _CLAWPACK: http://clawpack.org/

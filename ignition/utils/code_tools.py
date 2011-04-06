@@ -4,12 +4,14 @@ def comment_code (code_str, line_comment=None, block_comment=None):
     """Adds comments to a snippet of code.
 
     If line_comment is a given string then each line is prepended with the
-      line_comment string.
+    line_comment string.
+
     If block_comment is a tuple of two strings (begin, end) the code str is
-      surrounded by the strings.
+    surrounded by the strings.
 
     Example:
-    >>> code = "This is \na mulitiline\ncomment"
+
+    >>> code = "This is \\na mulitiline\\ncomment"
     >>> print comment_code(code, line_comment="//")
     // This is
     // a mulitiline
@@ -20,6 +22,7 @@ def comment_code (code_str, line_comment=None, block_comment=None):
     a mulitiline
     comment
     */
+
     """
     ret_code = code_str
     if code_str == "":
