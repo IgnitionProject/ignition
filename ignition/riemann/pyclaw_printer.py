@@ -1,4 +1,4 @@
-"""Definition of code printers for PyClawpack"""
+"""Definition of code printers for PyClaw"""
 
 import sympy as sp
 
@@ -94,8 +94,8 @@ import numpy as np
 
 """
 
-class PyClawpackPrinter (RiemannPrinter):
-    """Printer for pyclawpack pointwise evaluation."""
+class PyClawPrinter (RiemannPrinter):
+    """Printer for pyclaw pointwise evaluation."""
 
     comment_str = "#"
 
@@ -104,37 +104,6 @@ class PyClawpackPrinter (RiemannPrinter):
         ret_code += ", ".join(map(str, mat.tolist()))
         ret_code += "])"
         return ret_code
-
-    def _print_header(self, indent=0):
-        return indent_code(file_header, indent)
-
-    def _print_func_decl(self, indent=0):
-        return indent_code(func_decl, indent)
-
-    def _print_func_return(self, indent=0):
-        return indent_code(func_return, indent)
-
-    def _print_jac_evals (self, indent=0):
-        if not self._generator._is_nonlinear():
-            return ""
-
-        ret_code = ""
-        if self._generator.jacobian_averaging == "arithmetic":
-            ret_code += "# Evaluate the averages of the conserved "\
-                        "quantities\n"
-            for n, f in enumerate(self._generator.conserved.fields()):
-                ret_code += "%(f)s = (q_l[%(idx)d] + q_r[%(idx)d])/2.0\n" \
-                            % {"f":str(f), "idx":n}
-        else:
-            raise NotImplementedError("Unimplemented jacobian averaging: %s" %\
-                                      self._generator.jacobian_averaging)
-        return indent_code(ret_code, indent)
-
-    def _print_constants (self, indent=0):
-        ret_code = "\n# Evaluating Constants\n"
-        for a in self._generator.used_constants():
-            ret_code += "%(c)s = aux_global['%(c)s']\n" % {"c": str(a)}
-        return indent_code(ret_code, indent)
 
     def _print_constant_fields (self, indent=0):
         used_cf = self._generator.used_constant_fields()
@@ -153,12 +122,11 @@ class PyClawpackPrinter (RiemannPrinter):
                                       % self._generator.jacobian_averaging)
         return indent_code(ret_code, indent)
 
-    def _print_evals (self, indent=0):
-        ret_code = ""
-        ret_code += self._print_constants(indent)
-        ret_code += self._print_constant_fields(indent)
-        ret_code += self._print_jac_evals(indent)
-        return ret_code
+    def _print_constants (self, indent=0):
+        ret_code = "\n# Evaluating Constants\n"
+        for a in self._generator.used_constants():
+            ret_code += "%(c)s = aux_global['%(c)s']\n" % {"c": str(a)}
+        return indent_code(ret_code, indent)
 
     def _print_eigenvalues_symbolic (self, indent=0):
         ret_code = symbolic_eigen_decomp % \
@@ -172,6 +140,22 @@ class PyClawpackPrinter (RiemannPrinter):
         A_str = self._sympy_mat_to_numpy_str(self._generator.A)
         ret_code = numerical_eigen_decomp % A_str
         return indent_code(ret_code, indent)
+
+    def _print_evals (self, indent=0):
+        ret_code = ""
+        ret_code += self._print_constants(indent)
+        ret_code += self._print_constant_fields(indent)
+        ret_code += self._print_jac_evals(indent)
+        return ret_code
+
+    def _print_func_decl(self, indent=0):
+        return indent_code(func_decl, indent)
+
+    def _print_func_return(self, indent=0):
+        return indent_code(func_return, indent)
+
+    def _print_header(self, indent=0):
+        return indent_code(file_header, indent)
 
     def _print_kernel (self, indent=0):
         return indent_code(pointwise_kernel, indent)
@@ -190,14 +174,45 @@ class PyClawpackPrinter (RiemannPrinter):
         ret_code += self._print_func_return(indent)
         return ret_code
 
+    def _print_jac_evals (self, indent=0):
+        if not self._generator._is_nonlinear():
+            return ""
 
-class VectorizedPyClawpackPrinter (PyClawpackPrinter):
-    """Printer for pyclawpack vectorized evaluation."""
+        ret_code = ""
+        if self._generator.jacobian_averaging == "arithmetic":
+            ret_code += "# Evaluate the averages of the conserved "\
+                        "quantities\n"
+            for n, f in enumerate(self._generator.conserved.fields()):
+                ret_code += "%(f)s = (q_l[%(idx)d] + q_r[%(idx)d])/2.0\n" \
+                            % {"f":str(f), "idx":n}
+        else:
+            raise NotImplementedError("Unimplemented jacobian averaging: %s" %\
+                                      self._generator.jacobian_averaging)
+        return indent_code(ret_code, indent)
+
+class VectorizedPyClawPrinter (PyClawPrinter):
+    """Printer for pyclaw vectorized evaluation."""
 
     def _sympy_mat_to_vectorized_numpy_str (self, mat):
         idx_field_subs = dict([(x, sp.Symbol(str(x) + "[i]")) \
                                for x in self._generator.conserved.fields()])
         return self._sympy_mat_to_numpy_str(mat.subs(idx_field_subs))
+
+    def _print_constant_fields (self, indent=0):
+        used_cf = self._generator.used_constant_fields()
+        if len(used_cf) == 0:
+            return ""
+
+        ret_code = "\n# Evaluating Constant Fields\n"
+        if self._generator.jacobian_averaging == "arithmetic":
+            for n, cf in enumerate(self._generator.constant_fields):
+                if cf in used_cf:
+                    ret_code += "%(cf)s = (aux_l[%(n)d,:] + aux_r[%(n)d,:])" \
+                                "/2.0\n" % {"cf":str(cf), "n":n}
+        else:
+            raise NotImplementedError("Unimplemented jacobian averaging: %s" \
+                                      % self._generator.jacobian_averaging)
+        return indent_code(ret_code, indent)
 
     def _print_eigenvalues_numerical (self, indent=0):
         sub_dict = {}
@@ -222,6 +237,17 @@ class VectorizedPyClawpackPrinter (PyClawpackPrinter):
                     str([ev.subs(sub_dict) for ev in self._generator.eig_vals]))
         return indent_code(ret_code, indent)
 
+    def _print_evals (self, indent=0):
+        ret_code = ""
+        ret_code += self._print_sizes(indent)
+        ret_code += self._print_constants(indent)
+        ret_code += self._print_constant_fields(indent)
+        ret_code += self._print_jac_evals(indent)
+        return ret_code
+
+    def _print_func_return(self, indent=0):
+        return indent_code(vectorized_func_return, indent)
+
     def _print_jac_evals (self, indent=0):
         ret_code = ""
         if self._generator._is_nonlinear():
@@ -241,30 +267,6 @@ class VectorizedPyClawpackPrinter (PyClawpackPrinter):
         mwaves = meqn
         return indent_code(vectorized_shapes % {"meqn":meqn, "mwaves":mwaves},
                            indent)
-
-    def _print_evals (self, indent=0):
-        ret_code = ""
-        ret_code += self._print_sizes(indent)
-        ret_code += self._print_constants(indent)
-        ret_code += self._print_constant_fields(indent)
-        ret_code += self._print_jac_evals(indent)
-        return ret_code
-
-    def _print_constant_fields (self, indent=0):
-        used_cf = self._generator.used_constant_fields()
-        if len(used_cf) == 0:
-            return ""
-
-        ret_code = "\n# Evaluating Constant Fields\n"
-        if self._generator.jacobian_averaging == "arithmetic":
-            for n, cf in enumerate(self._generator.constant_fields):
-                if cf in used_cf:
-                    ret_code += "%(cf)s = (aux_l[%(n)d,:] + aux_r[%(n)d,:])" \
-                                "/2.0\n" % {"cf":str(cf), "n":n}
-        else:
-            raise NotImplementedError("Unimplemented jacobian averaging: %s" \
-                                      % self._generator.jacobian_averaging)
-        return indent_code(ret_code, indent)
 
     def _print_kernel (self, indent=0):
         ret_code = vectorized_kernel

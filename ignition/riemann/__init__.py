@@ -1,5 +1,5 @@
 """Simple Riemann solver language and generator"""
 
-from riemann_printer import *
-from language import *
-from generator import *
+from language import Conserved, Constant, ConstantField, Field
+from generator import Generator, generate
+from riemann_printer import RiemannPrinter

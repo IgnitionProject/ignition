@@ -123,7 +123,8 @@ def rp_advection_1d(q_l,q_r,aux_l,aux_r,aux_global):
     return wave, s, amdq, apdq
 
 def same_arrays (array_1, array_2, eps=1e-8):
-    return all(abs(a1 - a2) < eps for a1, a2 in \
+    return array_1.shape == array_2.shape and \
+           all(abs(a1 - a2) < eps for a1, a2 in \
                zip(np.ravel(array_1), np.ravel(array_2)))
 
 

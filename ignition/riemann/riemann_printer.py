@@ -18,14 +18,14 @@ class RiemannPrinter (object):
         ret_obj = None
         language = generator.language
         evaluation = generator.evaluation
-        if language == "pyclawpack":
+        if language == "pyclaw":
             if evaluation == "pointwise":
-                ret_obj = PyClawpackPrinter(generator)
+                ret_obj = PyClawPrinter(generator)
             elif evaluation == "vectorized":
-                ret_obj = VectorizedPyClawpackPrinter(generator)
+                ret_obj = VectorizedPyClawPrinter(generator)
         if ret_obj is None:
             raise NotImplementedError("No printer for generator.")
         return ret_obj
 
 # Cyclic imports
-from pyclawpack_printer import PyClawpackPrinter, VectorizedPyClawpackPrinter
+from pyclaw_printer import PyClawPrinter, VectorizedPyClawPrinter

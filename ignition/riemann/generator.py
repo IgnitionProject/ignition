@@ -136,9 +136,9 @@ class Generator (object):
         """The language of the generated kernel.
 
         Options:
-            "pyclawpack" - Code generated to the Python interface of CLAWPACK.
+            "pyclaw" - Code generated to the Python interface of CLAWPACK.
         """
-        return self._kws.get("language", "pyclawpack")
+        return self._kws.get("language", "pyclaw")
 
     @language.setter
     def language (self, value):
