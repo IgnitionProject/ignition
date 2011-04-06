@@ -1,0 +1,343 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>ignition.riemann.generator &mdash; Ignition v0.1.0 documentation</title>
+    <link rel="stylesheet" href="../../../static/agogo.css" type="text/css" />
+    <link rel="stylesheet" href="../../../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../../static/underscore.js"></script>
+    <script type="text/javascript" src="../../../static/doctools.js"></script>
+    <link rel="top" title="Ignition v0.1.0 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="header-wrapper">
+      <div class="header">
+        <h1><a href="../../../index.html">Ignition v0.1.0 documentation</a></h1>
+        <div class="rel">
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a>
+        </div>
+       </div>
+    </div>
+
+    <div class="content-wrapper">
+      <div class="content">
+        <div class="document">
+            
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for ignition.riemann.generator</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Generator for simple Riemann solver&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">sympy</span> <span class="kn">as</span> <span class="nn">sp</span>
+
+<span class="kn">from</span> <span class="nn">ignition.utils</span> <span class="kn">import</span> <span class="n">flatten</span><span class="p">,</span> <span class="n">indent_code</span>
+
+<span class="kn">from</span> <span class="nn">language</span> <span class="kn">import</span> <span class="n">Conserved</span><span class="p">,</span> <span class="n">Constant</span><span class="p">,</span> <span class="n">ConstantField</span>
+<span class="kn">from</span> <span class="nn">riemann_printer</span> <span class="kn">import</span> <span class="n">RiemannPrinter</span>
+
+<span class="k">class</span> <span class="nc">SymbolicEigenDecompError</span> <span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<div class="viewcode-block" id="Generator"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.generator.Generator">[docs]</a><span class="k">class</span> <span class="nc">Generator</span> <span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Manager of the code generation of Riemann problem kernels of the form:</span>
+
+<span class="sd">        q_t + f(q)*q_x = 0, or</span>
+<span class="sd">        q_t + A * q_x = 0</span>
+
+<span class="sd">    The conserved variable (q) and either the flux (f) or the jacobian (A) must</span>
+<span class="sd">    be provided.  See either demos/Riemann or Riemann.language for defining</span>
+<span class="sd">    these variables.</span>
+
+<span class="sd">    Parameters (see `help(Generator.parameter)` for more details):</span>
+
+<span class="sd">        conserved</span>
+<span class="sd">            The conserved field passed to the generated kernel.</span>
+<span class="sd">        flux</span>
+<span class="sd">            The flux being solved.</span>
+<span class="sd">        A</span>
+<span class="sd">            The jacobian of the flux.</span>
+<span class="sd">        constant_fields</span>
+<span class="sd">            Constant fields used by generate passed via aux_{l,r}.</span>
+<span class="sd">        eig_method</span>
+<span class="sd">            Generation method for solving eigen decompostion of A.</span>
+<span class="sd">        evaluation</span>
+<span class="sd">            The evaluation type for single kernel.</span>
+<span class="sd">        jacobian_averaging</span>
+<span class="sd">            The method for averaging left and right values of a cell interface</span>
+<span class="sd">            used in the kernel.</span>
+<span class="sd">        language</span>
+<span class="sd">            Language to generate.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kws</span> <span class="o">=</span> <span class="n">kws</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">conserved</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The conserved variable q of the hyperbolic system q_t + f(q)*q_x = 0.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;conserved&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+    <span class="nd">@conserved.setter</span>
+<div class="viewcode-block" id="Generator.conserved"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.generator.Generator.conserved">[docs]</a>    <span class="k">def</span> <span class="nf">conserved</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kws</span><span class="p">[</span><span class="s">&quot;conserved&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+</div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">constant_fields</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The conserved variable q of the hyperbolic system q_t + f(q)*q_x = 0.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;constant_fields&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+    <span class="nd">@constant_fields.setter</span>
+<div class="viewcode-block" id="Generator.constant_fields"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.generator.Generator.constant_fields">[docs]</a>    <span class="k">def</span> <span class="nf">constant_fields</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_of_field_names</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kws</span><span class="p">[</span><span class="s">&quot;constant_fields&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">ConstantFields</span><span class="p">,</span> <span class="n">list_of_field_names</span><span class="p">)</span>
+</div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">flux</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The flux f(q) of the hyperbolic system q_t + f(q)*q_x = 0.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;flux&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+    <span class="nd">@flux.setter</span>
+<div class="viewcode-block" id="Generator.flux"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.generator.Generator.flux">[docs]</a>    <span class="k">def</span> <span class="nf">flux</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kws</span><span class="p">[</span><span class="s">&quot;flux&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+</div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">A</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The jacobian of f(q) of the hyperbolic system q_t + f(q)*q_x = 0.</span>
+
+<span class="sd">        If f is provided but not A, then A will be generated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;A&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_kws</span><span class="p">[</span><span class="s">&quot;A&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conserved</span><span class="o">.</span><span class="n">jacobian</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flux</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kws</span><span class="p">[</span><span class="s">&quot;A&quot;</span><span class="p">]</span>
+
+    <span class="nd">@A.setter</span>
+<div class="viewcode-block" id="Generator.A"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.generator.Generator.A">[docs]</a>    <span class="k">def</span> <span class="nf">A</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kws</span><span class="p">[</span><span class="s">&quot;A&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+</div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">eig_method</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The method for the generating the eigen decomposition of A.</span>
+
+<span class="sd">        Options:</span>
+<span class="sd">            &quot;analytic&quot; - Using symbolic expression generate the analytic values</span>
+<span class="sd">                of the eigenvalue decomposition.  Throws SymbolicEigenvalueError</span>
+<span class="sd">                if unable to formulate the analytic eigen decomposition</span>
+<span class="sd">            &quot;numerical&quot; - Generates a simple eigenvalue decomposition algorithm</span>
+<span class="sd">                in the generated kernel.</span>
+<span class="sd">            &quot;auto&quot; (default) - Tries symbolic generation but if it fails it a</span>
+<span class="sd">                simple numerical eigen solver will be generated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;eig_method&quot;</span><span class="p">,</span> <span class="s">&quot;auto&quot;</span><span class="p">)</span>
+
+    <span class="nd">@eig_method.setter</span>
+<div class="viewcode-block" id="Generator.eig_method"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.generator.Generator.eig_method">[docs]</a>    <span class="k">def</span> <span class="nf">eig_method</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kws</span><span class="p">[</span><span class="s">&quot;eig_method&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+</div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">evaluation</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The evaluation method of the generated kernel.</span>
+
+<span class="sd">        Options:</span>
+<span class="sd">            &quot;pointwise&quot; (default) - the kernel will expect a single point for</span>
+<span class="sd">                left and right values of a cell.</span>
+<span class="sd">            &quot;vectorized&quot; - the kernel will expect a vector of points for left</span>
+<span class="sd">                and right values of cells.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;evaluation&quot;</span><span class="p">,</span> <span class="s">&quot;pointwise&quot;</span><span class="p">)</span>
+
+    <span class="nd">@evaluation.setter</span>
+<div class="viewcode-block" id="Generator.evaluation"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.generator.Generator.evaluation">[docs]</a>    <span class="k">def</span> <span class="nf">evaluation</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kws</span><span class="p">[</span><span class="s">&quot;evaluation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+</div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">jacobian_averaging</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The jacobian_averaging method of the generated kernel.</span>
+
+<span class="sd">        Options:</span>
+<span class="sd">            &quot;arithmetic&quot; (default) - Any evaluation over a cell interface</span>
+<span class="sd">                required by the jacobian will use an average of the left and</span>
+<span class="sd">                right states.</span>
+<span class="sd">            &quot;LR_eigs&quot; - A left and right jacobian will be formed and the</span>
+<span class="sd">                eigen decomposition of each will operate on the appropriate</span>
+<span class="sd">                plus or minus fluctuation (amdq or apdq).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;jacobian_averaging&quot;</span><span class="p">,</span> <span class="s">&quot;arithmetic&quot;</span><span class="p">)</span>
+
+    <span class="nd">@jacobian_averaging.setter</span>
+<div class="viewcode-block" id="Generator.jacobian_averaging"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.generator.Generator.jacobian_averaging">[docs]</a>    <span class="k">def</span> <span class="nf">jacobian_averaging</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kws</span><span class="p">[</span><span class="s">&quot;jacobian_averaging&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+</div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">language</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The language of the generated kernel.</span>
+
+<span class="sd">        Options:</span>
+<span class="sd">            &quot;pyclaw&quot; - Code generated to the Python interface of CLAWPACK.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kws</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;language&quot;</span><span class="p">,</span> <span class="s">&quot;pyclaw&quot;</span><span class="p">)</span>
+
+    <span class="nd">@language.setter</span>
+<div class="viewcode-block" id="Generator.language"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.generator.Generator.language">[docs]</a>    <span class="k">def</span> <span class="nf">language</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kws</span><span class="p">[</span><span class="s">&quot;language&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+</div>
+    <span class="k">def</span> <span class="nf">_is_nonlinear</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Simple check for non-linear fluxes&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">conserved</span><span class="o">.</span><span class="n">fields</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">flatten</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="o">.</span><span class="n">tolist</span><span class="p">()):</span>
+                <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">term</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="bp">False</span>
+
+    <span class="k">def</span> <span class="nf">_gen_eigenvalues</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">eig_method</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&quot;symbolic&quot;</span><span class="p">,</span> <span class="s">&quot;auto&quot;</span><span class="p">]:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">eig_triples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="o">.</span><span class="n">eigenvects</span><span class="p">()</span>
+                <span class="n">mat_size</span> <span class="o">=</span> <span class="n">eig_triples</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">mat_size</span><span class="p">,</span> <span class="n">mat_size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">Expr</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">eig_vals</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">eig_triples</span><span class="p">)):</span>
+                    <span class="n">evect</span> <span class="o">=</span> <span class="n">eig_triples</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">mult</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">eig_triples</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="mi">1</span><span class="p">]):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">eig_vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">eig_triples</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">mat_size</span><span class="p">):</span>
+                            <span class="n">R</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span> <span class="o">+</span> <span class="n">mult</span><span class="p">]</span> <span class="o">=</span> <span class="n">evect</span><span class="p">[</span><span class="n">row</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">R</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="n">R</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Rinv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">R</span><span class="o">.</span><span class="n">inv</span><span class="p">()</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">eig_method</span> <span class="o">==</span> <span class="s">&quot;auto&quot;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">eig_method</span> <span class="o">=</span> <span class="s">&quot;symbolic&quot;</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">eig_method</span> <span class="o">==</span> <span class="s">&quot;symbolic&quot;</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">SymbolicEigenDecompError</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">eig_method</span> <span class="o">==</span> <span class="s">&quot;auto&quot;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">eig_method</span> <span class="o">=</span> <span class="s">&quot;numerical&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">eig_method</span> <span class="o">==</span> <span class="s">&quot;numerical&quot;</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">eig_method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&quot;symbolic&quot;</span><span class="p">,</span> <span class="s">&quot;numerical&quot;</span><span class="p">,</span> <span class="s">&quot;auto&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Unknown eig_method: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">eig_method</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Generator.used_constants"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.generator.Generator.used_constants">[docs]</a>    <span class="k">def</span> <span class="nf">used_constants</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constants used inside jacobian evaluation&quot;&quot;&quot;</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">A</span>
+        <span class="n">atoms</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">flatten</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">atoms</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">flatten</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">tolist</span><span class="p">())]))</span>
+        <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">Constant</span><span class="p">),</span> <span class="n">atoms</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Generator.used_constant_fields"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.generator.Generator.used_constant_fields">[docs]</a>    <span class="k">def</span> <span class="nf">used_constant_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constant Fields used inside jacobian evaluation&quot;&quot;&quot;</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">A</span>
+        <span class="n">atoms</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">flatten</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">atoms</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">flatten</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">tolist</span><span class="p">())]))</span>
+        <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">ConstantField</span><span class="p">),</span> <span class="n">atoms</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Generator.info"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.generator.Generator.info">[docs]</a>    <span class="k">def</span> <span class="nf">info</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the parameters of the Riemann problem being generated.&quot;&quot;&quot;</span>
+        <span class="n">ret_code</span> <span class="o">=</span> <span class="s">&quot;Riemann Kernel generated from:</span><span class="se">\n</span><span class="s">&quot;</span>
+        <span class="n">ret_code</span> <span class="o">+=</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="mi">4</span> <span class="o">+</span> <span class="s">&quot;flux: </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flux</span><span class="p">)</span>
+        <span class="n">ret_code</span> <span class="o">+=</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="mi">4</span> <span class="o">+</span> <span class="s">&quot;conserved: </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conserved</span><span class="p">)</span>
+        <span class="n">ret_code</span> <span class="o">+=</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="mi">4</span> <span class="o">+</span> <span class="s">&quot;A: </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="p">)</span>
+        <span class="n">ret_code</span> <span class="o">+=</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="mi">4</span> <span class="o">+</span> <span class="s">&quot;eig_method: </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eig_method</span><span class="p">)</span>
+        <span class="n">ret_code</span> <span class="o">+=</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="mi">4</span> <span class="o">+</span> <span class="s">&quot;evaluation: </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">evaluation</span><span class="p">)</span>
+        <span class="n">ret_code</span> <span class="o">+=</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="mi">4</span> <span class="o">+</span> <span class="s">&quot;language: </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">language</span><span class="p">)</span>
+        <span class="n">ret_code</span> <span class="o">+=</span> <span class="s">&quot; &quot;</span><span class="o">*</span><span class="mi">4</span> <span class="o">+</span> <span class="s">&quot;jacobian_averaging: </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> \
+                    <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jacobian_averaging</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ret_code</span>
+</div>
+<div class="viewcode-block" id="Generator.generate"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.generator.Generator.generate">[docs]</a>    <span class="k">def</span> <span class="nf">generate</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the code for the kernel function.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gen_eigenvalues</span><span class="p">()</span>
+        <span class="n">printer</span> <span class="o">=</span> <span class="n">RiemannPrinter</span><span class="o">.</span><span class="n">get_printer</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">printer</span><span class="o">.</span><span class="n">print_kernel_file</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Generator.write"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.generator.Generator.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Prints the generated kernel function to filename.</span>
+
+<span class="sd">        If filename is None, the kernel is printed to stdout.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;Writing to file: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">filename</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">code</span>
+</div></div>
+<div class="viewcode-block" id="generate"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.generator.generate">[docs]</a><span class="k">def</span> <span class="nf">generate</span> <span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Generates the kernel to file (or stdout if no filename given).</span>
+
+<span class="sd">    For required keywords (kws) please see help(Generator).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Generator</span><span class="p">(</span><span class="o">**</span><span class="n">kws</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+        </div>
+        <div class="sidebar">
+          <h3>Table Of Contents</h3>
+          <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/index.html">Ignition Modules Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+</ul>
+
+          <h3 style="margin-top: 1.5em;">Search</h3>
+          <form class="search" action="../../../search.html" method="get">
+            <input type="text" name="q" size="18" />
+            <input type="submit" value="Go" />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+          </form>
+          <p class="searchtip" style="font-size: 90%">
+            Enter search terms or a module, class or function name.
+          </p>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+    <div class="footer-wrapper">
+      <div class="footer">
+        <div class="left">
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |
+          <a href="../../../genindex.html" title="General Index"
+             >index</a>
+        </div>
+
+        <div class="right">
+          
+    <div class="footer">
+        &copy; Copyright 2010, Andy R. Terrel.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+    </div>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+  </body>
+</html>

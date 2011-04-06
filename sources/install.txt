@@ -7,15 +7,17 @@ Requirements
 
 Currently the Ignition project relies on `SymPy`_ for symbolic algebra,
 `Numpy`_ for the FLAME language, `Mako`_ for printing.  Before installing
-Ignition, it is recommended to get the `development version of SymPy`_, but
+Ignition, one must install the `development version of SymPy`_, but
 Mako can be installed with ``easy_install mako``.
 
 --------
 Download
 --------
 
-Go to the `Project Page`_ on GitHub. You can either download the source
-by hitting the large downloads button or use git to checkout the repository.
+Go to the `Project Page`_ on GitHub. You can checkout the repository using git.
+
+For example
+    ~/ $ git clone git://github.com/aterrel/ignition.git
 
 -------
 Install
@@ -25,18 +27,43 @@ Inside the source, the INSTALL file gives detailed instructions.  Currently the
 library is mostly written in Python which gives two basic install.
 
 
-User or global install
-----------------------
-
-This is done with the usual Python distutils with the command ``python setup.py
-install``
-
 In source install
 -----------------
 
 Since the code is pure Python you can add the source directory to the
 ``PYTHONPATH`` environment variable.  No code needs to be moved or compiled for
 this option.
+
+For example:
+  * Clone both ignition and sympy from their respective dev repos:
+
+    Sympy: https://github.com/sympy/sympy
+    Ignition: https://github.com/aterrel/ignition
+
+    .. code-block:: bash
+
+        ~/ $ git clone git://github.com/sympy/sympy.git
+        ~/ $ git clone git://github.com/aterrel/ignition.git
+
+  * Add the directories to your PYTHONPATH environment variable:
+
+    .. code-block:: bash
+
+        ~/ $ export PYTHONPATH=$PWD/ignition:$PWD:sympy:$PYTHONPATH
+
+  * go to iginition/demo/riemann and run a demo
+
+    .. code-block:: bash
+
+        ~/ignition/demo/riemann $ python acoustics.py
+
+
+
+User or global install
+----------------------
+
+This is done with the usual Python distutils with the command ``python setup.py
+install``
 
 
 

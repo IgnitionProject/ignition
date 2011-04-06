@@ -18,6 +18,7 @@ Contents:
    dsl
    int_gen
    flame
+   riemann
    extending
 
 As more features and languages are added to Ignition, you will be able to see

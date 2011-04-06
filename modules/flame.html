@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../static/doctools.js"></script>
     <link rel="top" title="Ignition v0.1.0 documentation" href="../index.html" />
     <link rel="up" title="Ignition Modules Reference" href="index.html" />
-    <link rel="next" title="Ignition Utils" href="utils.html" />
+    <link rel="next" title="Ignition Riemann" href="riemann.html" />
     <link rel="prev" title="Ignition IntGen" href="int_gen.html" /> 
   </head>
   <body>
@@ -34,7 +34,7 @@
         <div class="rel">
           <a href="int_gen.html" title="Ignition IntGen"
              accesskey="P">previous</a> |
-          <a href="utils.html" title="Ignition Utils"
+          <a href="riemann.html" title="Ignition Riemann"
              accesskey="N">next</a> |
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |
@@ -126,7 +126,7 @@ args: List of PObjs that are input for the operation.</p>
 
 <dl class="method">
 <dt id="ignition.flame.generator.PAlgGenerator.gen_update">
-<tt class="descname">gen_update</tt><big>(</big><em>filename=None</em>, <em>type=None</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/generator.html#PAlgGenerator.gen_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.generator.PAlgGenerator.gen_update" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">gen_update</tt><big>(</big><em>filename=None</em>, <em>type=None</em>, <em>**solve_kws</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/generator.html#PAlgGenerator.gen_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.generator.PAlgGenerator.gen_update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates the loop updates and pre/post conditions inside loop.</p>
 </dd></dl>
 
@@ -146,7 +146,7 @@ args: List of PObjs that are input for the operation.</p>
 
 <dl class="function">
 <dt id="ignition.flame.generator.generate">
-<tt class="descclassname">ignition.flame.generator.</tt><tt class="descname">generate</tt><big>(</big><em>filename=None</em>, <em>filetype=None</em>, <em>op=None</em>, <em>loop_inv=None</em>, <em>inv_args=</em><span class="optional">[</span><span class="optional">]</span>, <em>PME=None</em>, <em>solver=None</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/generator.html#generate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.generator.generate" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">ignition.flame.generator.</tt><tt class="descname">generate</tt><big>(</big><em>filename=None</em>, <em>filetype=None</em>, <em>op=None</em>, <em>loop_inv=None</em>, <em>inv_args=</em><span class="optional">[</span><span class="optional">]</span>, <em>PME=None</em>, <em>solver=None</em>, <em>**solve_kws</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/generator.html#generate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.generator.generate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Utility function for generating a flame algorithm.</p>
 <p>Will create a generator object and write it to file, then return the
 generator object.</p>
@@ -386,7 +386,7 @@ NotImplementedError if operation isn&#8217;t supported by routine</dd>
 
 <dl class="function">
 <dt id="ignition.flame.tensors.solvers.tensor_solver">
-<tt class="descclassname">ignition.flame.tensors.solvers.</tt><tt class="descname">tensor_solver</tt><big>(</big><em>b4_eqns</em>, <em>aft_eqns</em>, <em>e_knowns=</em><span class="optional">[</span><span class="optional">]</span>, <em>levels=-1</em>, <em>num_sols=1</em>, <em>verbose=True</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/tensors/solvers.html#tensor_solver"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.tensors.solvers.tensor_solver" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">ignition.flame.tensors.solvers.</tt><tt class="descname">tensor_solver</tt><big>(</big><em>b4_eqns</em>, <em>aft_eqns</em>, <em>e_knowns=</em><span class="optional">[</span><span class="optional">]</span>, <em>levels=-1</em>, <em>num_sols=1</em>, <em>verbose=True</em>, <em>solution_file=None</em>, <em>logic_files=None</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/tensors/solvers.html#tensor_solver"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.tensors.solvers.tensor_solver" title="Permalink to this definition">¶</a></dt>
 <dd><p>Updater calling tensor solvers.</p>
 </dd></dl>
 
@@ -501,6 +501,12 @@ given solution dict (curr_dict)</p>
 <p>See default_strs for str_dict keys.</p>
 </dd></dl>
 
+<dl class="function">
+<dt id="ignition.flame.tensors.printers.update_dict_to_latex">
+<tt class="descclassname">ignition.flame.tensors.printers.</tt><tt class="descname">update_dict_to_latex</tt><big>(</big><em>update_dict</em>, <em>order</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/flame/tensors/printers.html#update_dict_to_latex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.flame.tensors.printers.update_dict_to_latex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns update dictionary and order as latex string.</p>
+</dd></dl>
+
 </div>
 </div>
 <div class="section" id="module-ignition.flame.printing">
@@ -571,7 +577,7 @@ given solution dict (curr_dict)</p>
         <div class="left">
           <a href="int_gen.html" title="Ignition IntGen"
              >previous</a> |
-          <a href="utils.html" title="Ignition Utils"
+          <a href="riemann.html" title="Ignition Riemann"
              >next</a> |
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |

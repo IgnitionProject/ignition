@@ -25,14 +25,14 @@
     <link rel="top" title="Ignition v0.1.0 documentation" href="../index.html" />
     <link rel="up" title="Ignition Modules Reference" href="index.html" />
     <link rel="next" title="Contributing" href="../contributing.html" />
-    <link rel="prev" title="Ignition FLAME" href="flame.html" /> 
+    <link rel="prev" title="Ignition Riemann" href="riemann.html" /> 
   </head>
   <body>
     <div class="header-wrapper">
       <div class="header">
         <h1><a href="../index.html">Ignition v0.1.0 documentation</a></h1>
         <div class="rel">
-          <a href="flame.html" title="Ignition FLAME"
+          <a href="riemann.html" title="Ignition Riemann"
              accesskey="P">previous</a> |
           <a href="../contributing.html" title="Contributing"
              accesskey="N">next</a> |
@@ -54,6 +54,46 @@
             
   <div class="section" id="module-ignition.utils">
 <span id="ignition-utils"></span><h1>Ignition Utils<a class="headerlink" href="#module-ignition.utils" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-ignition.utils.code_tools">
+<span id="code-tools"></span><h2>Code Tools<a class="headerlink" href="#module-ignition.utils.code_tools" title="Permalink to this headline">¶</a></h2>
+<p>Tools for manipulating strings of code</p>
+<dl class="function">
+<dt id="ignition.utils.code_tools.comment_code">
+<tt class="descclassname">ignition.utils.code_tools.</tt><tt class="descname">comment_code</tt><big>(</big><em>code_str</em>, <em>line_comment=None</em>, <em>block_comment=None</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/utils/code_tools.html#comment_code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.utils.code_tools.comment_code" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds comments to a snippet of code.</p>
+<blockquote>
+<p>If line_comment is a given string then each line is prepended with the
+line_comment string.</p>
+<p>If block_comment is a tuple of two strings (begin, end) the code str is
+surrounded by the strings.</p>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">code</span> <span class="o">=</span> <span class="s">&quot;This is </span>
+</pre></div>
+</div>
+</blockquote>
+<p>a mulitiline
+comment&#8221;</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">comment_code</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">line_comment</span><span class="o">=</span><span class="s">&quot;//&quot;</span><span class="p">)</span>
+<span class="go">// This is</span>
+<span class="go">// a mulitiline</span>
+<span class="go">// comment</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">comment_code</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">block_comment</span><span class="o">=</span><span class="p">(</span><span class="s">&quot;/*&quot;</span><span class="p">,</span><span class="s">&quot;*/&quot;</span><span class="p">)</span>
+<span class="go">/*</span>
+<span class="go">This is</span>
+<span class="go">a mulitiline</span>
+<span class="go">comment</span>
+<span class="go">*/</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="ignition.utils.code_tools.indent_code">
+<tt class="descclassname">ignition.utils.code_tools.</tt><tt class="descname">indent_code</tt><big>(</big><em>code_str</em>, <em>indent</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/utils/code_tools.html#indent_code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.utils.code_tools.indent_code" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indent a snippet of code with indent number of spaces</p>
+</dd></dl>
+
+</div>
 <div class="section" id="module-ignition.utils.enum">
 <span id="enum"></span><h2>Enum<a class="headerlink" href="#module-ignition.utils.enum" title="Permalink to this headline">¶</a></h2>
 <p>Robust enumerated type support in Python.</p>
@@ -240,7 +280,7 @@ nested list</p>
     <div class="footer-wrapper">
       <div class="footer">
         <div class="left">
-          <a href="flame.html" title="Ignition FLAME"
+          <a href="riemann.html" title="Ignition Riemann"
              >previous</a> |
           <a href="../contributing.html" title="Contributing"
              >next</a> |

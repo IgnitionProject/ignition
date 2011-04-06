@@ -1,0 +1,174 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>ignition.riemann.language &mdash; Ignition v0.1.0 documentation</title>
+    <link rel="stylesheet" href="../../../static/agogo.css" type="text/css" />
+    <link rel="stylesheet" href="../../../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../static/jquery.js"></script>
+    <script type="text/javascript" src="../../../static/underscore.js"></script>
+    <script type="text/javascript" src="../../../static/doctools.js"></script>
+    <link rel="top" title="Ignition v0.1.0 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="header-wrapper">
+      <div class="header">
+        <h1><a href="../../../index.html">Ignition v0.1.0 documentation</a></h1>
+        <div class="rel">
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a>
+        </div>
+       </div>
+    </div>
+
+    <div class="content-wrapper">
+      <div class="content">
+        <div class="document">
+            
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for ignition.riemann.language</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Defines the Riemann language&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">sympy</span> <span class="kn">import</span> <span class="n">Matrix</span><span class="p">,</span> <span class="n">Symbol</span>
+
+<div class="viewcode-block" id="Conserved"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.language.Conserved">[docs]</a><span class="k">class</span> <span class="nc">Conserved</span> <span class="p">(</span><span class="n">Symbol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents a conserved variable</span>
+
+<span class="sd">    For multi-dimension variables, the dimension can be set with fields</span>
+<span class="sd">    or with dim.</span>
+
+<span class="sd">    The given a list of expressions, jacobian will compute the jacobian of the</span>
+<span class="sd">    expressions with respect to the fields of the conserved variable.</span>
+
+<span class="sd">    Examples:</span>
+
+<span class="sd">    &gt;&gt;&gt; q = Conserved(&#39;q&#39;, dim=2)</span>
+<span class="sd">    &gt;&gt;&gt; q_0, q_1 = q.fields()</span>
+<span class="sd">    &gt;&gt;&gt; q.jacobian([.5*q_0+q_1, q_1**2])</span>
+<span class="sd">    [0.5,     1]</span>
+<span class="sd">    [  0, 2*q_1]</span>
+<span class="sd">    &gt;&gt;&gt; nq = Conserved(&#39;nq&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; u, uh = nq.fields([&#39;u&#39;, &#39;uh&#39;])</span>
+<span class="sd">    &gt;&gt;&gt; nq.jacobian([.5*u+uh, uh**2])</span>
+<span class="sd">    [0.5,    1]</span>
+<span class="sd">    [  0, 2*uh]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="n">Symbol</span><span class="o">.</span><span class="n">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">dim</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">_fields</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">_field_names</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">_constant_fields</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">return</span> <span class="n">obj</span>
+
+<div class="viewcode-block" id="Conserved.fields"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.language.Conserved.fields">[docs]</a>    <span class="k">def</span> <span class="nf">fields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_of_names</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generates and returns the fields inside the conserve fields.</span>
+
+<span class="sd">        If list of names is given, the fields are named accordingly once</span>
+<span class="sd">        initialized with different names the names field is ignored.</span>
+
+<span class="sd">        If a dimension wasn&#39;t set when the Conserved object was constructed,</span>
+<span class="sd">        the dimension is determined from the number of names.  If the number</span>
+<span class="sd">        of names and the dimension are different, an error is thrown.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_field_names</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">list_of_names</span><span class="p">:</span>
+            <span class="n">list_of_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">_</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">n</span><span class="p">)</span> \
+                             <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">list_of_names</span><span class="p">))</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Given too many names for dim.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">Field</span><span class="p">,</span> <span class="n">list_of_names</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_field_names</span> <span class="o">=</span> <span class="n">list_of_names</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span>
+</div>
+<div class="viewcode-block" id="Conserved.jacobian"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.language.Conserved.jacobian">[docs]</a>    <span class="k">def</span> <span class="nf">jacobian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flux</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the jacobian of the flux expression with respect to the</span>
+<span class="sd">        fields in the conserved variable.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;No fields.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span><span class="o">.</span><span class="n">jacobian</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">)</span>
+</div></div>
+<span class="k">class</span> <span class="nc">Field</span> <span class="p">(</span><span class="n">Symbol</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">ConstantField</span> <span class="p">(</span><span class="n">Symbol</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">Constant</span> <span class="p">(</span><span class="n">Symbol</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+        </div>
+        <div class="sidebar">
+          <h3>Table Of Contents</h3>
+          <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules/index.html">Ignition Modules Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+</ul>
+
+          <h3 style="margin-top: 1.5em;">Search</h3>
+          <form class="search" action="../../../search.html" method="get">
+            <input type="text" name="q" size="18" />
+            <input type="submit" value="Go" />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+          </form>
+          <p class="searchtip" style="font-size: 90%">
+            Enter search terms or a module, class or function name.
+          </p>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+    <div class="footer-wrapper">
+      <div class="footer">
+        <div class="left">
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |
+          <a href="../../../genindex.html" title="General Index"
+             >index</a>
+        </div>
+
+        <div class="right">
+          
+    <div class="footer">
+        &copy; Copyright 2010, Andy R. Terrel.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+    </div>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+  </body>
+</html>

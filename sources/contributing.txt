@@ -2,7 +2,15 @@ Contributing
 ============
 
 Ignition currently uses `GitHub`_ for all hosting of issues and source code.
-Feel free to fork and submit patches to the `project page`_.
+Feel free to fork and submit patches to the `project page`_. For more
+information on how this work I recommend reading the Github help pages.
+
+  | http://help.github.com/fork-a-repo/ - Tells you how to fork
+  | http://help.github.com/pull-requests/ - Tells you a bit about sending pull requests.
+
+I think github has really nice documentation but there are lots of git
+help around the web.  I look forward to seeing your contributions!
+
 
 Contributions to docs
 ---------------------

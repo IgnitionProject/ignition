@@ -1,0 +1,353 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Ignition Riemann &mdash; Ignition v0.1.0 documentation</title>
+    <link rel="stylesheet" href="../static/agogo.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <link rel="top" title="Ignition v0.1.0 documentation" href="../index.html" />
+    <link rel="up" title="Ignition Modules Reference" href="index.html" />
+    <link rel="next" title="Ignition Utils" href="utils.html" />
+    <link rel="prev" title="Ignition FLAME" href="flame.html" /> 
+  </head>
+  <body>
+    <div class="header-wrapper">
+      <div class="header">
+        <h1><a href="../index.html">Ignition v0.1.0 documentation</a></h1>
+        <div class="rel">
+          <a href="flame.html" title="Ignition FLAME"
+             accesskey="P">previous</a> |
+          <a href="utils.html" title="Ignition Utils"
+             accesskey="N">next</a> |
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a>
+        </div>
+       </div>
+    </div>
+
+    <div class="content-wrapper">
+      <div class="content">
+        <div class="document">
+            
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="ignition-riemann">
+<h1>Ignition Riemann<a class="headerlink" href="#ignition-riemann" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-ignition.riemann.language">
+<span id="language"></span><h2>Language<a class="headerlink" href="#module-ignition.riemann.language" title="Permalink to this headline">¶</a></h2>
+<p>Defines the Riemann language</p>
+<dl class="class">
+<dt id="ignition.riemann.language.Conserved">
+<em class="property">class </em><tt class="descclassname">ignition.riemann.language.</tt><tt class="descname">Conserved</tt><a class="reference internal" href="../modules_gpf/ignition/riemann/language.html#Conserved"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.language.Conserved" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents a conserved variable</p>
+<p>For multi-dimension variables, the dimension can be set with fields
+or with dim.</p>
+<p>The given a list of expressions, jacobian will compute the jacobian of the
+expressions with respect to the fields of the conserved variable.</p>
+<p>Examples:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">Conserved</span><span class="p">(</span><span class="s">&#39;q&#39;</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q_0</span><span class="p">,</span> <span class="n">q_1</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">fields</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">jacobian</span><span class="p">([</span><span class="o">.</span><span class="mi">5</span><span class="o">*</span><span class="n">q_0</span><span class="o">+</span><span class="n">q_1</span><span class="p">,</span> <span class="n">q_1</span><span class="o">**</span><span class="mi">2</span><span class="p">])</span>
+<span class="go">[0.5,     1]</span>
+<span class="go">[  0, 2*q_1]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nq</span> <span class="o">=</span> <span class="n">Conserved</span><span class="p">(</span><span class="s">&#39;nq&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u</span><span class="p">,</span> <span class="n">uh</span> <span class="o">=</span> <span class="n">nq</span><span class="o">.</span><span class="n">fields</span><span class="p">([</span><span class="s">&#39;u&#39;</span><span class="p">,</span> <span class="s">&#39;uh&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nq</span><span class="o">.</span><span class="n">jacobian</span><span class="p">([</span><span class="o">.</span><span class="mi">5</span><span class="o">*</span><span class="n">u</span><span class="o">+</span><span class="n">uh</span><span class="p">,</span> <span class="n">uh</span><span class="o">**</span><span class="mi">2</span><span class="p">])</span>
+<span class="go">[0.5,    1]</span>
+<span class="go">[  0, 2*uh]</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="ignition.riemann.language.Conserved.fields">
+<tt class="descname">fields</tt><big>(</big><em>list_of_names=None</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/riemann/language.html#Conserved.fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.language.Conserved.fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates and returns the fields inside the conserve fields.</p>
+<p>If list of names is given, the fields are named accordingly once
+initialized with different names the names field is ignored.</p>
+<p>If a dimension wasn&#8217;t set when the Conserved object was constructed,
+the dimension is determined from the number of names.  If the number
+of names and the dimension are different, an error is thrown.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ignition.riemann.language.Conserved.jacobian">
+<tt class="descname">jacobian</tt><big>(</big><em>flux</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/riemann/language.html#Conserved.jacobian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.language.Conserved.jacobian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the jacobian of the flux expression with respect to the
+fields in the conserved variable.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-ignition.riemann.generator">
+<span id="generator"></span><h2>Generator<a class="headerlink" href="#module-ignition.riemann.generator" title="Permalink to this headline">¶</a></h2>
+<p>Generator for simple Riemann solver</p>
+<dl class="class">
+<dt id="ignition.riemann.generator.Generator">
+<em class="property">class </em><tt class="descclassname">ignition.riemann.generator.</tt><tt class="descname">Generator</tt><big>(</big><em>**kws</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/riemann/generator.html#Generator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.generator.Generator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Manager of the code generation of Riemann problem kernels of the form:</p>
+<blockquote>
+q_t + f(q)*q_x = 0, or
+q_t + A * q_x = 0</blockquote>
+<p>The conserved variable (q) and either the flux (f) or the jacobian (A) must
+be provided.  See either demos/Riemann or Riemann.language for defining
+these variables.</p>
+<p>Parameters (see <cite>help(Generator.parameter)</cite> for more details):</p>
+<blockquote>
+<dl class="docutils">
+<dt>conserved</dt>
+<dd>The conserved field passed to the generated kernel.</dd>
+<dt>flux</dt>
+<dd>The flux being solved.</dd>
+<dt>A</dt>
+<dd>The jacobian of the flux.</dd>
+<dt>constant_fields</dt>
+<dd>Constant fields used by generate passed via aux_{l,r}.</dd>
+<dt>eig_method</dt>
+<dd>Generation method for solving eigen decompostion of A.</dd>
+<dt>evaluation</dt>
+<dd>The evaluation type for single kernel.</dd>
+<dt>jacobian_averaging</dt>
+<dd>The method for averaging left and right values of a cell interface
+used in the kernel.</dd>
+<dt>language</dt>
+<dd>Language to generate.</dd>
+</dl>
+</blockquote>
+<dl class="attribute">
+<dt id="ignition.riemann.generator.Generator.A">
+<tt class="descname">A</tt><a class="reference internal" href="../modules_gpf/ignition/riemann/generator.html#Generator.A"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.generator.Generator.A" title="Permalink to this definition">¶</a></dt>
+<dd><p>The jacobian of f(q) of the hyperbolic system q_t + f(q)*q_x = 0.</p>
+<p>If f is provided but not A, then A will be generated.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ignition.riemann.generator.Generator.conserved">
+<tt class="descname">conserved</tt><a class="reference internal" href="../modules_gpf/ignition/riemann/generator.html#Generator.conserved"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.generator.Generator.conserved" title="Permalink to this definition">¶</a></dt>
+<dd><p>The conserved variable q of the hyperbolic system q_t + f(q)*q_x = 0.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ignition.riemann.generator.Generator.constant_fields">
+<tt class="descname">constant_fields</tt><a class="reference internal" href="../modules_gpf/ignition/riemann/generator.html#Generator.constant_fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.generator.Generator.constant_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>The conserved variable q of the hyperbolic system q_t + f(q)*q_x = 0.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ignition.riemann.generator.Generator.eig_method">
+<tt class="descname">eig_method</tt><a class="reference internal" href="../modules_gpf/ignition/riemann/generator.html#Generator.eig_method"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.generator.Generator.eig_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>The method for the generating the eigen decomposition of A.</p>
+<dl class="docutils">
+<dt>Options:</dt>
+<dd><dl class="first last docutils">
+<dt>&#8220;analytic&#8221; - Using symbolic expression generate the analytic values</dt>
+<dd>of the eigenvalue decomposition.  Throws SymbolicEigenvalueError
+if unable to formulate the analytic eigen decomposition</dd>
+<dt>&#8220;numerical&#8221; - Generates a simple eigenvalue decomposition algorithm</dt>
+<dd>in the generated kernel.</dd>
+<dt>&#8220;auto&#8221; (default) - Tries symbolic generation but if it fails it a</dt>
+<dd>simple numerical eigen solver will be generated.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ignition.riemann.generator.Generator.evaluation">
+<tt class="descname">evaluation</tt><a class="reference internal" href="../modules_gpf/ignition/riemann/generator.html#Generator.evaluation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.generator.Generator.evaluation" title="Permalink to this definition">¶</a></dt>
+<dd><p>The evaluation method of the generated kernel.</p>
+<dl class="docutils">
+<dt>Options:</dt>
+<dd><dl class="first last docutils">
+<dt>&#8220;pointwise&#8221; (default) - the kernel will expect a single point for</dt>
+<dd>left and right values of a cell.</dd>
+<dt>&#8220;vectorized&#8221; - the kernel will expect a vector of points for left</dt>
+<dd>and right values of cells.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ignition.riemann.generator.Generator.flux">
+<tt class="descname">flux</tt><a class="reference internal" href="../modules_gpf/ignition/riemann/generator.html#Generator.flux"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.generator.Generator.flux" title="Permalink to this definition">¶</a></dt>
+<dd><p>The flux f(q) of the hyperbolic system q_t + f(q)*q_x = 0.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ignition.riemann.generator.Generator.generate">
+<tt class="descname">generate</tt><big>(</big><big>)</big><a class="reference internal" href="../modules_gpf/ignition/riemann/generator.html#Generator.generate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.generator.Generator.generate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the code for the kernel function.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ignition.riemann.generator.Generator.info">
+<tt class="descname">info</tt><big>(</big><big>)</big><a class="reference internal" href="../modules_gpf/ignition/riemann/generator.html#Generator.info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.generator.Generator.info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the parameters of the Riemann problem being generated.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ignition.riemann.generator.Generator.jacobian_averaging">
+<tt class="descname">jacobian_averaging</tt><a class="reference internal" href="../modules_gpf/ignition/riemann/generator.html#Generator.jacobian_averaging"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.generator.Generator.jacobian_averaging" title="Permalink to this definition">¶</a></dt>
+<dd><p>The jacobian_averaging method of the generated kernel.</p>
+<dl class="docutils">
+<dt>Options:</dt>
+<dd><dl class="first last docutils">
+<dt>&#8220;arithmetic&#8221; (default) - Any evaluation over a cell interface</dt>
+<dd>required by the jacobian will use an average of the left and
+right states.</dd>
+<dt>&#8220;LR_eigs&#8221; - A left and right jacobian will be formed and the</dt>
+<dd>eigen decomposition of each will operate on the appropriate
+plus or minus fluctuation (amdq or apdq).</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ignition.riemann.generator.Generator.language">
+<tt class="descname">language</tt><a class="reference internal" href="../modules_gpf/ignition/riemann/generator.html#Generator.language"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.generator.Generator.language" title="Permalink to this definition">¶</a></dt>
+<dd><p>The language of the generated kernel.</p>
+<dl class="docutils">
+<dt>Options:</dt>
+<dd>&#8220;pyclaw&#8221; - Code generated to the Python interface of CLAWPACK.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="ignition.riemann.generator.Generator.used_constant_fields">
+<tt class="descname">used_constant_fields</tt><big>(</big><big>)</big><a class="reference internal" href="../modules_gpf/ignition/riemann/generator.html#Generator.used_constant_fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.generator.Generator.used_constant_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constant Fields used inside jacobian evaluation</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ignition.riemann.generator.Generator.used_constants">
+<tt class="descname">used_constants</tt><big>(</big><big>)</big><a class="reference internal" href="../modules_gpf/ignition/riemann/generator.html#Generator.used_constants"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.generator.Generator.used_constants" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constants used inside jacobian evaluation</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ignition.riemann.generator.Generator.write">
+<tt class="descname">write</tt><big>(</big><em>filename=None</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/riemann/generator.html#Generator.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.generator.Generator.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints the generated kernel function to filename.</p>
+<p>If filename is None, the kernel is printed to stdout.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="ignition.riemann.generator.generate">
+<tt class="descclassname">ignition.riemann.generator.</tt><tt class="descname">generate</tt><big>(</big><em>filename=None</em>, <em>**kws</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/riemann/generator.html#generate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.generator.generate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates the kernel to file (or stdout if no filename given).</p>
+<p>For required keywords (kws) please see help(Generator).</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-ignition.riemann.riemann_printer">
+<span id="riemannprinter"></span><h2>RiemannPrinter<a class="headerlink" href="#module-ignition.riemann.riemann_printer" title="Permalink to this headline">¶</a></h2>
+<p>Base classes for code printers</p>
+<dl class="class">
+<dt id="ignition.riemann.riemann_printer.RiemannPrinter">
+<em class="property">class </em><tt class="descclassname">ignition.riemann.riemann_printer.</tt><tt class="descname">RiemannPrinter</tt><big>(</big><em>generator</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/riemann/riemann_printer.html#RiemannPrinter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.riemann_printer.RiemannPrinter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for Riemann printer objects</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-ignition.riemann.pyclaw_printer">
+<span id="pyclawprinter"></span><h2>PyClawPrinter<a class="headerlink" href="#module-ignition.riemann.pyclaw_printer" title="Permalink to this headline">¶</a></h2>
+<p>Definition of code printers for PyClaw</p>
+<dl class="class">
+<dt id="ignition.riemann.pyclaw_printer.PyClawPrinter">
+<em class="property">class </em><tt class="descclassname">ignition.riemann.pyclaw_printer.</tt><tt class="descname">PyClawPrinter</tt><big>(</big><em>generator</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/riemann/pyclaw_printer.html#PyClawPrinter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.pyclaw_printer.PyClawPrinter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Printer for pyclaw pointwise evaluation.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="ignition.riemann.pyclaw_printer.VectorizedPyClawPrinter">
+<em class="property">class </em><tt class="descclassname">ignition.riemann.pyclaw_printer.</tt><tt class="descname">VectorizedPyClawPrinter</tt><big>(</big><em>generator</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/riemann/pyclaw_printer.html#VectorizedPyClawPrinter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.riemann.pyclaw_printer.VectorizedPyClawPrinter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Printer for pyclaw vectorized evaluation.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+        </div>
+        <div class="sidebar">
+          <h3>Table Of Contents</h3>
+          <ul>
+<li class="toctree-l1"><a class="reference internal" href="../intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Ignition Modules Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+
+          <h3 style="margin-top: 1.5em;">Search</h3>
+          <form class="search" action="../search.html" method="get">
+            <input type="text" name="q" size="18" />
+            <input type="submit" value="Go" />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+          </form>
+          <p class="searchtip" style="font-size: 90%">
+            Enter search terms or a module, class or function name.
+          </p>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+    <div class="footer-wrapper">
+      <div class="footer">
+        <div class="left">
+          <a href="flame.html" title="Ignition FLAME"
+             >previous</a> |
+          <a href="utils.html" title="Ignition Utils"
+             >next</a> |
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |
+          <a href="../genindex.html" title="General Index"
+             >index</a>
+            <br/>
+            <a href="../sources/modules/riemann.txt"
+               rel="nofollow">Show Source</a>
+        </div>
+
+        <div class="right">
+          
+    <div class="footer">
+        &copy; Copyright 2010, Andy R. Terrel.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.5.
+    </div>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+  </body>
+</html>

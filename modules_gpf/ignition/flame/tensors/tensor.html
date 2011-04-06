@@ -143,6 +143,9 @@
     <span class="k">def</span> <span class="nf">latex</span> <span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">to_latex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">_latex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">printer</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">latex</span>
+
 <div class="viewcode-block" id="Tensor.update"><a class="viewcode-back" href="../../../../modules/flame.html#ignition.flame.tensors.tensor.Tensor.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">l_ind</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">u_ind</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">rank</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
              <span class="n">has_inverse</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">conform_name</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Forms a new Tensor with only the listed attributes changed&quot;&quot;&quot;</span>

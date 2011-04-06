@@ -57,28 +57,55 @@
 <h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
 <p>Currently the Ignition project relies on <a class="reference external" href="http://www.sympy.org/">SymPy</a> for symbolic algebra,
 <a class="reference external" href="http:/numpy.scipy.org/">Numpy</a> for the FLAME language, <a class="reference external" href="http://www.makotemplates.org/">Mako</a> for printing.  Before installing
-Ignition, it is recommended to get the <a class="reference external" href="https://github.com/sympy/sympy">development version of SymPy</a>, but
+Ignition, one must install the <a class="reference external" href="https://github.com/sympy/sympy">development version of SymPy</a>, but
 Mako can be installed with <tt class="docutils literal"><span class="pre">easy_install</span> <span class="pre">mako</span></tt>.</p>
 </div>
 <div class="section" id="download">
 <h2>Download<a class="headerlink" href="#download" title="Permalink to this headline">¶</a></h2>
-<p>Go to the <a class="reference external" href="https://github.com/aterrel/ignition">Project Page</a> on GitHub. You can either download the source
-by hitting the large downloads button or use git to checkout the repository.</p>
+<p>Go to the <a class="reference external" href="https://github.com/aterrel/ignition">Project Page</a> on GitHub. You can checkout the repository using git.</p>
+<dl class="docutils">
+<dt>For example</dt>
+<dd>~/ $ git clone git://github.com/aterrel/ignition.git</dd>
+</dl>
 </div>
 <div class="section" id="install">
 <h2>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h2>
 <p>Inside the source, the INSTALL file gives detailed instructions.  Currently the
 library is mostly written in Python which gives two basic install.</p>
-<div class="section" id="user-or-global-install">
-<h3>User or global install<a class="headerlink" href="#user-or-global-install" title="Permalink to this headline">¶</a></h3>
-<p>This is done with the usual Python distutils with the command <tt class="docutils literal"><span class="pre">python</span> <span class="pre">setup.py</span>
-<span class="pre">install</span></tt></p>
-</div>
 <div class="section" id="in-source-install">
 <h3>In source install<a class="headerlink" href="#in-source-install" title="Permalink to this headline">¶</a></h3>
 <p>Since the code is pure Python you can add the source directory to the
 <tt class="docutils literal"><span class="pre">PYTHONPATH</span></tt> environment variable.  No code needs to be moved or compiled for
 this option.</p>
+<dl class="docutils">
+<dt>For example:</dt>
+<dd><ul class="first last">
+<li><p class="first">Clone both ignition and sympy from their respective dev repos:</p>
+<p>Sympy: <a class="reference external" href="https://github.com/sympy/sympy">https://github.com/sympy/sympy</a>
+Ignition: <a class="reference external" href="https://github.com/aterrel/ignition">https://github.com/aterrel/ignition</a></p>
+<div class="highlight-bash"><div class="highlight"><pre>~/ <span class="nv">$ </span>git clone git://github.com/sympy/sympy.git
+~/ <span class="nv">$ </span>git clone git://github.com/aterrel/ignition.git
+</pre></div>
+</div>
+</li>
+<li><p class="first">Add the directories to your PYTHONPATH environment variable:</p>
+<div class="highlight-bash"><div class="highlight"><pre>~/ <span class="nv">$ </span><span class="nb">export </span><span class="nv">PYTHONPATH</span><span class="o">=</span><span class="nv">$PWD</span>/ignition:<span class="nv">$PWD</span>:sympy:<span class="nv">$PYTHONPATH</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">go to iginition/demo/riemann and run a demo</p>
+<div class="highlight-bash"><div class="highlight"><pre>~/ignition/demo/riemann <span class="nv">$ </span>python acoustics.py
+</pre></div>
+</div>
+</li>
+</ul>
+</dd>
+</dl>
+</div>
+<div class="section" id="user-or-global-install">
+<h3>User or global install<a class="headerlink" href="#user-or-global-install" title="Permalink to this headline">¶</a></h3>
+<p>This is done with the usual Python distutils with the command <tt class="docutils literal"><span class="pre">python</span> <span class="pre">setup.py</span>
+<span class="pre">install</span></tt></p>
 </div>
 </div>
 </div>
