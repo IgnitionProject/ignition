@@ -17,6 +17,24 @@ def acoustic_eqns ():
           b*p/rho]
     return f, q, [a,b]
 
+def advection_eqns ():
+    """Returns flux, conserved, constant_fields"""
+    q = Conserved('q')
+    (w,) = q.fields(['w'])
+    u = Constant('u')
+    f = [u * w]
+    return f, q, []
+
+def shallow_water_eqns():
+    q = Conserved('q')
+    h, uh = q.fields(['h', 'uh'])
+    u = uh / h
+    g = Constant('g')
+
+    f = [ uh ,
+          u * uh + .5 * g * h ** 2]
+    return f, q, []
+
 def get_pointwise_acoustic_inputs ():
     q_l = np.array([1.0, 2.0])
     q_r = np.array([1.2, 2.2])
@@ -33,15 +51,21 @@ def get_vectorized_acoustic_inputs ():
     aux_global = {"bulk": 1.0, "rho": 2.0}
     return q_l, q_r, aux_l, aux_r, aux_global
 
+def get_vectorized_advection_inputs ():
+    q_l = np.array([[1.0, 1.2, 1.3]])
+    q_r = np.array([[1.1, 1.4, 1.6]])
+    aux_l = np.array([[]])
+    aux_r = np.array([[]])
+    aux_global = {"u": 1.0}
+    return q_l, q_r, aux_l, aux_r, aux_global
+
 def test_pointwise_acoustic_symbolic_kernel():
-    """Acoustic equation with pointwise eval and symbolic eigenvalues"""
     flux, conserved, const_fields = acoustic_eqns()
     g = Generator(flux=flux, conserved=conserved, constant_fields=const_fields)
     eval(compile(g.generate(), "<generated acoustic kernel>", "exec"))
     locals()['kernel'](*get_pointwise_acoustic_inputs())
 
 def test_pointwise_acoustic_numeric_kernel():
-    """Mostly a test to see if things can be generated and run"""
     flux, conserved, const_fields = acoustic_eqns()
     g = Generator(flux=flux, conserved=conserved, constant_fields=const_fields,
                   eig_method="numerical")
@@ -49,7 +73,6 @@ def test_pointwise_acoustic_numeric_kernel():
     locals()['kernel'](*get_pointwise_acoustic_inputs())
 
 def test_vectorized_acoustic_symbolic_kernel():
-    """Mostly a test to see if things can be generated and run"""
     flux, conserved, const_fields = acoustic_eqns()
     g = Generator(flux=flux, conserved=conserved, constant_fields=const_fields,
                   evaluation="vectorized")
@@ -63,3 +86,56 @@ def test_vectorized_acoustic_symbolic_kernel():
 #                   evaluation="vectorized", eig_method="numerical")
 #     eval(compile(g.generate(), "<generated acoustic kernel>", "exec"))
 #     locals()['kernel'](*get_vectorized_acoustic_inputs())
+
+
+# Advection solver from pyclawpack
+def rp_advection_1d(q_l,q_r,aux_l,aux_r,aux_global):
+    r"""Basic 1d advection riemann solver
+
+    *aux_global* should contain -
+     - *u* - (float) Determines advection speed
+
+    See :ref:`pyclaw_rp` for more details.
+
+    :Version: 1.0 (2008-2-20)
+    """
+
+    # Riemann solver constants
+    meqn = 1
+    mwaves = 1
+
+    # Number of Riemann problems we are solving
+    nrp = q_l.shape[1]
+
+    # Return values
+    wave = np.empty( (meqn, mwaves, nrp) )
+    s = np.empty( (mwaves, nrp) )
+    amdq = np.zeros( (meqn, nrp) )
+    apdq = np.zeros( (meqn, nrp) )
+
+    wave[0,0,:] = q_r[0,:] - q_l[0,:]
+    s[0,:] = aux_global['u']
+    if aux_global['u'] > 0:
+        apdq[0,:] = s[0,:] * wave[0,0,:]
+    else:
+        amdq[0,:] = s[0,:] * wave[0,0,:]
+
+    return wave, s, amdq, apdq
+
+def same_arrays (array_1, array_2, eps=1e-8):
+    return all(abs(a1 - a2) < eps for a1, a2 in \
+               zip(np.ravel(array_1), np.ravel(array_2)))
+
+
+def test_compare_vectorized_advection_to_pyclawpack():
+    flux, conserved, const_fields = advection_eqns()
+    g = Generator(flux=flux, conserved=conserved, constant_fields=const_fields,
+                  evaluation="vectorized")
+    eval(compile(g.generate(), "<generated advection kernel>", "exec"))
+    wave, s, amdq, apdq = locals()['kernel'](*get_vectorized_advection_inputs())
+    gold_wave, gold_s, gold_amdq, gold_apdq = rp_advection_1d(\
+        *get_vectorized_advection_inputs())
+    assert(same_arrays(wave, gold_wave))
+    assert(same_arrays(s, gold_s))
+    assert(same_arrays(amdq, gold_amdq))
+    assert(same_arrays(apdq, gold_apdq))

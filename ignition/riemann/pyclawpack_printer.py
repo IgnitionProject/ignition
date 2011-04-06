@@ -86,6 +86,9 @@ func_decl = """def kernel(q_l, q_r, aux_l, aux_r, aux_global):
 func_return = """return wave, eigen_vals, amdq, apdq
 """
 
+vectorized_func_return = """return wave, eigen_vals.transpose(), amdq, apdq
+"""
+
 file_header = """from __future__ import division
 import numpy as np
 
@@ -135,6 +138,7 @@ class PyClawpackPrinter (RiemannPrinter):
 
     def _print_constant_fields (self, indent=0):
         used_cf = self._generator.used_constant_fields()
+
         if len(used_cf) == 0:
             return ""
 
