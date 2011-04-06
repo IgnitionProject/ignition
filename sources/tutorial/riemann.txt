@@ -8,7 +8,9 @@ hyperbolic equation as below:
 
 
 .. math::
+
     q_t + f(q)*q_t = 0
+
     q_t + A*q_t = 0
 
 Currently only 1D simple kernels are implemented.

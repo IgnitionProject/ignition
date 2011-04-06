@@ -110,15 +110,18 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;No fields.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span><span class="o">.</span><span class="n">jacobian</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">)</span>
 </div></div>
-<span class="k">class</span> <span class="nc">Field</span> <span class="p">(</span><span class="n">Symbol</span><span class="p">):</span>
+<div class="viewcode-block" id="Field"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.language.Field">[docs]</a><span class="k">class</span> <span class="nc">Field</span> <span class="p">(</span><span class="n">Symbol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents a field of the conserved quantity.&quot;&quot;&quot;</span>
     <span class="k">pass</span>
-
-<span class="k">class</span> <span class="nc">ConstantField</span> <span class="p">(</span><span class="n">Symbol</span><span class="p">):</span>
+</div>
+<div class="viewcode-block" id="ConstantField"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.language.ConstantField">[docs]</a><span class="k">class</span> <span class="nc">ConstantField</span> <span class="p">(</span><span class="n">Symbol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents a field of constants defined on cells.&quot;&quot;&quot;</span>
     <span class="k">pass</span>
-
-<span class="k">class</span> <span class="nc">Constant</span> <span class="p">(</span><span class="n">Symbol</span><span class="p">):</span>
+</div>
+<div class="viewcode-block" id="Constant"><a class="viewcode-back" href="../../../modules/riemann.html#ignition.riemann.language.Constant">[docs]</a><span class="k">class</span> <span class="nc">Constant</span> <span class="p">(</span><span class="n">Symbol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents a global constant.&quot;&quot;&quot;</span>
     <span class="k">pass</span>
-</pre></div>
+</pre></div></div>
 
           </div>
         </div>

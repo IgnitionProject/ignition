@@ -61,19 +61,13 @@
 <dt id="ignition.utils.code_tools.comment_code">
 <tt class="descclassname">ignition.utils.code_tools.</tt><tt class="descname">comment_code</tt><big>(</big><em>code_str</em>, <em>line_comment=None</em>, <em>block_comment=None</em><big>)</big><a class="reference internal" href="../modules_gpf/ignition/utils/code_tools.html#comment_code"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ignition.utils.code_tools.comment_code" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds comments to a snippet of code.</p>
-<blockquote>
 <p>If line_comment is a given string then each line is prepended with the
 line_comment string.</p>
 <p>If block_comment is a tuple of two strings (begin, end) the code str is
 surrounded by the strings.</p>
 <p>Example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">code</span> <span class="o">=</span> <span class="s">&quot;This is </span>
-</pre></div>
-</div>
-</blockquote>
-<p>a mulitiline
-comment&#8221;</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">comment_code</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">line_comment</span><span class="o">=</span><span class="s">&quot;//&quot;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">code</span> <span class="o">=</span> <span class="s">&quot;This is </span><span class="se">\n</span><span class="s">a mulitiline</span><span class="se">\n</span><span class="s">comment&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">comment_code</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">line_comment</span><span class="o">=</span><span class="s">&quot;//&quot;</span><span class="p">)</span>
 <span class="go">// This is</span>
 <span class="go">// a mulitiline</span>
 <span class="go">// comment</span>
