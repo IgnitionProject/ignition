@@ -11,12 +11,12 @@ class ConformityError (Exception):
 
 class TensorExpr (Expr):
     """Base object for things with Tensor properties such as:
-    
+
         * rank
         * shape
         * has_inverse
-        * algebraic ops 
-    
+        * algebraic ops
+
     """
     _op_priority = 20
     rank = -1
@@ -48,6 +48,34 @@ class TensorExpr (Expr):
         mul_by_one = self.__mul_by_one(other)
         if mul_by_one is not None:
             return mul_by_one
+
+        # Check for inverse multiplying
+        self_rank = self.rank
+        if self_rank not in [0,2]:
+            pass
+        elif isinstance(other, Mul):
+            self_inv = isinstance(self, Inverse)
+            inv_idx = 0
+            while inv_idx < len(other.args):
+                # Skip numbers, constants, or symbols
+                if not isinstance(other.args[inv_idx], TensorExpr):
+                    pass
+                elif (self_inv and self.args[0] == other.args[inv_idx]) or \
+                     (not self_inv and isinstance(other.args[inv_idx], Inverse) \
+                      and self == other.args[inv_idx].args[0]):
+                    break
+                elif self_rank == 2:
+                    # For rank 2 skip rank 0 objects otherwise break without inv
+                    if other.args[inv_idx].rank != 0:
+                        inv_idx = len(other.args)
+                        break
+                inv_idx += 1
+            if inv_idx < len(other.args):
+                return reduce(operator.mul, other.args[:inv_idx] + \
+                    (Tensor('1', self_rank), ) + other.args[inv_idx+1:])
+        elif (isinstance(self, Inverse) and self.args[0] == other) or \
+             (isinstance(other, Inverse) and self == other.args[0]):
+            return Tensor('1', self_rank)
         return super(TensorExpr, self).__mul__(other)
 
     @call_highest_priority('__mul__')
@@ -60,6 +88,27 @@ class TensorExpr (Expr):
         mul_by_one = self.__mul_by_one(other)
         if mul_by_one is not None:
             return mul_by_one
+
+        # Check for inverse multiplying
+        self_rank = self.rank
+        if not isinstance(other, Mul):
+            pass
+        elif self_rank == 2 and \
+             ((isinstance(self, Inverse) and self.args[0] == other.args[-1]) or \
+              (isinstance(other.args[-1], Inverse) and self == other.args[-1].args[0])):
+            return reduce(operator.mul, other.args[:-1] + \
+                          (Tensor('1', self_rank), ))
+        elif self_rank == 0:
+            if isinstance(self, Inverse):
+                for n in xrange(len(other.args)):
+                    if self.args[0] == other.args[n]:
+                        return reduce(operator.mul, other.args[:n] + \
+                                      (Tensor('1', self_rank), ) + other.args[n+1:])
+            else:
+                for n in xrange(len(other.args)):
+                    if isinstance(other.args[n], Inverse) and self == other.args[n].args[0]:
+                        return reduce(operator.mul, other.args[:n] + \
+                                      (Tensor('1', self_rank), ) + other.args[n+1:])
         return super(TensorExpr, self).__rmul__(other)
 
     @call_highest_priority('__radd__')
@@ -191,7 +240,7 @@ def expr_shape(expr):
     """Returns the shape of a given expression
 
     Will raise ConformityError if expression does not conform.
-    
+
     >>> A = Tensor('A', rank=2)
     >>> B = Tensor('B', rank=2)
     >>> x = Tensor('x', rank=1)
@@ -227,7 +276,7 @@ def expr_rank(expr):
     """Returns the rank of a given expression
 
     Will raise ConformityError if expression does not conform.
-    
+
     >>> A = Tensor('A', rank=2)
     >>> B = Tensor('B', rank=2)
     >>> x = Tensor('x', rank=1)

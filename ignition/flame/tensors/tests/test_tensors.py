@@ -1,7 +1,7 @@
 from sympy import S, Symbol
 from sympy.utilities.pytest import raises
-from ignition.flame.tensors import (ConformityError, numpy_print, T, Tensor,
-                                   solve_vec_eqn)
+from ignition.flame.tensors import (ConformityError, I, numpy_print, one, T,
+                                    Tensor, solve_vec_eqn)
 
 delta_1, omega_2, pi_1, pi_2, gamma_2, mu_12 = \
     map(lambda x: Tensor(x, rank=0),
@@ -93,6 +93,33 @@ def testZeroOne():
     One = Tensor('1', 1)
     k = Tensor('k', 1)
     assert(k - ZERO * One == k)
+
+def testInverseMul():
+    ans = 5*I
+    A = Tensor('A', rank=2, has_inv=True)
+    A_I = Inverse(A)
+    e = 5*A
+    assert(A_I * e == ans)
+    assert(e*A_I == ans)
+    e = 5*A_I
+    assert(A * e == ans)
+    assert(e*A == ans)
+
+    ans = 5*one
+    p = Tensor('p', rank=1)
+    pAp = T(p)*A*p
+    pAp_I = Inverse(pAp)
+    e = 5*pAp
+    assert(e*pAp_I == ans)
+    assert(pAp_I*e == ans)
+    e = 5*pAp_I
+    assert(e*pAp == ans)
+    assert(pAp*e == ans)
+
+    e = 5*pAp*A
+    assert(A_I*e == 5*pAp*I)
+    assert(e*pAp_I == 5*A)
+
 
 if __name__ == "__main__":
     test_numpy_print()
