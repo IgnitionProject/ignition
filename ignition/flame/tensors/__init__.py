@@ -9,6 +9,7 @@ from tensor_expr import (
     is_inner, mul_rank, expr_coeff, expr_shape, expr_rank)
 from tensor import (Tensor)
 from basic_operators import (NotInvertibleError, Inner, Inverse, Transpose, T)
+from simplify import simplify
 from solvers import (all_back_sub, tensor_solver, solve_vec_eqn)
 from printers import (numpy_print, latex_print)
 from tensor_names import (convert_name, set_lower_ind, set_upper_ind, to_latex)

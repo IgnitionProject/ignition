@@ -8,9 +8,11 @@ from sympy.utilities.iterables import postorder_traversal
 from tensor_expr import expr_coeff, expr_rank
 from ignition import IGNITION_DEBUG as DEBUG
 from ignition.utils import flatten, UpdatingPermutationIterator
+
 from ignition.flame.tensors.constants import CONSTANTS
 from ignition.flame.tensors.basic_operators import Inner, NotInvertibleError, \
     Inverse
+from ignition.flame.tensors.simplify import simplify
 from ignition.flame.tensors.printers import update_dict_to_latex
 
 #DEBUG = 1
@@ -80,11 +82,11 @@ def sol_cse (sol_dict):
 
 def solve_vec_eqn(eqn, var):
     """Returns the solution to a linear equation containing Tensors
-    
+
     Raises:
       NonLinearEqnError if the variable is detected to be nonlinear
       NotInvertibleError if an inverse is required that is not available
-      NotImplementedError if operation isn't supported by routine     
+      NotImplementedError if operation isn't supported by routine
     """
     if DEBUG:
         print "solve_vec_eqn: ", eqn, "for", var
@@ -138,12 +140,12 @@ def get_eqns_unk (eqns, knowns):
 
 def forward_solve(eqns, knowns, branching=False):
     """Returns a dict of unknowns:solutions from a simple backward solve.
-    
-    Does a simple backward solver for a list of eqn given a list of unknowns. 
-    Each equation should be an expression that equals zero.  If an unknown is 
+
+    Does a simple backward solver for a list of eqn given a list of unknowns.
+    Each equation should be an expression that equals zero.  If an unknown is
     not solved for, then its entry in the solution dict will be None.
-    
-     
+
+
     >>> q, r, s = map(lambda x: Tensor(x, rank=1), 'qrs')
     >>> delta = Tensor('delta', rank=0)
     >>> eqn1 = s + q
@@ -223,7 +225,7 @@ def is_solved (sol_dict):
                   True)
 
 def update_sol_dict_unk_sol (sol_dict, unknowns, solved, curr_dict):
-    """Upadates the solution dict, unknown list and solved list based on 
+    """Upadates the solution dict, unknown list and solved list based on
     given solution dict (curr_dict)"""
     newly_solved = get_solved(curr_dict)
     if len(newly_solved) == 0:
@@ -241,14 +243,14 @@ def print_sols(sol, sol_dict):
         print "    " + str(k) + "=" + str(sol_dict[k])
 
 def add_new_eqns (add_vars, all_eqns, sol_dict):
-    """Substitutes solved values into equations and adds them to the list of 
+    """Substitutes solved values into equations and adds them to the list of
     equations"""
     for knwn in add_vars:
         for eqn in all_eqns:
             if knwn in eqn:
                 if DEBUG:
                     print "substituting:", knwn, "=", sol_dict[knwn], "in", eqn
-                new_eqn = expand(eqn.subs(knwn, sol_dict[knwn]))
+                new_eqn = symplify(expand(eqn.subs(knwn, sol_dict[knwn])))
                 if new_eqn == S(0): continue
                 all_eqns.append(new_eqn)
                 if DEBUG:
@@ -257,10 +259,10 @@ def add_new_eqns (add_vars, all_eqns, sol_dict):
 
 def assump_solve(eqns, knowns, assumps=None):
     """An aggressive solver for list of eqns and given knowns.
-    
+
     Similar to forward_solve, but will iteratively update equations based on given
-    solutions by assuming an unknown is known. 
-    
+    solutions by assuming an unknown is known.
+
     >>> q, r, s = map(lambda x: Tensor(x, rank=1), 'qrs')
     >>> s_t = Transpose(s)
     >>> delta = Tensor('delta', rank=0)
@@ -268,7 +270,7 @@ def assump_solve(eqns, knowns, assumps=None):
     >>> eqn2 = s_t * r
     >>> assump_solve([eqn1, eqn2], [s, q])
     {delta: -(T(s)*s)/(T(s)*q), r: delta*q + s}
-    
+
     Should not raise any exceptions, but may return a solution dict with
     unsolved variables.
     """
@@ -327,7 +329,7 @@ def assump_solve(eqns, knowns, assumps=None):
             add_new_eqns(filter(lambda k: ret_dict[k] is not None, ret_dict),
                          all_eqns, ret_dict)
 
-        # Substitute new values into equations and add them to the set of eqns        
+        # Substitute new values into equations and add them to the set of eqns
         add_new_eqns(newly_solved, all_eqns, ret_dict)
         # If we solved all unknowns stop
         if len(unknowns) == 0:
@@ -374,8 +376,8 @@ def build_assump_stack (eqns, knowns, levels= -1):
 def branching_assump_solve(eqns, knowns, levels= -1):
     """Returns all unique solutions discovered by assuming different unknowns
     and branching to see if different solutions occur.
-    
-    See also: assump_solve    
+
+    See also: assump_solve
     """
     print "Building assumption stacks"
     assump_stack = build_assump_stack(eqns, knowns, levels)
@@ -457,18 +459,18 @@ def backward_sub(eqns, knowns, unknowns=None, multiple_sols=False, sub_all=True,
                 else:
                     sols = [sol_dict[unk]]
                 for sol in sols:
-                    # FIXME: This a hack, if the substitution raised a 
+                    # FIXME: This a hack, if the substitution raised a
                     #        NotInvertibleError then the equation is jacked up
                     try:
                         sub_sol = eqn.subs(unk, sol)
-                        new_eqns.append(expand(sub_sol))
+                        new_eqns.append(simplify(expand(sub_sol)))
                     except NotInvertibleError:
                         pass
             for i in xrange(len(new_eqns)):
                 if new_eqns[i] in constraints:
                     continue
                 for cnstrt in constraints:
-                        new_eqns[i] = new_eqns[i].subs(cnstrt, S(0))
+                        new_eqns[i] = simplify(expand(new_eqns[i].subs(cnstrt, S(0))))
             new_eqns = filter(lambda s: s != S(0), set(new_eqns))
 #            print "New Eqns:", pprint.pformat(new_eqns, 5, 80)
             if sub_all:
