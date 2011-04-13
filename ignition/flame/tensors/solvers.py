@@ -26,7 +26,8 @@ class UnsolvableEqnsError (Exception):
 
 
 def tensor_solver (b4_eqns, aft_eqns, e_knowns=[], levels= -1, num_sols=1,
-                   verbose=True, solution_file=None, logic_files=None):
+                   verbose=True, solution_file=None, logic_files=None,
+                   allow_recompute=False):
     """Updater calling tensor solvers."""
     if verbose or DEBUG:
         print "tensor_solver:"
@@ -49,7 +50,7 @@ def tensor_solver (b4_eqns, aft_eqns, e_knowns=[], levels= -1, num_sols=1,
         print "=" * 80
     multiple_sols = True
     sub_all = True
-    sol_dicts = all_back_sub(eqns, knowns, levels, multiple_sols, sub_all)
+    sol_dicts = all_back_sub(eqns, knowns, levels, multiple_sols, sub_all, allow_recompute)
     #sol_dicts = map(sol_cse, sol_dicts)
     if solution_file:
         fp = open(solution_file, 'w')
@@ -479,7 +480,38 @@ def backward_sub(eqns, knowns, unknowns=None, multiple_sols=False, sub_all=True,
                 all_eqns.extend(new_eqns)
     return (sol_dict, None)
 
-def all_back_sub(eqns, knowns, levels= -1, multiple_sols=False, sub_all=True):
+def sol_without_recomputes (sol_tup):
+    if isinstance(sol_tup[0].values()[-1], set):
+        return sol_without_recomputes_multi(sol_tup)
+    sol_dict, ord_unks = sol_tup
+    for unk_idx in xrange(len(ord_unks)-1, -1, -1):
+        unk_eqn = sol_dict[ ord_unks[unk_idx]]
+        for knw_idx in xrange(len(ord_unks)-1, unk_idx, -1):
+            knw_eqn = sol_dict[ord_unks[knw_idx]]
+            if unk_eqn in knw_eqn:
+                return None
+    return sol_tup
+
+def sol_without_recomputes_multi (sol_tup):
+    sol_dict, ord_unks = sol_tup
+    for unk_idx in xrange(len(ord_unks)-1, -1, -1):
+        unk_eqns = sol_dict[ ord_unks[unk_idx]]
+        for knw_idx in xrange(len(ord_unks)-1, unk_idx, -1):
+            bad_eqns = []
+            knw_var = ord_unks[knw_idx]
+            knw_eqns = sol_dict[knw_var]
+            for knw_eqn in knw_eqns:
+                for unk_eqn in unk_eqns:
+                    if unk_eqn in knw_eqn:
+                        bad_eqns.append(knw_eqn)
+            sol_dict[knw_var] = sol_dict[knw_var] - set(bad_eqns)
+            if len(sol_dict[knw_var]) == 0:
+                return None
+    return sol_dict, ord_unks
+
+
+def all_back_sub(eqns, knowns, levels= -1, multiple_sols=False, sub_all=True,
+                 allow_recompute=False):
     unks = get_eqns_unk(eqns, knowns)
     print "Knowns:", knowns
     print "Unknowns:", unks
@@ -515,4 +547,7 @@ def all_back_sub(eqns, knowns, levels= -1, multiple_sols=False, sub_all=True):
     print "Found %d unique solutions" % len(sols)
     sols.sort(key=lambda s: sum([len(list(postorder_traversal(v))) \
                                       for _, v in s[0].iteritems()]))
+    if not allow_recompute:
+        sols = filter(lambda x:x, map(sol_without_recomputes, sols))
+        print "Found %d unique solutions without recomputation" % len(sols)
     return sols

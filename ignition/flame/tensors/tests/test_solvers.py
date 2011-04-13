@@ -1,9 +1,9 @@
 from sympy import S
 
-from ignition.flame.tensors import expr_rank, expr_shape, solve_vec_eqn, \
-    T, Tensor, Transpose
-from ignition.flame.tensors.solvers import all_back_sub, assump_solve, \
-    backward_sub, branching_assump_solve, forward_solve
+from ignition.flame.tensors import (expr_rank, expr_shape, solve_vec_eqn,
+                                    T, Tensor, Transpose)
+from ignition.flame.tensors.solvers import (all_back_sub, assump_solve,
+    backward_sub, branching_assump_solve, forward_solve, sol_without_recomputes)
 
 def test_backward_sub():
     q, r, s = map(lambda x: Tensor(x, rank=1), 'qrs')
@@ -66,7 +66,7 @@ def test_0 ():
 #def test_1 ():
 #    # r = s - q * delta,  and
 #    # s^t r = 0
-#    # 
+#    #
 #    # {q and s known}
 #    # delta = (s^t q)^{-1} s^t s
 #    # {q, s, and delta known}
@@ -267,3 +267,22 @@ def test_numerator ():
 def test_cyclic_solve ():
     a, b = map(lambda x: Tensor(x, rank=0), 'ab')
     assert(backward_sub([a + b], [], [a, b]) == (None, b))
+
+def test_sol_without_recomputes ():
+    a, b, c, d = map(lambda x: Tensor(x, rank=0), 'abcd')
+    sol_dict = {a: b + c*d, b: c*d}
+    ord_unk = [a, b]
+    assert(sol_without_recomputes((sol_dict, ord_unk)) == (sol_dict, ord_unk))
+    sol_dict = {a: b + c*d, b: c*d}
+    ord_unk = [b, a]
+    assert(sol_without_recomputes((sol_dict, ord_unk)) is None)
+    sol_dict = {a: set([b + c*d]), b: set([c*d])}
+    ord_unk = [b, a]
+    assert(sol_without_recomputes((sol_dict, ord_unk)) is None)
+    sol_dict = {a: set([b + c*d, b*d]), b: set([c*d])}
+    ord_unk = [b, a]
+    assert(sol_without_recomputes((sol_dict, ord_unk)) == \
+           ({a: set([b*d]), b: set([c*d])}, ord_unk))
+    sol_dict = {a: set([b + c*d, b*d]), b: set([c*d])}
+    ord_unk = [a, b]
+    assert(sol_without_recomputes((sol_dict, ord_unk)) == (sol_dict, ord_unk))
