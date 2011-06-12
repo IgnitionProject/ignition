@@ -1,7 +1,8 @@
 from sympy import S, Symbol
 from sympy.utilities.pytest import raises
-from ignition.flame.tensors import (ConformityError, I, numpy_print, one, T,
+from ignition.flame.tensors import (ConformityError, I, Inverse, one, T,
                                     Tensor, solve_vec_eqn)
+
 
 delta_1, omega_2, pi_1, pi_2, gamma_2, mu_12 = \
     map(lambda x: Tensor(x, rank=0),

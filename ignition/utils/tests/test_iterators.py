@@ -1,4 +1,4 @@
-from sympy import raises
+from sympy.utilities.pytest import raises
 
 from ignition.utils.iterators import (flatten, flatten_list, nested_list_idxs,
                                       UpdatingPermutationIterator)

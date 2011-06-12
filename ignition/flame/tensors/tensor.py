@@ -9,11 +9,11 @@ from tensor_names import add_idx, convert_name, set_lower_ind, set_upper_ind, \
                          to_latex
 
 
-m, n, k = symbols('mnk')
+m, n, k = symbols('m n k')
 
 class Tensor (TensorExpr, Symbol):
     """Basic Tensor symbol.
-    
+
     >>> A = Tensor('A', rank=2)
     >>> B = Tensor('B', rank=2)
     >>> x = Tensor('x', rank=1)
@@ -24,7 +24,7 @@ class Tensor (TensorExpr, Symbol):
     alpha*A*x + beta*B*x
     >>> expand((alpha*A+beta*B)*(x+y))
     alpha*A*x + alpha*A*y + beta*B*x + beta*B*y
-    
+
     """
 
     def __new__ (cls, ten, rank=None, shape=None, has_inv=None, transposed=None,
@@ -112,12 +112,12 @@ class Tensor (TensorExpr, Symbol):
 
 class BasisVector (Tensor):
     """Unit basis vector with 1 at given position r.
-    
+
     >>> e_0 = BasisVector(0)
     >>> A = Tensor('A')
-    >>> A*e_0 
+    >>> A*e_0
     a[0]
-    
+
     """
 
     _op_priority = 122
