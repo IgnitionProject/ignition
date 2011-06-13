@@ -66,7 +66,9 @@ class Inverse (TensorExpr, Function):
     def _sympystr(self, printer):
         return "(%s)**-1" % str(self.args[0])
 
-    def _latex(self, printer):
+    #FIXME: Not sure why inverse is getting an extra arg here but just using a
+    #       dummy until I figure out the issue.
+    def _latex(self, printer, *args):
         if len(self.args[0].args) <= 1:
             return latex(self.args[0]) + "^{-1}"
         else:
