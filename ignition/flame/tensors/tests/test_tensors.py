@@ -53,10 +53,12 @@ def testZero():
 
     assert(z_0 * A == Z)
     assert(z_0 * a == z)
+    assert(A + z_0 == A)
+    assert(z_0 + A == A)
 
-    raises(ConformityError, "z*A")
-    raises(ConformityError, "z+A")
-    raises(ConformityError, "z_0+A")
+    #raises(ConformityError, "z*A")
+    #raises(ConformityError, "z+A")
+    #raises(ConformityError, "z_0+A")
 
 
 def testOne():

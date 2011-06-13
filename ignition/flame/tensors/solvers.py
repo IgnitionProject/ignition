@@ -5,7 +5,7 @@ import pprint
 from sympy import Add, cse, expand, Mul, S
 from sympy.utilities.iterables import postorder_traversal
 
-from tensor_expr import expr_coeff, expr_rank
+from tensor_expr import expr_coeff, expr_nonlinear, expr_rank
 from ignition import IGNITION_DEBUG as DEBUG
 from ignition.utils import flatten, UpdatingPermutationIterator
 
@@ -93,7 +93,7 @@ def solve_vec_eqn(eqn, var):
         print "solve_vec_eqn: ", eqn, "for", var
     if var.rank != expr_rank(eqn):
         raise ValueError("Unmatched ranks of clauses")
-    if eqn.as_poly(var).degree() > 1:
+    if expr_nonlinear(eqn, var):
         raise NonLinearEqnError()
 
     def _only_solve_numerator(expr):
@@ -251,7 +251,7 @@ def add_new_eqns (add_vars, all_eqns, sol_dict):
             if knwn in eqn:
                 if DEBUG:
                     print "substituting:", knwn, "=", sol_dict[knwn], "in", eqn
-                new_eqn = symplify(expand(eqn.subs(knwn, sol_dict[knwn])))
+                new_eqn = simplify(expand(eqn.subs(knwn, sol_dict[knwn])))
                 if new_eqn == S(0): continue
                 all_eqns.append(new_eqn)
                 if DEBUG:

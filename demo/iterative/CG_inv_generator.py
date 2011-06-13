@@ -30,17 +30,17 @@ class InvariantGenerator( object ):
                 # We throw away constants since they don't need a new name
                 ret = "_"
             else:
-                ret = str(obj)
+                ret = obj
         else:
             raise ValueError("Unable to handle obj %s of type %s" % \
                              (str(obj), type(obj)))
         return ret
 
     def _get_signature(self, fname):
-        return "def %(fname)s($(fargs)s):" % \
+        return "def %(fname)s(%(fargs)s):" % \
             {'fname': fname,
              'fargs': ", ".join(map(lambda o: str(self._get_tuple_args(o)),
-                                    self.args)),
+                                    self.args)).replace("'", ""),
             }
 
     def _get_body(self, inv):

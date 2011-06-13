@@ -8,6 +8,7 @@ from numpy import eye, dot, max, sqrt, zeros, ones
 from numpy.random import random
 from numpy.linalg import solve
 from pprint import pprint
+from sympy.utilities.pytest import skip
 
 from ignition.flame.tensors import all_back_sub, numpy_print, T, Tensor
 
@@ -221,6 +222,7 @@ def test_reg_cg():
     run_cg_algorithms(cg_eqns, knowns)
 
 def test_expanded_cg():
+    skip("Test takes too long")
     delta_1, mu_12 = map(lambda x: Tensor(x, rank=0), ['delta_1', 'mu_12'])
     r_1, r_2, q_1, q_2, p_1, p_2, x_1, x_2 = map(lambda x: Tensor(x, rank=1), \
         ['r_1', 'r_2', 'q_1', 'q_2', 'p_1', 'p_2', 'x_1', 'x_2'])
@@ -242,6 +244,7 @@ def test_expanded_cg():
     run_cg_algorithms(cg_eqns, knowns)
 
 def test_chronos_cg():
+    skip("Test takes too long")
     delta_1, omega_2, pi_1, pi_2, mu_12 = map(lambda x: Tensor(x, rank=0), \
         ['delta_1', 'omega_2', 'pi_1', 'pi_2', 'mu_12'])
     r_1, r_2, q_1, q_2, p_1, p_2, x_1, x_2 = map(lambda x: Tensor(x, rank=1), \

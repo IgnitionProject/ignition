@@ -113,6 +113,10 @@ class TensorExpr (Expr):
 
     @call_highest_priority('__radd__')
     def __add__ (self, other):
+        if is_zero(self):
+            return other
+        elif is_zero(other):
+            return self
         is_add_conforming_or_die(self, other)
         if is_zero(self):
             return other
@@ -122,6 +126,10 @@ class TensorExpr (Expr):
 
     @call_highest_priority('__add__')
     def __radd__ (self, other):
+        if is_zero(self):
+            return other
+        elif is_zero(other):
+            return self
         is_add_conforming_or_die(other, self)
         if self.name and self.name.startswith('0'):
             return other
@@ -325,6 +333,22 @@ def expr_coeff(expr, var):
     lhs = expr.args[:idx]
     rhs = expr.args[idx + 1:] if len(expr.args) > idx + 1 else []
     return reduce(operator.mul, lhs, S(1)), expr.args[idx], reduce(operator.mul, rhs, S(1))
+
+def expr_nonlinear(expr, var):
+    args = expr.args
+    if var not in expr or var is expr:
+        return False
+    elif isinstance(expr, Add):
+        pass
+    elif isinstance(expr, Mul):
+        if len(filter(lambda arg: var in arg, expr.args)) > 1:
+            return True
+    elif isinstance(expr, Pow):
+        if (var in expr.args[0] and abs(expr.args[1]) > 1) or \
+            var in expr.args[1]:
+            return True
+        args = expr.args[:1]
+    return any(map(lambda e: expr_nonlinear(e, var), args))
 
 
 from tensor import Tensor #/* cyclic */
