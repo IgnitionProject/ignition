@@ -6,7 +6,10 @@ from sympy.core.decorators import call_highest_priority
 # from tensor import Tensor /* cyclic */
 # from functions import Inner, Inverse, Transpose /* cyclic */
 
-class ConformityError (Exception):
+class FlameTensorError(Exception):
+    pass
+
+class ConformityError (FlameTensorError):
     pass
 
 class TensorExpr (Expr):

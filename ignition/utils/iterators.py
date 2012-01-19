@@ -1,11 +1,12 @@
 """Defines some custom iterators"""
 
 from copy import copy
+import math
 
 class UpdatingPermutationIterator (object):
     """A permutation iterator that can update to stop cycling on a particular
     position.
-    
+
     >>> iter = UpdatingPermuataionIterator(range(2))
     >>> list(iter)
     [[0, 1], [1, 0]]
@@ -18,8 +19,8 @@ class UpdatingPermutationIterator (object):
     >>> iter.bad_pos(0)
     >>> list(iter)
     >>> [[2, 0, 1], [2, 1, 0]]
-    
-    
+
+
     """
 
     def __init__ (self, items, n= -1):
@@ -28,6 +29,9 @@ class UpdatingPermutationIterator (object):
         self._curr = range(self._n)
         self._done = False
         self._first = True
+
+    def __len__(self):
+        return math.factorial(len(self._items))
 
     def _increment(self):
         i = self._n - 1
@@ -83,7 +87,7 @@ class UpdatingPermutationIterator (object):
 
 def flatten (alst):
     """A recursive flattening algorithm for handling arbitrarily nested iterators
-    
+
     >>> flatten([0, [1,(2, 3), [4, [5, [6, 7]]]], 8])
     [1, 2, 3, 4, 5, 6, 7, 8]
     """
@@ -98,7 +102,7 @@ def flatten (alst):
 
 def flatten_list (alst):
     """Similar to flatten except only flattens lists
-    
+
     >>> flatten_list([0, (2, 3), [4])
     [0, (2, 3), 4]
     """
@@ -112,7 +116,7 @@ def flatten_list (alst):
     return list(_recur(alst))
 
 def nested_list_idxs (alst):
-    """Returns tuple generator corresponding to all indexes in the 
+    """Returns tuple generator corresponding to all indexes in the
     nested list
 
     >>> list(nested_list_iter([[1,2],[3]])

@@ -14,6 +14,7 @@ from ignition.flame.tensors.basic_operators import Inner, NotInvertibleError, \
     Inverse
 from ignition.flame.tensors.simplify import simplify
 from ignition.flame.tensors.printers import update_dict_to_latex
+from ignition.flame.tensors.tensor_expr import FlameTensorError
 
 #DEBUG = 1
 LATEX = 1
@@ -518,7 +519,7 @@ def all_back_sub(eqns, knowns, levels= -1, multiple_sols=False, sub_all=True,
     ord_unk_iter = UpdatingPermutationIterator(unks,
                                        levels if levels != -1 else len(unks))
     sols = []
-    tot_to_test = len(list(ord_unk_iter))
+    tot_to_test = len(ord_unk_iter)
     print "Searching a possible %d orders" % tot_to_test
     print "Hit control-C to stop searching and return solutions already found."
     ord_unk_iter.reset()
@@ -529,8 +530,12 @@ def all_back_sub(eqns, knowns, levels= -1, multiple_sols=False, sub_all=True,
             num_tested += 1
             if num_tested % (tot_to_test / 10 if tot_to_test > 10 else 2) == 0:
                 print "Tested: ", num_tested, ", Solutions:", len(sols)
-            sol_dict, failed_var = backward_sub(eqns, knowns, ord_unks,
-                                                multiple_sols, sub_all)
+            try:
+                sol_dict, failed_var = backward_sub(eqns, knowns, ord_unks,
+                                                    multiple_sols, sub_all)
+            except FlameTensorError:
+                continue
+
     #        print "  result:", sol_dict, failed_var
             if sol_dict is None:
                 if failed_var in ord_unks:
