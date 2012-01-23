@@ -18,14 +18,14 @@ def CG_Inv ( A,R,P,D,I,J,JI,U,W,Z, ):
     [ R_l,R_m,R_r, ] = R
     [ P_l,P_m,P_r, ] = P
     [ [ D_l,_,_, ], [ _,D_m,_, ], [ _,_,D_r, ], ] = D
-    [ [ I,_,_, ], [ _,I,_, ], [ _,_,I, ], ] = I
+    [ [ I_tl,_,_, ], [ _,I_ml,_, ], [ _,_,I_br, ], ] = I
     [ [ J_tl,_,_, ], [ j_ml,_,_, ], [ _,j_bm,J_br, ], ] = J
     [ [ JI_tl,JI_tm,JI_tr, ], [ JI_ml,JI_mm,JI_mr, ], [ JI_bl,JI_bm,JI_br, ], ] = JI
     [ [ U_tl,U_tm,U_tr, ], [ _,U_mm,U_mr, ], [ _,_,U_br, ], ] = U
     [ [ W_l,_,_, ], [ _,W_m,_, ], [ _,_,W_r, ], ] = W
     [ [ Z_l,_,_, ], [ _,Z_m,_, ], [ _,_,Z_r, ], ] = Z
     eqns = [
-     I - J_tl - JI_tl ,
+     I_tl - J_tl - JI_tl ,
      j_ml - JI_ml ,
      R_l * J_tl + R_m * j_ml - R_l - A * P_l * D_l ,
      R_l * JI_tl + R_m * JI_ml - A * P_l * D_l ,

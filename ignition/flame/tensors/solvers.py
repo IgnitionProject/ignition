@@ -2,6 +2,7 @@
 
 from copy import copy
 import pprint
+import traceback
 from sympy import Add, cse, expand, Mul, S
 from sympy.utilities.iterables import postorder_traversal
 
@@ -11,7 +12,7 @@ from ignition.utils import flatten, UpdatingPermutationIterator
 
 from ignition.flame.tensors.constants import CONSTANTS
 from ignition.flame.tensors.basic_operators import Inner, NotInvertibleError, \
-    Inverse
+    Inverse, Transpose
 from ignition.flame.tensors.simplify import simplify
 from ignition.flame.tensors.printers import update_dict_to_latex
 from ignition.flame.tensors.tensor_expr import FlameTensorError
@@ -126,6 +127,8 @@ def solve_vec_eqn(eqn, var):
                     rhs /= coeff
                     lhs = var
             return _solve_recur(lhs, rhs)
+        if isinstance(expr, Transpose):
+            return _solve_recur(expr.args[0], Transpose(rhs))
         raise NotImplementedError("Can't handle expr of type %s" % type(expr))
     # Check if expr is of the form (a + b) / c with rank(c) == 0
     # then solve just the numerator
@@ -533,7 +536,9 @@ def all_back_sub(eqns, knowns, levels= -1, multiple_sols=False, sub_all=True,
             try:
                 sol_dict, failed_var = backward_sub(eqns, knowns, ord_unks,
                                                     multiple_sols, sub_all)
-            except FlameTensorError:
+            except FlameTensorError, e:
+                print "Error for:", ord_unks
+                traceback.print_exc()
                 continue
 
     #        print "  result:", sol_dict, failed_var

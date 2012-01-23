@@ -332,7 +332,7 @@ class Fuse_J_3x3 (TensorRepartFuseRule):
         ret[J_tl] = matrix([[J_tl.update(l_ind="00"), Zero],
                             [Tj_ml.update(l_ind="10"), zero]])
         ret[Tj_ml] = matrix([T(Zero), one])
-        # FIXME: Bug with Fuse printing layout should be 
+        # FIXME: Bug with Fuse printing layout should be
         ret[j_bm] = matrix([[j_bm.update(l_ind="32")]])
         ret[J_br] = matrix([[J_br.update(l_ind="33")]])
         return ret
@@ -344,8 +344,8 @@ class Part_I_J_3x3 (TensorPartRule):
     def __call__(self, I_J):
         return \
           [[I_J.update(l_ind="tl"), Zero, Zero],
-           [-T(I_J.update(l_ind="ml", rank=1)), one, T(Zero)],
-           [ZERO, I_J.update(l_ind="bm", rank=1), I_J.update(l_ind="br")]]
+           [-T(I_J.update(l_ind="ml", rank=I_J.rank - 1)), one, T(Zero)],
+           [ZERO, I_J.update(l_ind="bm",rank=I_J.rank - 1), I_J.update(l_ind="br")]]
 
 class Repart_I_J_3x3 (TensorRepartFuseRule):
     """Special Repartition rule for I - J"""
