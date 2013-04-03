@@ -91,6 +91,7 @@ vectorized_func_return = """return wave, eigen_vals.transpose(), amdq, apdq
 
 file_header = """from __future__ import division
 import numpy as np
+from numpy import sqrt
 
 """
 
