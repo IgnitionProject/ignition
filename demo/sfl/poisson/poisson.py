@@ -6,4 +6,4 @@ K = Coefficient('K', rank=0)
 
 expr = div(K * grad(u))
 
-generate('proteus', expr)
+generate('proteus', expr).to_file()
