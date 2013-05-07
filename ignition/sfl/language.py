@@ -1,3 +1,4 @@
+import numpy as np
 from sympy import Expr, Symbol
 
 class Variable(Symbol):
@@ -19,12 +20,6 @@ class FunctionSpace(Symbol):
     """Represents a function space"""
     pass
 
-# Measures
-class Measure(Symbol):
-    pass
-
-dX = Measure('dX')
-
 # Domains
 class Domain(Symbol):
     """Represents a domain"""
@@ -33,11 +28,6 @@ class Domain(Symbol):
 class Region(Domain):
     """Represents a region (or subset of a domain)"""
     pass
-
-# Functions
-class Function(Symbol):
-    pass
-
 
 # Operators
 class Operator(Expr):
@@ -49,11 +39,16 @@ class div(Operator):
 class grad(Operator):
     pass
 
+class Dt(Operator):
+    """Derivative with respect to time."""
+    pass
 
 class Dx(Operator):
+    """Deriviative with repect to space."""
     pass
 
 class Dn(Operator):
+    """Deriviative along normal of boundary."""
     pass
 
 class curl(Operator):
@@ -71,7 +66,7 @@ class Coefficient(Symbol):
     expr. Code linking to the generated code must defind the named
     function for evaluation.
     """
-    def __new__(cls, name, rank):
+    def __new__(cls, name, rank=None, dim=None):
         obj = Symbol.__new__(cls, name)
         obj.rank = rank
         return obj
@@ -81,5 +76,7 @@ class Constant(Coefficient):
 
     Expression that is not defined by unknowns from another SFL expr.
     """
-    def __new__(cls, val, rank=None):
-        return Coefficient.__new__(cls, rank)
+    def __new__(cls, name, val, rank=None, dim=None):
+        obj = Coefficient.__new__(cls, name, rank, dim)
+        obj.val = np.array(val)
+        return obj

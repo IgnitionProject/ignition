@@ -5,7 +5,7 @@ class SFLGenerator(object):
 
     """
     def __init__(self, expr):
-        self.expr
+        self.expr = expr
 
     def generate(self):
         pass
@@ -15,7 +15,7 @@ class ProteusGenerator(SFLGenerator):
 
     """
     def to_file(self, filename):
-        with f as open(filename, 'w'):
+        with open(filename, 'w') as f:
             f.write(self.generate)
 
 class UFLGenerator(SFLGenerator):
@@ -23,11 +23,11 @@ class UFLGenerator(SFLGenerator):
 
     """
     def to_file(self, filename):
-        with f as open(filename, 'w'):
+        with open(filename, 'w') as f:
             f.write(self.generate)
 
 
-def generator(framework, expr):
+def generate(framework, expr):
     """Generates the equation in a lower level framework"""
     if framework == "proteus":
         return ProteusGenerator(expr)
