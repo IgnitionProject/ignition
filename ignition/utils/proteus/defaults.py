@@ -3,8 +3,13 @@ import proteus.StepControl
 import proteus.TimeIntegration
 import proteus.Transport
 
+class ProteusBase(object):
 
-class ProteusProblem(object):
+    def __init__(self, **kws):
+        for k, v in kws.iteritems():
+            setattr(self, k, v)
+
+class ProteusProblem(ProteusBase):
     """A default Problem for Proteus """
 
     name = None # Name of model, None or string
@@ -33,7 +38,8 @@ class ProteusProblem(object):
     sd = True # Use sparse representation of diffusion tensors
     LevelModelType = proteus.Transport.OneLevelTransport
 
-class ProteusNumerics(object):
+
+class ProteusNumerics(ProteusBase):
     """The default values for numerics modules
     """
     stepController = proteus.StepControl.FixedStep # The step controller class derived from :class:`proteus.StepControl.SC_base`
