@@ -13,6 +13,3 @@ def __ignition_debug():
 IGNITION_DEBUG = __ignition_debug()
 
 from utils import *
-import flame
-import int_gen
-import riemann
