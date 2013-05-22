@@ -80,3 +80,7 @@ class Constant(Coefficient):
         obj = Coefficient.__new__(cls, name, rank, dim)
         obj.val = np.array(val)
         return obj
+
+
+# Visitors
+def extract_independent_coefficietns(expr):
