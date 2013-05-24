@@ -7,13 +7,14 @@ TARGETS= $(BENCH_EXEC) $(SHARED_OBJS) sum_of_squares_ctypes.py
 
 CC=gcc
 CYTHON=cython
+PYTHON=python
 
 CFLAGS=-I $(PYTHONINC) -O2 -Wall -fwrapv -fno-strict-aliasing -std=gnu99
 LDFLAGS=-fPIC -shared 
 PYLDFLAGS=-pthread -L $(PYTHONLIB) -Wl,-rpath,$(PYTHONLIB) -lpython2.7 -L . -lsum_of_squares
 
 bench: $(TARGETS)
-	python $<
+	$(PYTHON) $<
 
 libsum_of_squares.so: sum_of_squares.c sum_of_squares.h
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
