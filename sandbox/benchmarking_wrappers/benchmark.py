@@ -1,10 +1,10 @@
 import time
 
-import sum_of_squares_ctypes
-import sum_of_squares_cython
-import sum_of_squares_cffi
-import sum_of_squares
-
+from sum_of_squares_ctypes import sum_of_squares_ctypes
+from sum_of_squares_cython import sum_of_squares_cython_compile, sum_of_squares_cython_wrap
+from sum_of_squares_cffi import sum_of_squares_cffi
+from sum_of_squares import sum_of_squares as sum_of_squares_swig
+from sum_of_squares_extension import sum_of_squares_extension
 
 def sum_of_squares_py(N):
     sum = 0
@@ -14,11 +14,12 @@ def sum_of_squares_py(N):
 
 
 funcs = [sum_of_squares_py,
-         sum_of_squares_ctypes.sum_of_squares_ctypes,
-         sum_of_squares_cython.sum_of_squares_cython_compile,
-         sum_of_squares_cython.sum_of_squares_cython_wrap,
-         sum_of_squares_cffi.sum_of_squares_cffi,
-         sum_of_squares.sum_of_squares,
+         sum_of_squares_ctypes,
+         sum_of_squares_cython_compile,
+         sum_of_squares_cython_wrap,
+         sum_of_squares_cffi,
+         sum_of_squares_swig,
+         sum_of_squares_extension
          ]
 
 input = 100
