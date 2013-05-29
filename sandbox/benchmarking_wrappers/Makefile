@@ -31,15 +31,18 @@ sum_of_squares_cython.c:sum_of_squares_cython.pyx libsum_of_squares.so csum_of_s
 
 sum_of_squares_cython.so:sum_of_squares_cython.c
 	$(CC) $(CFLAGS) $(PY_CFLAGS) $(LDFLAGS) $(PY_LDFLAGS) $(SQUARES_LDFLAGS) -o $@ $<
+	install_name_tool -change /opt/anaconda1anaconda2anaconda3/lib/libpython2.7.dylib /Users/aterrel/workspace/opt/apps/anaconda/1.4.0/lib/libpython2.7.dylib $@
 
 sum_of_squares_wrap.c:sum_of_squares.i
 	$(SWIG) $<
 
 sum_of_squares_wrap.o:sum_of_squares_wrap.c
 	$(CC) $(CFLAGS) $(PY_CFLAGS) -c $<
+	install_name_tool -change /opt/anaconda1anaconda2anaconda3/lib/libpython2.7.dylib /Users/aterrel/workspace/opt/apps/anaconda/1.4.0/lib/libpython2.7.dylib $@
 
 _sum_of_squares.so: sum_of_squares_wrap.o libsum_of_squares.so
 	$(CC) $(CFLAGS) $(PY_CFLAGS) $(LDFLAGS) $(PY_LDFLAGS) $(SQUARES_LDFLAGS) -o $@ $<
+	install_name_tool -change /opt/anaconda1anaconda2anaconda3/lib/libpython2.7.dylib /Users/aterrel/workspace/opt/apps/anaconda/1.4.0/lib/libpython2.7.dylib $@
 
 clean: 
 	$(RM) -rf $(SHARED_OBJS) $(CYTHON_INTERMEDIATE) $(SWIG_INTERMEDIATE) *.pyc
