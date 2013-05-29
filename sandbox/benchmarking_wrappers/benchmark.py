@@ -6,6 +6,9 @@ from sum_of_squares_cffi import sum_of_squares_cffi
 from sum_of_squares_swig import sum_of_squares_swig
 from sum_of_squares_extension import sum_of_squares_extension
 
+import bitey
+from sum_of_squares_bitey import sum_of_squares_bitey
+
 def sum_of_squares_py(N):
     sum = 0
     for i in range(1, N+1):
@@ -19,7 +22,8 @@ funcs = [sum_of_squares_py,
          sum_of_squares_cython_wrap,
          sum_of_squares_cffi,
          sum_of_squares_swig,
-         sum_of_squares_extension
+         sum_of_squares_extension,
+         sum_of_squares_bitey
          ]
 
 input = 100
