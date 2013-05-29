@@ -3,6 +3,7 @@ import time
 import sum_of_squares_ctypes
 import sum_of_squares_cython
 import sum_of_squares_cffi
+import sum_of_squares
 
 
 def sum_of_squares_py(N):
@@ -17,6 +18,7 @@ funcs = [sum_of_squares_py,
          sum_of_squares_cython.sum_of_squares_cython_compile,
          sum_of_squares_cython.sum_of_squares_cython_wrap,
          sum_of_squares_cffi.sum_of_squares_cffi,
+         sum_of_squares.sum_of_squares,
          ]
 
 input = 100
