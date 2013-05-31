@@ -53,20 +53,30 @@ class CCodePrinter(CodePrinter):
         fp.write(out_code)
 
     def _visit_node(self, node, indent=0):
+        if hasattr(node, "__iter__"):
+            return "\n".join(map(lambda n: self._visit_node(n, indent), node))
         visitor_func = self.__getattribute__("_visit_%s" % node.name)
         return visitor_func(node, indent)
 
     def _visit_statement(self, node, indent=0):
-        return indent_code(node.__str__() + ";", indent)
+        return indent_code(node.__str__() + ";\n", indent)
 
     def _visit_loopnode(self, node, indent=0):
         """Adds a c-code snippet to a loop"""
-        # if kind == 'for':
-        #     ret_str = "for (%(loop_idx_type)s %(loop_idx)s = %(start)s; " \
-        #               "%(loop_idx)s < %(stop)s; %(loop_idx)s += %(inc)s) {\n"
-        #     ret_str = ret_str % {}
-        # ret_str += indent_code(self.node, indent + 2)
-        # ret_str += '}'
-        # return ret_str
+        kind = node.kind
+        if kind == 'for':
+            ret_str = "for (%(idx)s = %(init)s; " \
+                      "%(idx)s < %(test)s; %(idx)s += %(inc)s) {\n"
+        elif kind == "while":
+            ret_str = "(%(idx)s = %(init)s; \n" \
+                      "while (%(idx)s < %(test)s) {\n" \
+                      "  %(idx)s += %(inc)s) {\n"
+        else:
+            raise NotImplementedError("Do not know how to print %s kind of loop" \
+                                      % kind)
+        ret_str = ret_str % node.__dict__
+        ret_str += self._visit_node(node.objs, indent + 2)
+        ret_str += '}'
+        return indent_code(ret_str, indent)
 
 

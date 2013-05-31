@@ -37,7 +37,7 @@ class Statement(CodeObj):
     name = "statement"
 
     def __init__(self, operator, *args):
-        super(CodeObj, self).__init__()
+        super(Statement, self).__init__()
         self.operator = operator
         self.args = args
 
@@ -45,12 +45,12 @@ class Statement(CodeObj):
         operator = self.operator
         args = self.args
         if len(args) == 1:
-            return str(operator) + " " + str(args[0])
+            ret_str =  str(operator) + " " + str(args[0])
         elif len(args) == 2:
-            return " ".join([str(args[0]), str(operator), str(args[1])])
+            ret_str = " ".join([str(args[0]), str(operator), str(args[1])])
         else:
-            return " ".join(["<Statement: %s, %s>", str(operator), " ".join(args)])
-
+            ret_str = " ".join(["<Statement: %s, %s>", str(operator), " ".join(args)])
+        return ret_str
 
 class Variable(CodeObj):
     """Represents a variable"""
@@ -65,7 +65,7 @@ class Variable(CodeObj):
         self.var_type = var_type
 
     def __str__(self):
-        return name
+        return self.name
 
     def __add__(self, other):
         return Statement('+', self, other)
@@ -74,8 +74,6 @@ class BlockNode(CodeObj):
     """Represents a code block for printing"""
 
     name = 'blocknode'
-    def __init__(self):
-        super(BlockNode, self).__init__()
 
 
 class LoopNode(BlockNode):
