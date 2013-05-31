@@ -1,9 +1,9 @@
-from ignition.utils.code_obj import CodeNode, Statement, Variable
+from ignition.utils.code_obj import CodeObj, Statement, Variable
 
 
 def create_sum_squares():
     """Returns a code dag for sum of squares."""
-    code_dag = CodeNode()
+    code_dag = CodeObj()
     num_squares = Variable('N', var_type=int)
     sum_var = Variable('sum_var', var_type=int)
     sum_squares = code_dag.add_function('sum_squares', inputs=[num_squares])

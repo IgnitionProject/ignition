@@ -1,50 +1,13 @@
 """Module for code to represent code objects and DAGs"""
 
 class CodeObj(object):
-    """Top base class for ignition code representation"""
-    pass
-
-
-class Statement(CodeObj):
-    def __init__(self, operator, *args):
-        super(CodeObj, self).__init__()
-        self.operator = operator
-        self.args = args
-
-    def __str__(self):
-        operator = self.operator
-        args = self.args
-        if args == 1:
-            return str(operator) + " " + str(args[0])
-        elif args == 2:
-            return " ".join([str(args[0]), str(operator), str(args[1])])
-        else:
-            return " ".join(["<Statement:", str(operator), " ".join(args)])
-
-
-class Variable(CodeObj):
-    """Represents a variable"""
-
-    def __init__(self, name, var_type, **kws):
-        super(Variable, self).__init__()
-        self.generated = False
-        self.declared = False
-        self.name = name
-        self.var_type = var_type
-
-    def __str__(self):
-        return name
-
-    def __add__(self, other):
-        return Statement('+', self, other)
-
-
-class CodeNode(CodeObj):
     """Base node class for Code DAG"""
+
+    name = "codeobj"
     LOOP_IDX_PREFIX = "idx"
 
     def __init__(self):
-        super(CodeNode, self).__init__()
+        super(CodeObj, self).__init__()
         self.objs = []
         self.idx_vars = []
 
@@ -69,14 +32,55 @@ class CodeNode(CodeObj):
         return next_idx
 
 
-class BlockNode(CodeNode):
+class Statement(CodeObj):
+
+    name = "statement"
+
+    def __init__(self, operator, *args):
+        super(CodeObj, self).__init__()
+        self.operator = operator
+        self.args = args
+
+    def __str__(self):
+        operator = self.operator
+        args = self.args
+        if len(args) == 1:
+            return str(operator) + " " + str(args[0])
+        elif len(args) == 2:
+            return " ".join([str(args[0]), str(operator), str(args[1])])
+        else:
+            return " ".join(["<Statement: %s, %s>", str(operator), " ".join(args)])
+
+
+class Variable(CodeObj):
+    """Represents a variable"""
+
+    name = "variable"
+
+    def __init__(self, name, var_type, **kws):
+        super(Variable, self).__init__()
+        self.generated = False
+        self.declared = False
+        self.name = name
+        self.var_type = var_type
+
+    def __str__(self):
+        return name
+
+    def __add__(self, other):
+        return Statement('+', self, other)
+
+class BlockNode(CodeObj):
     """Represents a code block for printing"""
 
+    name = 'blocknode'
     def __init__(self):
         super(BlockNode, self).__init__()
 
 
 class LoopNode(BlockNode):
+
+    name = "loopnode"
 
     def __init__(self, kind, test=None, inc=None, init=None, idx=None):
         super(BlockNode, self).__init__()
@@ -92,6 +96,8 @@ class LoopNode(BlockNode):
 
 class FunctionNode(BlockNode):
     """Represents a function block"""
+
+    name = "functionnode"
 
     def __init__(self, name, inputs=None, outputs=None):
         super(FunctionNode, self).__init__()
