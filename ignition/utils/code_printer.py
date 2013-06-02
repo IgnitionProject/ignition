@@ -3,6 +3,8 @@
 import distutils.ccompiler
 
 from code_tools import comment_code, indent_code
+from iterators import flatten
+
 
 class CodePrinter(object):
     """Base class for language based code printers"""
@@ -25,21 +27,21 @@ class CCodePrinter(CodePrinter):
             self._print_header_file(header)
         with open(filename, 'w') as fp:
             self._print_head(fp)
-            self._visit_node(fp)
+            fp.write(self.code_str())
         self.c_files.append(filename)
 
     def to_ctypes_module(self, modname):
         self.to_file(modname+".c", modname+".h")
         self._compile_shared_lib(modname)
         ctypes_mod = "from ctypes import cdll\n"
-        ctypes_mod += "lib = cddl.LoadLibrary(./lib%(modname)s.so)\n"
+        ctypes_mod += "lib = cdll.LoadLibrary('./lib%(modname)s.so')\n"
         for f in self.code_obj.get_functions():
             ctypes_mod += "%(func)s = lib.%(func)s" % {"func": f}
         with open(modname + ".py", 'w') as fp:
             fp.write(ctypes_mod % {"modname": modname})
 
     def _compile_shared_lib(self, libname):
-        if not self.c_file_written:
+        if not self.c_files:
             raise RuntimeError("Must call to_file before compile")
 
         # TODO: Add configuration options for compiler
@@ -52,14 +54,40 @@ class CCodePrinter(CodePrinter):
         out_code = comment_code(out_code, self.line_comment)
         fp.write(out_code)
 
+    def _print_header_file(self, headername):
+        with open(headername, 'w') as fp:
+            self._print_head(fp)
+
+    def _vars_decl(self, vars):
+        ret_str = ''
+        for var in vars:
+            ret_str += "%(var_type)s %(var_name)s;\n" % var.__dict__
+        return ret_str
+
     def _visit_node(self, node, indent=0):
         if hasattr(node, "__iter__"):
             return "\n".join(map(lambda n: self._visit_node(n, indent), node))
         visitor_func = self.__getattribute__("_visit_%s" % node.name)
         return visitor_func(node, indent)
 
-    def _visit_statement(self, node, indent=0):
-        return indent_code(node.__str__() + ";\n", indent)
+    def _visit_variable(self, node, indent=0):
+        return ''
+
+    def _visit_codeobj(self, node, indent=0):
+        return self._visit_node(node.objs, indent)
+
+    def _visit_functionnode(self, node, indent=0):
+        ret_str = "%(ret_type)s %(func_name)s" % node.__dict__
+        ret_str += "(%s)\n{\n" % ", ".join(map(lambda x: x.var_type + " " + x.var_name, node.inputs))
+
+        vars = set(node.get_vars())
+        ret_str += indent_code(self._vars_decl(vars), 2)
+
+        ret_str += self._visit_node(node.objs, indent + 2)
+        if node.output:
+            ret_str += "  return %(output)s;\n" % node.__dict__
+        ret_str += "}\n"
+        return indent_code(ret_str, indent)
 
     def _visit_loopnode(self, node, indent=0):
         """Adds a c-code snippet to a loop"""
@@ -67,6 +95,7 @@ class CCodePrinter(CodePrinter):
         if kind == 'for':
             ret_str = "for (%(idx)s = %(init)s; " \
                       "%(idx)s < %(test)s; %(idx)s += %(inc)s) {\n"
+        # TODO: Need to support more while loops
         elif kind == "while":
             ret_str = "(%(idx)s = %(init)s; \n" \
                       "while (%(idx)s < %(test)s) {\n" \
@@ -76,7 +105,8 @@ class CCodePrinter(CodePrinter):
                                       % kind)
         ret_str = ret_str % node.__dict__
         ret_str += self._visit_node(node.objs, indent + 2)
-        ret_str += '}'
+        ret_str += '}\n'
         return indent_code(ret_str, indent)
 
-
+    def _visit_statement(self, node, indent=0):
+        return indent_code(node.__str__() + ";\n", indent)

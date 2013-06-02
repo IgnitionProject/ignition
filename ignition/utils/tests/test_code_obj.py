@@ -1,16 +1,19 @@
-from ignition.utils.code_obj import CodeObj, Statement, Variable
+from ignition.utils.code_obj import CodeObj, Statement, Variable, FunctionNode, LoopNode
 
 
 def create_sum_squares():
     """Returns a code dag for sum of squares."""
-    code_dag = CodeObj()
-    num_squares = Variable('N', var_type=int)
-    sum_var = Variable('sum_var', var_type=int)
-    sum_squares = code_dag.add_function('sum_squares', inputs=[num_squares])
-    floop = sum_squares.add_for_loop(start=1, stop=num_squares + 1)
+    num_squares = Variable('N', var_type="int")
+    sum_var = Variable('sum_var', var_type="int")
+
+    sum_squares = FunctionNode('sum_squares', ret_type="int", inputs=[num_squares], output=sum_var)
+    sum_squares.add_object(sum_var)
+    sum_squares.add_statement("=", sum_var, 0)
+    floop = LoopNode(kind='for', init=1, test=num_squares + 1, inc=1)
     s1 = Statement("*", floop.idx, floop.idx)
-    floop.add_statement(Statement("+=", sum_var, s1))
-    sum_squares.add_return(sum_var)
+    floop.add_statement("+=", sum_var, s1)
+    sum_squares.add_object(floop)
+    code_dag = CodeObj().add_object(sum_squares)
     return code_dag
 
 
