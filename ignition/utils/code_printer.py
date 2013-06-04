@@ -61,8 +61,34 @@ class CCodePrinter(CodePrinter):
     def _vars_decl(self, vars):
         ret_str = ''
         for var in vars:
-            ret_str += "%(var_type)s %(var_name)s;\n" % var.__dict__
+            if var.name == "indexed_variable":
+                ret_str += self._index_vars_decl(var)
+            else:
+                ret_str += "%(var_type)s %(var_name)s" % var.__dict__
+                val = var.init_var
+                ret_str += "" if val is None else "= %s" % val
+            ret_str += ";\n"
         return ret_str
+
+    def _index_vars_decl(self, var):
+        ret_str = "%(var_type)s%(type_mod)s %(var_name)s%(init_str)s"
+        var_name = var.var_name
+        init_val = var.init_var
+        init_str = ''
+        type_mod = ''
+        if var.shape:
+            var_name += "[%s]" % "][".join(map(str, var.shape))
+            if init_val:
+                init_str = " = "
+                init_str += str(init_val).replace('[', '{').replace(']', '}')
+        else:
+            type_mod = "*"
+            if init_val:
+                raise RuntimeError("Cannot assign init_val to unshaped variable")
+        return ret_str % {"var_type": var.var_type,
+                          "var_name": var_name,
+                          "type_mod": type_mod,
+                          "init_str": init_str}
 
     def _visit_node(self, node, indent=0):
         if hasattr(node, "__iter__"):
@@ -71,6 +97,9 @@ class CCodePrinter(CodePrinter):
         return visitor_func(node, indent)
 
     def _visit_variable(self, node, indent=0):
+        return ''
+
+    def _visit_indexed_variable(self, node, indent=0):
         return ''
 
     def _visit_codeobj(self, node, indent=0):
@@ -88,7 +117,8 @@ class CCodePrinter(CodePrinter):
         return ret_str
 
     def _visit_functionnode(self, node, indent=0):
-        ret_str = "%(ret_type)s %(func_name)s" % node.__dict__
+        ret_str = "%(ret_type)s %(func_name)s" % {'ret_type': node.ret_type if node.ret_type is not None else "void",
+                                                  'func_name': node.func_name}
         ret_str += "(%s)\n" % ", ".join(map(lambda x: x.var_type + " " + x.var_name, node.inputs))
         ret_str += self._visit_block_head(node, indent)
         ret_str += self._visit_node(node.objs, indent + 2)
@@ -119,5 +149,28 @@ class CCodePrinter(CodePrinter):
         ret_str += self._visit_block_foot(node, indent)
         return indent_code(ret_str, indent)
 
-    def _visit_statement(self, node, indent=0):
-        return indent_code(node.__str__() + ";\n", indent)
+    def _visit_statement(self, node, indent=0, add_end=True):
+        operator = node.operator
+        args = map(lambda x: self._visit_statement(x, add_end=False) if hasattr(x, 'name') and x.name == "statement" else str(x),
+                   node.args)
+        visit_func_str = "_visit_statement_%s" % node.operator
+        if hasattr(self, visit_func_str):
+            ret_func = self.__getattribute__(visit_func_str)
+        else:
+            ret_func = self._visit_statement_default
+        ret_str = ret_func(operator, args)
+        if add_end:
+            ret_str += ";\n"
+        return indent_code(ret_str, indent)
+
+    def _visit_statement_default(self, op, args):
+        if len(args) == 2 and op in ['=', '+', '+=', '*', '*=', '-', '-=', '/', '/=']:
+            ret_str = " ".join([args[0], str(op), args[1]])
+        elif len(args) == 1 and op in ['*', '&', '-', '++', '--']:
+            ret_str = str(op) + args[0]
+        else:
+            ret_str = "%s(%s)" % (op, ", ".join(args))
+        return ret_str
+
+    def _visit_statement_index(self, op, args):
+        return "%s[%s]" % (args[0], "][".join(map(str, args[1:])))

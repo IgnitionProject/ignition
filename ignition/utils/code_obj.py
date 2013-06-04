@@ -56,7 +56,7 @@ class Statement(CodeObj):
 
     name = "statement"
 
-    def __init__(self, operator, *args):
+    def __init__(self, operator, *args, **kws):
         super(Statement, self).__init__()
         self.operator = operator
         self.args = args
@@ -84,12 +84,27 @@ class Variable(CodeObj):
         self.declared = False
         self.var_name = var_name
         self.var_type = var_type
+        self.init_var = kws.get("init_var", None)
 
     def __str__(self):
         return self.var_name
 
     def __add__(self, other):
         return Statement('+', self, other)
+
+
+class IndexedVariable(Variable):
+    """Represents a variable that can be indexed"""
+
+    name = "indexed_variable"
+
+    def __init__(self, var_name, var_type, shape=None, **kws):
+        super(IndexedVariable, self).__init__(var_name, var_type, **kws)
+        self.shape = shape
+
+    def index_stmt(self, idx):
+        """Returns a statement for indexing"""
+        return Statement("index", self, idx)
 
 
 class BlockNode(CodeObj):
@@ -123,8 +138,10 @@ class FunctionNode(BlockNode):
         super(FunctionNode, self).__init__()
         self.func_name = func_name
         self.ret_type = ret_type
+        if ret_type is None and output is not None and output.var_type is not None:
+            self.ret_type = output.var_type
         self.inputs = [] if inputs is None else inputs
-        self.output = [] if output is None else output
+        self.output = output
 
     def add_function(self, name, **kws):
         raise RuntimeError("Nested functions not currently supported")

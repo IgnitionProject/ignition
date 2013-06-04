@@ -1,4 +1,5 @@
-from ignition.utils.code_obj import CodeObj, Statement, Variable, FunctionNode, LoopNode
+from ignition.utils.code_obj import (CodeObj, Statement, Variable, FunctionNode, LoopNode,
+   IndexedVariable)
 
 
 def create_sum_squares():
@@ -44,3 +45,22 @@ def create_double_sum():
 def test_double_for_loop():
     """Test for creating a double sum"""
     create_double_sum() # Should raise exception if fails.
+
+def create_index_variable_loop():
+    """Create a dag with a simple loop sum"""
+    sum = Variable('sum', var_type='int')
+    arr_vals = range(10)
+    arr = IndexedVariable('arr', var_type='int', shape=(10,),
+                          init_var=arr_vals)
+    idx_loop_fun = FunctionNode('idx_loop_fun', output=sum)
+    idx_loop_fun.add_object(sum).add_statement("=", sum, 0)
+    idx_loop_fun.add_object(arr)
+    loop = LoopNode(kind='for', init=0, test=arr.shape[0], inc=1)
+    loop.add_statement("+=", sum, arr.index_stmt(loop.idx))
+    idx_loop_fun.add_object(loop)
+
+    return CodeObj().add_object(idx_loop_fun)
+
+def test_create_index_variable_loop():
+    """Test for creating a index variable loop"""
+    create_index_variable_loop() # Should raise exception if fails

@@ -4,7 +4,8 @@ import sys
 from ignition.utils.code_obj import Statement
 from ignition.utils.code_printer import CCodePrinter
 
-from test_code_obj import create_sum_squares, create_double_sum
+from test_code_obj import create_sum_squares, create_double_sum, create_index_variable_loop
+
 
 def test_statement_C():
     dag = Statement('=', 'a', 'b')
@@ -28,3 +29,11 @@ def test_double_sum_C():
     sys.path.append(modpath)
     double_sum = import_module(modname)
     assert(double_sum.double_sum(3) == 20)
+
+def test_jndex_variable_loop_C():
+    dag = create_index_variable_loop()
+    modname = "index_variable_loop"
+    modpath = CCodePrinter(dag).to_ctypes_module(modname)
+    sys.path.append(modpath)
+    index_variable_loop = import_module(modname)
+    assert(index_variable_loop.idx_loop_fun() == 45)
