@@ -1,5 +1,9 @@
 """Module for code to represent code objects and DAGs"""
 
+from iterators import counting_iter
+
+VAR_COUNTER = counting_iter()
+
 class CodeObj(object):
     """Base node class for Code DAG"""
 
@@ -31,7 +35,7 @@ class CodeObj(object):
 
     def next_idx_var(self, idx_type="int"):
         """Returns a free index to use in code"""
-        idx_name = self.LOOP_IDX_PREFIX + "_" + str(len(self.idx_vars))
+        idx_name = self.LOOP_IDX_PREFIX + "_" + str(VAR_COUNTER.next())
         next_idx = Variable(idx_name, idx_type)
         self.idx_vars.append(next_idx)
         return next_idx

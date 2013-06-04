@@ -133,3 +133,9 @@ def nested_list_idxs (alst):
                 ret_val.append(curr_val)
             return ret_val
     return flatten_list(_recur(alst, []))
+
+def counting_iter():
+    count = 0
+    while True:
+        yield count
+        count += 1

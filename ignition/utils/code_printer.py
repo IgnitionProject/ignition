@@ -66,7 +66,7 @@ class CCodePrinter(CodePrinter):
 
     def _visit_node(self, node, indent=0):
         if hasattr(node, "__iter__"):
-            return "\n".join(map(lambda n: self._visit_node(n, indent), node))
+            return "".join(map(lambda n: self._visit_node(n, indent), node))
         visitor_func = self.__getattribute__("_visit_%s" % node.name)
         return visitor_func(node, indent)
 
@@ -76,17 +76,25 @@ class CCodePrinter(CodePrinter):
     def _visit_codeobj(self, node, indent=0):
         return self._visit_node(node.objs, indent)
 
+    def _visit_block_head(self, node, indent=0):
+        """Generic code for all blocks"""
+        vars = set(node.get_vars())
+        ret_str = "{\n"
+        ret_str += indent_code(self._vars_decl(vars), indent + 2)
+        return ret_str
+
+    def _visit_block_foot(self, node, indent):
+        ret_str = "}\n"
+        return ret_str
+
     def _visit_functionnode(self, node, indent=0):
         ret_str = "%(ret_type)s %(func_name)s" % node.__dict__
-        ret_str += "(%s)\n{\n" % ", ".join(map(lambda x: x.var_type + " " + x.var_name, node.inputs))
-
-        vars = set(node.get_vars())
-        ret_str += indent_code(self._vars_decl(vars), 2)
-
+        ret_str += "(%s)\n" % ", ".join(map(lambda x: x.var_type + " " + x.var_name, node.inputs))
+        ret_str += self._visit_block_head(node, indent)
         ret_str += self._visit_node(node.objs, indent + 2)
         if node.output:
             ret_str += "  return %(output)s;\n" % node.__dict__
-        ret_str += "}\n"
+        ret_str += self._visit_block_foot(node, indent)
         return indent_code(ret_str, indent)
 
     def _visit_loopnode(self, node, indent=0):
@@ -94,18 +102,21 @@ class CCodePrinter(CodePrinter):
         kind = node.kind
         if kind == 'for':
             ret_str = "for (%(idx)s = %(init)s; " \
-                      "%(idx)s < %(test)s; %(idx)s += %(inc)s) {\n"
+                      "%(idx)s < %(test)s; %(idx)s += %(inc)s)\n"
+            ret_str += self._visit_block_head(node, indent)
         # TODO: Need to support more while loops
         elif kind == "while":
             ret_str = "(%(idx)s = %(init)s; \n" \
-                      "while (%(idx)s < %(test)s) {\n" \
-                      "  %(idx)s += %(inc)s) {\n"
+                      "while (%(idx)s < %(test)s)\n"
+            ret_str += self._visit_block_head(node, indent)
         else:
             raise NotImplementedError("Do not know how to print %s kind of loop" \
                                       % kind)
         ret_str = ret_str % node.__dict__
         ret_str += self._visit_node(node.objs, indent + 2)
-        ret_str += '}\n'
+        if kind == "while":
+            ret_str += "  %(idx)s += %(inc)s);\n" % node.__dict__
+        ret_str += self._visit_block_foot(node, indent)
         return indent_code(ret_str, indent)
 
     def _visit_statement(self, node, indent=0):
