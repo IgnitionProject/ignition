@@ -2,6 +2,38 @@ import numpy as np
 from sympy import Expr, Symbol
 
 
+class StrongForm(object):
+
+    def __init__(self, eqn):
+        self.eqn = eqn
+
+    def _find_obj(self, name, node):
+        if hasattr(node, "name") and node.name == name:
+            return node
+        for arg in node.args:
+            obj = self._find_obj(name, arg)
+            if obj is not None:
+                return obj
+        return None
+
+    def __getattr__(self, key):
+        obj = self._find_obj(key, self.eqn)
+        if obj is None:
+            raise AttributeError("%s not found in 'StrongForm' or %s" % (name, self.eqn))
+        return obj
+
+    def __setattr__(self, key, val):
+        if key != "eqn":
+            try:
+                obj = self._find_obj(key, self.eqn)
+                if hasattr(obj, "_set"):
+                    obj._set(val)
+                    return
+            except AttributeError:
+                pass
+        super(StrongForm, self).__setattr__(key, val)
+
+
 class Variable(Symbol):
     """Represents an unknown quantity"""
     def __new__(cls, name, dim=1, space="L2"):
@@ -14,7 +46,7 @@ class Variable(Symbol):
 class Time(Variable):
     """Special Variable representing time"""
     def __new__(cls):
-        obj = Unknown.__new__(cls, 'time', space="L2")
+        obj = Variable.__new__(cls, 'time', space="L2")
         return obj
 
 
@@ -94,6 +126,9 @@ class Constant(Coefficient):
         obj = Coefficient.__new__(cls, name, rank, dim)
         obj.val = np.array(val)
         return obj
+
+    def _set(self, val):
+        self.val = np.array(val)
 
 class ChiConstant(Constant):
     """Represents a characteristic function"""
