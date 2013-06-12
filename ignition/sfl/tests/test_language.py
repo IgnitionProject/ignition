@@ -1,4 +1,4 @@
-from ignition.sfl.language import (Constant, Constants, grad, div, StrongForm, Variable, Variables)
+from ignition.sfl.language import (Coefficients, Constant, Constants, grad, Dt, div, StrongForm, Variable, Variables)
 
 
 def test_StrongForm():
@@ -23,6 +23,7 @@ def test_variables():
 
     assert(strong_form.variables() == set([u]))
 
+
 def test_separate_by_order():
     u, v = Variables('u v')
     c, f = Constants('c f')
@@ -30,6 +31,19 @@ def test_separate_by_order():
 
     order_dict = strong_form.separate_by_order()
     print order_dict
-    assert(order_dict[0] == [-f])
-    assert(order_dict[1] == [div(v)])
-    assert(order_dict[2] == [c*grad(div(u))])
+    assert(order_dict[0] == -f)
+    assert(order_dict[1] == div(v))
+    assert(order_dict[2] == c*grad(div(u)))
+
+
+def test_extract_transport_coefficients():
+    u = Variable('u')
+    
+    a, b, c, d = Coefficients('a b c d')
+    eqn = Dt(a*u) + div(b*u + c*grad(u)) + d*u
+    strong_form = StrongForm(eqn)
+
+    print strong_form.extract_transport_coefficients()
+    assert(False)
+
+test_extract_transport_coefficients()

@@ -1,5 +1,5 @@
 import numpy as np
-from sympy import Add, Expr, Mul, Symbol
+from sympy import Add, Expr, Mul, Symbol, preorder_traversal
 
 
 class StrongForm(object):
@@ -56,6 +56,7 @@ class StrongForm(object):
 
     def separate_by_order(self):
         ret_dict = {}
+
         #TODO: Pretty gorpy, should probably use a dynamic programming solution
         def _order_visitor(node):
             if isinstance(node, Add):
@@ -66,18 +67,92 @@ class StrongForm(object):
                 return _order_visitor(node.args[0]) + node.differential_order
             else:
                 return 0
+
         if isinstance(self.eqn, Add):
             for arg in self.eqn.args:
                 order = _order_visitor(arg)
-                ret_dict[order] = ret_dict.get(order, []) + [arg]
+                ret_dict[order] = ret_dict.get(order, 0) + arg
         else:
             order = _order_visitor(arg)
-            ret_dict[order] = ret_dict.get(order, []) + [self.eqn]
+            ret_dict[order] = self.eqn
+
         return ret_dict
 
-    def extract_coefficients(self):
+
+    def _extract_advection(self, order_dict):
+        first_order = order_dict.get(1, 0)
+        divs = filter(lambda x: isinstance(x, div), preorder_traversal(first_order))
+        div_args = map(lambda d: d.args[0], divs)
+        return Add(*div_args)
+
+    def _extract_diffusion(self, order_dict):
+
+        def _find_grad_coefficient(node):
+            if isinstance(node, Add):
+                return Add(map(_find_grad_coefficient, node))
+            if isinstance(node, Mul):
+                grad_pos = []
+                for i in range(len(node.args)):
+                    if isinstance(node.args[i], grad):
+                        grad_pos.append(i)
+                if grad_pos:
+                    ret_mul = 1
+                    for j in range(len(node.args)):
+                        if j not in grad_pos:
+                            ret_mul *= node.args[j]
+                    return ret_mul
+                return 0
+            else:
+                return 0
+
+        def _is_div_grad(node):
+            is_div = isinstance(node, div)
+            div_grad = False
+            if is_div:
+                for arg in preorder_traversal(node.args[0]):
+                    if isinstance(arg, grad):
+                        div_grad = True
+                        break
+            return div_grad
+        
+
+        second_order = order_dict.get(2, 0)
+        div_grads = filter(_is_div_grad, preorder_traversal(second_order))
+        
+
+    def _extract_hamiltonian(self, order_dict):
+        raise NotImplementedError()
+        return
+
+    def _extract_potential(self, order_dict):
+        raise NotImplementedError()
+        return
+
+    def _extract_mass(self, order_dict):
+
+        def _mass_visitor(node):
+            if isinstance(node, Add):
+                return Add(*map(lambda x:_mass_visitor(x, top), node.args))
+            else:
+                if self._find_obj_by_type(node, Dt):
+                    return node
+                return 0
+
+        first_order = order_dict.get(1, 0)                
+        return _mass_visitor(first_order)
+
+    def _extract_reaction(self, order_dict):
+        return order_dict.get(0, 0)
+
+    def extract_transport_coefficients(self):
         ret_dict = {}
         order_dict = self.separate_by_order()
+        ret_dict["advection"] = self._extract_advection(order_dict)
+        ret_dict["diffusion"] =  self._extract_diffusion(order_dict)
+        #ret_dict["hamiltonian"] =  self._extract_hamiltonian(order_dict)
+        #ret_dict["potential"] =  self._extract_potential(order_dict)
+        ret_dict["mass"] =  self._extract_mass(order_dict)
+        ret_dict["reaction"] = self._extract_reaction(order_dict)
         return ret_dict
 
 
@@ -116,6 +191,7 @@ class Region(Domain):
 
 # Operators
 class Operator(Expr):
+
     differential_order = 0
 
 
@@ -183,6 +259,7 @@ class Constant(Coefficient):
     def _set(self, val):
         self.val = np.array(val)
 
+
 class ChiConstant(Constant):
     """Represents a characteristic function"""
     pass
@@ -196,7 +273,7 @@ class RegionConstant(ChiConstant):
 # Some utility functions
 def _pluralize_obj_creation(obj):
     f = lambda name_str, *args, **kws: \
-        map(lambda name: obj(name, *args, **kws), name_str.split(kws.get('sep',' ')))
+        map(lambda name: obj(name, *args, **kws), name_str.split(kws.get('sep', ' ')))
     f.__doc__ = "Calls %(obj_class)r on names in name_str.\n\n"\
                 "See %(obj_class)r docstring for more details of args and kws" \
                 % {"obj_class": obj}
