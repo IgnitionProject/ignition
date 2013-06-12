@@ -6,7 +6,7 @@ myDarcy = darcy_eqn.eqn
 myDarcy.u.dim = 2
 myDarcy.a = Constant(0.01, units='m/s') #converts RegionConstant to Constant(value=0.01)
 #myDarcy.a = 0.3 * units("m/s")
-myDarcy.f.units = unira("m/s")
+myDarcy.f.units = units("m/s")
 myDarcy.f = sin(x[0])*cos(x[1]) #converts GenericField to SpatialField
 
 #Optional debugging
