@@ -1,4 +1,4 @@
-from ignition.flame.tensors.tensor_names import (convert_name,
+from ignition.dsl.flame.tensors.tensor_names import (convert_name,
     add_lower_ind, add_upper_ind, set_lower_ind, set_upper_ind, to_latex)
 
 def test_convert_name():

@@ -4,10 +4,8 @@ import operator
 from numpy import matrix
 from sympy import Add, Basic, expand, Function, latex, Mul, Pow, S
 
-from tensor_expr import expr_rank, expr_shape, TensorExpr
-from tensor import Tensor, n
-from ignition.flame.tensors.tensor_expr import is_one, is_zero
-from ignition.flame.tensors.constants import A, P_0
+from .tensor_expr import expr_rank, expr_shape, is_one, is_zero, TensorExpr
+from .tensor import Tensor
 
 INVERTIBLE = []
 

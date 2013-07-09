@@ -1,7 +1,7 @@
 import sys
 
-from ignition.sfl.language import *
-from ignition.sfl.generators import generate
+from ignition.dsl.sfl.language import *
+from ignition.dsl.sfl.generators import generate
 from ignition.utils.proteus.runner import proteus_runner
 
 # from proteus.FemTools import C0_AffineLinearOnSimplexWithNodalBasis

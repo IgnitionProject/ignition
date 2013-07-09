@@ -2,9 +2,8 @@
 
 import sympy as sp
 
-from ignition.utils import indent_code
-
-from riemann_printer import RiemannPrinter
+from ...code_tools import indent_code
+from .riemann_printer import RiemannPrinter
 
 numerical_eigen_decomp = """
 # Numerically solve eigenvalue decomposition

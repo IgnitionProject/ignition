@@ -2,8 +2,8 @@ import sys
 
 from proteus import Comm, Profiling, NumericalSolution, default_so, default_s
 
-from optparser import get_prog_opts
-from defaults import ProteusProblem, ProteusNumerics
+from .optparser import get_prog_opts
+from .defaults import ProteusProblem, ProteusNumerics
 
 def init_mpi_petsc(opts, log):
     log("Initializing MPI")

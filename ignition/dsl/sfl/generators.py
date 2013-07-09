@@ -3,7 +3,7 @@
 import os
 import sys
 
-from proteus_coefficient_printer import ProteusCoefficientPrinter
+from .proteus_coefficient_printer import ProteusCoefficientPrinter
 
 
 class SFLGenerator(object):

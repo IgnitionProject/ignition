@@ -2,8 +2,7 @@
 
 import distutils.ccompiler
 
-from code_tools import comment_code, indent_code
-from iterators import flatten
+from .code_tools import comment_code, indent_code
 
 
 class CodePrinter(object):

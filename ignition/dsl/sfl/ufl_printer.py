@@ -1,8 +1,7 @@
 """Code printers for UFL"""
 
-from ignition.utils import indent_code
-
-from sfl_printer import SFLPrinter
+from ...utils import indent_code
+from .sfl_printer import SFLPrinter
 
 class UFLPrinter(SFLPrinter):
     comment_str = "//"

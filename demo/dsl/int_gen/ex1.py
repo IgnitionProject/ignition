@@ -1,5 +1,5 @@
 from sympy import *
-from ignition.int_gen import *
+from ignition.dsl.int_gen import *
 
 select_quad_rule(num_pts=2, name="Gauss")
 

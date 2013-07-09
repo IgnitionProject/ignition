@@ -1,4 +1,4 @@
-from ignition.sfl.language import *
+from ignition.dsl.sfl.language import *
 
 from sympy import latex
 

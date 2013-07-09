@@ -1,8 +1,8 @@
 from importlib import import_module
 import sys
 
-from ignition.utils.code_obj import Statement
-from ignition.utils.code_printer import CCodePrinter
+from ignition.code_tools.code_obj import Statement
+from ignition.code_tools.code_printer import CCodePrinter
 
 from test_code_obj import create_sum_squares, create_double_sum, create_index_variable_loop
 

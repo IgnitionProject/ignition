@@ -1,6 +1,6 @@
 """Base class for printers"""
 
-from ignition.utils import comment_code, indent_code
+from ...utils import comment_code, indent_code
 
 class SFLPrinter(object):
     """Base class for all SFL printers"""

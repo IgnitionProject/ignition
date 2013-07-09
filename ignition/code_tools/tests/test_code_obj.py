@@ -1,4 +1,4 @@
-from ignition.utils.code_obj import (CodeObj, Statement, Variable, FunctionNode, LoopNode,
+from ignition.code_tools.code_obj import (CodeObj, Statement, Variable, FunctionNode, LoopNode,
    IndexedVariable)
 
 

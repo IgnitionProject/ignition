@@ -1,7 +1,7 @@
 from numpy import matrix, zeros
 
-from ignition.flame.prule import PartRule, RepartFuseRule
-from ignition.utils import flatten_list
+from ..prule import PartRule, RepartFuseRule
+from ....utils import flatten_list
 
 from printers import latex_print
 

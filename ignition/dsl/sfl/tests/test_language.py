@@ -1,4 +1,4 @@
-from ignition.sfl.language import (Coefficients, Constant, Constants, grad, Dt, div, StrongForm, Variable, Variables)
+from ignition.dsl.sfl.language import (Coefficients, Constant, Constants, grad, Dt, div, StrongForm, Variable, Variables)
 
 
 def test_StrongForm():

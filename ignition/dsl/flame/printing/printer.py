@@ -4,7 +4,7 @@ import sys
 
 from mako.lookup import TemplateLookup
 
-from ignition.flame.printing import FLAME_TEMPLATE_DIR
+from ignition.dsl.flame.printing import FLAME_TEMPLATE_DIR
 
 class TemplatePrinter (object):
     """Abstract printer class for using a Mako Template"""

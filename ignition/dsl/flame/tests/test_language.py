@@ -1,6 +1,6 @@
 import numpy as np
 
-from ignition.flame import PObj, Tensor
+from ignition.dsl.flame import PObj, Tensor
 
 def test_part():
     A = PObj("A")

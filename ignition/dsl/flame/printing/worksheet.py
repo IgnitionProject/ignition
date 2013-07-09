@@ -1,8 +1,8 @@
 """Worksheet printer class"""
 
-from ignition.flame.tensors.printers import latex_print
+from ..tensors.printers import latex_print
 
-from printer import TemplatePrinter
+from .printer import TemplatePrinter
 
 class WorksheetPrinter (TemplatePrinter):
     """Basic FLAME worksheet printer class"""

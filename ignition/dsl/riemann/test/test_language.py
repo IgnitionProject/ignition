@@ -1,6 +1,6 @@
 import sympy
 
-from ignition.riemann.language import *
+from ignition.dsl.riemann.language import *
 
 def test_construction():
     """Test construction of Riemann expressions"""

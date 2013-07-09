@@ -3,10 +3,9 @@
 import numpy as np
 import sympy as sp
 
-from ignition.utils import flatten, indent_code
-
-from language import Conserved, Constant, ConstantField
-from riemann_printer import RiemannPrinter
+from ...utils import flatten
+from .language import Conserved, Constant, ConstantField
+from .riemann_printer import RiemannPrinter
 
 class SymbolicEigenDecompError (Exception):
     pass

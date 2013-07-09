@@ -1,6 +1,6 @@
 """Defines PME Language"""
 
-from ignition.utils.enum import Enum
+from ...utils.enum import Enum
 
 
 class PObj (object):

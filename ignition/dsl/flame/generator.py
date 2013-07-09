@@ -1,7 +1,7 @@
 """Code generator for PME Language"""
 
-from ignition.flame.pobj import PObj
-from ignition.flame.printing import get_printer
+from .pobj import PObj
+from .printing import get_printer
 
 class PAlgGenerator (object):
     """Wrapper object for generating partitioned algorithms.

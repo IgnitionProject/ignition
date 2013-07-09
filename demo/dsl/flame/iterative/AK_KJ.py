@@ -2,7 +2,7 @@
 
 from numpy import matrix
 
-from ignition.flame import *
+from ignition.dsl.flame import *
 from ignition.utils import flatten
 
 # Define the operation

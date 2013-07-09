@@ -1,6 +1,6 @@
 """Example for Rule B=L*B"""
 
-from ignition import *
+from ignition.dsl.flame import *
 
 
 class LBRule (OpRule):

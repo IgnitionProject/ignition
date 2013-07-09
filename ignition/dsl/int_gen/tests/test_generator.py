@@ -3,8 +3,8 @@ from subprocess import Popen, PIPE
 import sympy
 
 
-from ignition.int_gen.language import DiscFunc, Dom, Func
-from ignition.int_gen.generator import gen_file, int_gen
+from ignition.dsl.int_gen.language import DiscFunc, Dom, Func
+from ignition.dsl.int_gen.generator import gen_file, int_gen
 
 def test_symbolic_fun():
     x = sympy.Symbol("x")

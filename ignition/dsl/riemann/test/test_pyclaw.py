@@ -3,7 +3,7 @@ from __future__ import division
 import numpy as np
 from numpy import sqrt
 
-from ignition.riemann import (Conserved, Constant, ConstantField, Generator)
+from ignition.dsl.riemann import (Conserved, Constant, ConstantField, Generator)
 
 def acoustic_eqns ():
     """Returns flux, conserved, constant_fields"""

@@ -1,6 +1,6 @@
 """Base classes for code printers"""
 
-from ignition.utils import comment_code, indent_code
+from ...code_tools import comment_code, indent_code
 
 class RiemannPrinter (object):
     """Base class for Riemann printer objects"""

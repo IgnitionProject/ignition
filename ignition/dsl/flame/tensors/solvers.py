@@ -6,16 +6,16 @@ import traceback
 from sympy import Add, cse, expand, Mul, S
 from sympy.utilities.iterables import postorder_traversal
 
-from tensor_expr import expr_coeff, expr_nonlinear, expr_rank
 from ignition import IGNITION_DEBUG as DEBUG
-from ignition.utils import flatten, UpdatingPermutationIterator
 
-from ignition.flame.tensors.constants import CONSTANTS
-from ignition.flame.tensors.basic_operators import Inner, NotInvertibleError, \
+from ....utils import flatten, UpdatingPermutationIterator
+from .tensor_expr import expr_coeff, expr_nonlinear, expr_rank
+from .constants import CONSTANTS
+from .basic_operators import Inner, NotInvertibleError, \
     Inverse, Transpose
-from ignition.flame.tensors.simplify import simplify
-from ignition.flame.tensors.printers import update_dict_to_latex
-from ignition.flame.tensors.tensor_expr import FlameTensorError
+from .simplify import simplify
+from .printers import update_dict_to_latex
+from .tensor_expr import FlameTensorError
 
 #DEBUG = 1
 LATEX = 1

@@ -1,5 +1,5 @@
-from ignition.sfl.language import *
-from ignition.sfl.generators import generate
+from ignition.dsl.sfl.language import *
+from ignition.dsl.sfl.generators import generate
 
 u = Variable('u', dim=3, space='L2')
 M = Coefficient('M', rank=1, dim=3)

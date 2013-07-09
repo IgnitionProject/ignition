@@ -1,6 +1,6 @@
 from sympy import S, Symbol
 from sympy.utilities.pytest import raises
-from ignition.flame.tensors import (ConformityError, I, Inverse, one, T,
+from ignition.dsl.flame.tensors import (ConformityError, I, Inverse, one, T,
                                     Tensor, solve_vec_eqn)
 
 

@@ -2,7 +2,7 @@ import sympy
 import numpy
 import scipy
 
-from ignition.riemann.language import *
+from ignition.dsl.riemann.language import *
 
 q = Conserved('q')
 p, u = q.fields(['p','u'])

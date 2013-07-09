@@ -9,7 +9,7 @@ from itertools import chain, combinations
 
 import numpy as np
 
-from ignition.flame import CONSTANTS, iterative_arg, PObj, T, TensorExpr
+from ignition.dsl.flame import CONSTANTS, iterative_arg, PObj, T, TensorExpr
 
 class InvariantGenerator( object ):
     """Abstract class for generating invariants from PME's.

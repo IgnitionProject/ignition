@@ -1,8 +1,7 @@
 """Script printer for Proteus"""
 
-from ignition.utils import indent_code
-
-from sfl_printer import SFLPrinter
+from ...utils import indent_code
+from .sfl_printer import SFLPrinter
 
 
 script_header =  """

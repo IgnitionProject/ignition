@@ -1,4 +1,4 @@
-from ignition.utils import comment_code, indent_code
+from ignition.code_tools import comment_code, indent_code
 
 def test_comment_code ():
     code = "This is \na mulitiline\ncomment"

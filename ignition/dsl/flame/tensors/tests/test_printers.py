@@ -1,4 +1,4 @@
-from ignition.flame.tensors import (numpy_print, latex_print, T, Tensor)
+from ignition.dsl.flame.tensors import (numpy_print, latex_print, T, Tensor)
 
 delta_1, omega_2, pi_1, pi_2, gamma_2, mu_12 = \
     map(lambda x: Tensor(x, rank=0),

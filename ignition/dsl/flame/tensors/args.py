@@ -1,5 +1,5 @@
-from ignition.flame.pobj import PObj
-from ignition.flame.tensors import Tensor
+from ..pobj import PObj
+from ..tensors import Tensor
 import iterative_prules
 
 PART_SUFFIX_DEFAULT = "3x3"

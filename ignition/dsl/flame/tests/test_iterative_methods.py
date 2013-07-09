@@ -5,12 +5,11 @@ import sys
 
 from functools import partial
 from numpy import eye, dot, max, sqrt, zeros, ones
-from numpy.random import random
 from numpy.linalg import solve
 from pprint import pprint
 from sympy.utilities.pytest import skip
 
-from ignition.flame.tensors import all_back_sub, numpy_print, T, Tensor
+from ignition.dsl.flame.tensors import all_back_sub, numpy_print, T, Tensor
 
 TEST_NUM_SOLS = 1000
 TEST_LEVELS = -1

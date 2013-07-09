@@ -1,6 +1,6 @@
 """Module for code to represent code objects and DAGs"""
 
-from iterators import counting_iter
+from ..utils.iterators import counting_iter
 
 VAR_COUNTER = counting_iter()
 

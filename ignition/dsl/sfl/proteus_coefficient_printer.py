@@ -1,6 +1,6 @@
 """Generator for Proteus coefficient evaluator"""
 
-from ignition.utils.code_tools import indent_code
+from ...utils.code_tools import indent_code
 
 coefficient_header = """
 /* Proteus Coefficient file generated from Ignition */

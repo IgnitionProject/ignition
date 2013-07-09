@@ -1,4 +1,4 @@
-from ignition.riemann import *
+from ignition.dsl.riemann import *
 
 q = Conserved('q')
 h, uh = q.fields(['h', 'uh'])

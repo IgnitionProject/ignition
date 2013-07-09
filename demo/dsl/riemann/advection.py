@@ -1,6 +1,6 @@
 from sympy import Matrix
 
-from ignition.riemann import *
+from ignition.dsl.riemann import *
 
 q = Conserved('q')
 (w,) = q.fields(['w'])

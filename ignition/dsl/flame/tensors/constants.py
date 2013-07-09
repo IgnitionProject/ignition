@@ -1,6 +1,6 @@
 """ Some useful constants """
 
-from tensor import Tensor
+from .tensor import Tensor
 
 ZERO = Tensor('0', 2)
 Zero = Tensor('0', 1)

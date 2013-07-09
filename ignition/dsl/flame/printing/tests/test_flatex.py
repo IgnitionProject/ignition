@@ -2,7 +2,7 @@ import os
 
 from mako.lookup import TemplateLookup
 
-from ignition.flame.printing import LatexWorksheetPrinter
+from ignition.dsl.flame.printing import LatexWorksheetPrinter
 
 
 def test_flatex_template ():

@@ -1,8 +1,8 @@
 from sympy import S
 
-from ignition.flame.tensors import (expr_rank, expr_shape, solve_vec_eqn,
+from ignition.dsl.flame.tensors import (expr_rank, expr_shape, solve_vec_eqn,
                                     T, Tensor, Transpose)
-from ignition.flame.tensors.solvers import (all_back_sub, assump_solve,
+from ignition.dsl.flame.tensors.solvers import (all_back_sub, assump_solve,
     backward_sub, branching_assump_solve, forward_solve, sol_without_recomputes)
 
 def test_backward_sub():

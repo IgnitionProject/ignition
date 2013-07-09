@@ -4,8 +4,8 @@ from sympy import Symbol, symbols
 from sympy.core.decorators import call_highest_priority
 
 
-from tensor_expr import TensorExpr
-from tensor_names import add_idx, convert_name, set_lower_ind, set_upper_ind, \
+from .tensor_expr import TensorExpr
+from .tensor_names import add_idx, convert_name, set_lower_ind, set_upper_ind, \
                          to_latex
 
 
@@ -155,6 +155,6 @@ class BasisVector (Tensor):
         return super(BasisVector, self).__rmul__(other)
 
 
-from basic_operators import Transpose
-from ignition.flame.tensors.constants import one, zero
+from .basic_operators import Transpose
+from .constants import one, zero
 

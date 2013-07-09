@@ -4,7 +4,7 @@ import pprint
 import sys
 
 from ignition import *
-from ignition.flame.tensors.solvers import backward_sub
+from ignition.dsl.flame.tensors.solvers import backward_sub
 
 SHOW_NUM_SOLS = 10
 

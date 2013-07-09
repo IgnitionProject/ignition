@@ -1,6 +1,6 @@
 """Tools for manipulating strings of code"""
 
-def comment_code (code_str, line_comment=None, block_comment=None):
+def comment_code(code_str, line_comment=None, block_comment=None):
     """Adds comments to a snippet of code.
 
     If line_comment is a given string then each line is prepended with the
@@ -38,7 +38,7 @@ def comment_code (code_str, line_comment=None, block_comment=None):
         ret_code = block_comment[0] + "\n" + code_str + "\n" + block_comment[1]
     return ret_code
 
-def indent_code (code_str, indent):
+def indent_code(code_str, indent):
     """Indent a snippet of code with indent number of spaces"""
     if code_str == "" or indent == 0:
         return code_str

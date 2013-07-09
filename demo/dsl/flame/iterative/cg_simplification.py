@@ -3,7 +3,7 @@ import pprint
 
 
 from ignition import *
-from ignition.flame.tensors.basic_operators import add_invertible
+from ignition.dsl.flame.tensors.basic_operators import add_invertible
 
 su_12, delta_11 = map(lambda x: Tensor(x, 0), ["su_12", "delta_11"])
 p_1, p_2, r_1, r_2, x_1, x_2, u_02 = \

@@ -1,6 +1,6 @@
 from sympy import S
 
-from ignition.flame.tensors import simplify, T, Tensor
+from ignition.dsl.flame.tensors import simplify, T, Tensor
 
 def test_mul_inverse():
     delta_11 = Tensor('delta_11', 0)

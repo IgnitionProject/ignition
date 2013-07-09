@@ -3,7 +3,7 @@
 from math import sqrt
 from sympy import ccode, sympify
 
-from ignition.int_gen.language import Add, DiscFunc
+from .language import Add, DiscFunc
 
 QUAD_PTS = [-(1.0 / 3.0 * sqrt(5 + 2 * sqrt(10.0 / 7.0))),
             - (1.0 / 3.0 * sqrt(5 - 2 * sqrt(10.0 / 7.0))),

@@ -1,6 +1,6 @@
 from numpy import matrix, zeros
 
-from ignition.utils import Enum
+from ...utils import Enum
 
 class DenseRepart (object):
     """Defines repartitioning rules"""
