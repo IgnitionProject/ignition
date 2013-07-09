@@ -12,8 +12,8 @@ PYTHON=python
 SWIG=swig -python
 CLANG=clang
 
-CFLAGS=-O2 -std=gnu99
-LDFLAGS=-fPIC -shared
+CFLAGS=-O2 -std=gnu99 -fPIC 
+LDFLAGS=-shared
 PY_CFLAGS=$(shell python2.7-config --cflags)
 PY_LDFLAGS=-L$(PYTHON_LIB) -Wl,-rpath,$(PYTHON_LIB) $(shell python2.7-config --ldflags)
 SQUARES_LDFLAGS=-L. -Wl,-rpath,$(PWD) -lsum_of_squares
