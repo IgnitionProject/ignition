@@ -4,6 +4,7 @@ from ..utils.iterators import counting_iter
 
 VAR_COUNTER = counting_iter()
 
+
 class CodeObj(object):
     """Base node class for Code DAG"""
 
@@ -148,3 +149,15 @@ class FunctionNode(BlockNode):
 
     def add_return(self, variable):
         self.outputs.append(variable)
+
+
+class ClassNode(BlockNode):
+    """Represents a class block"""
+
+    name = "classnode"
+
+    def __init__(self, class_name):
+        super(ClassNode, self).__init__()
+
+    def add_init_func(self, func_node, **kws):
+        self.init_func = func_node

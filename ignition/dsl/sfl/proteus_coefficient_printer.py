@@ -1,23 +1,32 @@
 """Generator for Proteus coefficient evaluator"""
 
 from .sfl_printer import SFLPrinter
-from ...code_tools import indent_code
+from ...code_tools import comment_code, indent_code
 
 
-coefficient_header = """
-/* Proteus Coefficient file generated from Ignition */
+coefficient_header = """\
+Proteus Coefficient file generated from Ignition
+"""
+
+class_header = """\
+class %{class_name}s(TC_base):
 """
 
 
 class ProteusCoefficientPrinter(SFLPrinter):
     """Generator for Proteus Coefficient evaluator"""
 
-    def __init__(self, generator):
-        self._generator = generator
+    language = 'Python'
+    comment_str = '//'
+    block_comment_tuple = ('"""', '"""')
 
-    @staticmethod
-    def _print_header(indent):
-        return indent_code(coefficient_header, indent)
+    def _print_header(self, indent):
+        return comment_code(indent_code(coefficient_header, indent),
+                            block_comment=self.block_comment_tuple)
+
+    def _print_class_head(self, generate, indent=0):
+        ret_str = class_header(generate.classname)
+
 
     def _print_independent_evals(self, indent=0):
         expr = self._generate.get_independent_evals()

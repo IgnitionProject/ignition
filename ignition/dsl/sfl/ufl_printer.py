@@ -1,6 +1,5 @@
 """Code printers for UFL"""
 
-from ...utils import indent_code
 from .sfl_printer import SFLPrinter
 
 class UFLPrinter(SFLPrinter):

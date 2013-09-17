@@ -28,5 +28,5 @@ class SFLPrinter(object):
         return ret_obj
 
 # Cyclic imports
-#from ufl_printer import UFLPrinter
-#from proteus_script_printer import ProteusScriptPrinter
+from ufl_printer import UFLPrinter
+from proteus_script_printer import ProteusScriptPrinter

@@ -1,6 +1,5 @@
 """Script printer for Proteus"""
 
-from ...utils import indent_code
 from .sfl_printer import SFLPrinter
 
 
@@ -319,5 +318,3 @@ class ProteusScriptPrinter(SFLPrinter):
         ret_code += self._print_numeric_class(indent)
         ret_code += self._print_script_footer(indent)
         return ret_code
-
-    
