@@ -1,6 +1,7 @@
 """Base class for printers"""
 
-from ...utils import comment_code, indent_code
+from ...code_tools import comment_code
+
 
 class SFLPrinter(object):
     """Base class for all SFL printers"""
@@ -9,8 +10,8 @@ class SFLPrinter(object):
         self._generator = generator
 
     def print_file(self, indent=0):
-        return comment_code(self._generator.info(), self.comment_str) + \
-               self._print_file(indent)
+        return comment_code(self._generator.info(), self.comment_str) \
+            + self._print_file(indent)
 
     @staticmethod
     def get_printer(generator):
