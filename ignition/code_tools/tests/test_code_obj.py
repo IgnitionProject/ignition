@@ -1,5 +1,5 @@
-from ignition.code_tools.code_obj import (CodeObj, Statement, Variable, FunctionNode, LoopNode,
-   IndexedVariable)
+from ignition.code_tools.code_obj import (ClassNode, CodeObj, Statement, Variable, FunctionNode, LoopNode,
+                                          IndexedVariable)
 
 
 def create_sum_squares():
@@ -42,9 +42,11 @@ def create_double_sum():
     double_sum.add_object(outer_loop)
     return CodeObj().add_object(double_sum)
 
+
 def test_double_for_loop():
     """Test for creating a double sum"""
-    create_double_sum() # Should raise exception if fails.
+    create_double_sum()  # Should raise exception if fails.
+
 
 def create_index_variable_loop():
     """Create a dag with a simple loop sum"""
@@ -61,6 +63,23 @@ def create_index_variable_loop():
 
     return CodeObj().add_object(idx_loop_fun)
 
+
 def test_create_index_variable_loop():
     """Test for creating a index variable loop"""
-    create_index_variable_loop() # Should raise exception if fails
+    create_index_variable_loop()  # Should raise exception if fails
+
+
+def create_class_obj():
+    """Creates a simple counter class with single member and add_one function"""
+    counter_node = ClassNode('Counter')
+    count_var = Variable('count', var_type='int')
+    counter_node.add_member_variable(count_var)
+    init_func = counter_node.add_constructor()
+    init_func.add_statement('=', count_var, 0)
+    add_one_func = counter_node.add_function('add_one')
+    add_one_func.add_statement('+=', count_var, 1)
+    return counter_node
+
+def test_create_class_obj():
+    """Test for creating a simple counter class"""
+    create_class_obj()  # Should raise exception if fails

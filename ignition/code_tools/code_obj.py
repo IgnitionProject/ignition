@@ -158,6 +158,15 @@ class ClassNode(BlockNode):
 
     def __init__(self, class_name):
         super(ClassNode, self).__init__()
+        self.members = []
+        self.constructors = []
 
-    def add_init_func(self, func_node, **kws):
-        self.init_func = func_node
+    def add_member_variable(self, var_node):
+        self.add_object(var_node)
+        self.members.append(var_node)
+        return self
+
+    def add_constructor(self, *args, **kws):
+        node = FunctionNode("<constructor>", *args, **kws)
+        self.constructors.append(node)
+        return node
