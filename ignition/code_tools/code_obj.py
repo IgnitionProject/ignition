@@ -85,13 +85,13 @@ class Variable(CodeObj):
 
     name = "variable"
 
-    def __init__(self, var_name, var_type, **kws):
+    def __init__(self, var_name, var_type, var_init=None, **kws):
         super(Variable, self).__init__()
         self.generated = False
         self.declared = False
         self.var_name = var_name
         self.var_type = var_type
-        self.init_var = kws.get("init_var")
+        self.var_init = var_init
 
     def __str__(self):
         return self.var_name

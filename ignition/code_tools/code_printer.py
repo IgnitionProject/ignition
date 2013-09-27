@@ -164,7 +164,7 @@ class CCodePrinter(CodePrinter):
     def _decl_index_var(self, var):
         ret_str = "%(var_type)s%(type_mod)s %(var_name)s%(init_str)s"
         var_name = var.var_name
-        init_val = var.init_var
+        init_val = var.var_init
         init_str = ''
         type_mod = ''
         if var.shape:
@@ -188,7 +188,7 @@ class CCodePrinter(CodePrinter):
                 ret_str += self._decl_index_var(var)
             else:
                 ret_str += "%(var_type)s %(var_name)s" % var.__dict__
-                val = var.init_var
+                val = var.var_init
                 ret_str += "" if val is None else "= %s" % val
             ret_str += ";\n"
         return ret_str
@@ -247,10 +247,12 @@ class PythonCodePrinter(CodePrinter):
 
     def _decl_index_var(self, var):
         ret_tmp = "%(var_name)s = %(init_str)s"
-        if var.init_var is not None:
-            if isinstance(var.init_var, np.ndarray):
+        if var.var_init is not None:
+            if isinstance(var.var_init, np.ndarray):
                 self.imports.add("import numpy as np")
-                init_str = "np." + repr(var.init_var)
+                init_str = "np." + repr(var.var_init)
+            else:
+                init_str = repr(var.var_init)
             ret_str = ret_tmp % {"var_name": var.var_name,
                                  "init_str": init_str}
         elif var.shape:
@@ -265,21 +267,21 @@ class PythonCodePrinter(CodePrinter):
     def _decl_vars(self, vars):
         ret_str = ''
         for var in vars:
-            if var.init_var is None:
+            if var.var_init is None:
                 continue
             if var.name == "indexed_variable":
                 ret_str += self._decl_index_var(var)
             else:
                 ret_str += "%(var_name)s = %(val)s" \
                            % {"var_name": self._visit_variable(var),
-                              "val": var.init_var}
+                              "val": var.var_init}
             ret_str += "\n"
         return ret_str
 
     def _visit_block_head(self, node, indent=0):
         vars = set(node.variables)
         ret_str = ""
-        ret_str += indent_code(self._decl_vars(vars), indent + self.num_indent)
+        ret_str += indent_code(self._decl_vars(vars), self.num_indent)
         return ret_str
 
     def _visit_block_foot(self, node, indent=0):

@@ -53,7 +53,7 @@ def create_index_variable_loop():
     sum = Variable('sum', var_type='int')
     arr_vals = range(10)
     arr = IndexedVariable('arr', var_type='int', shape=(10,),
-                          init_var=arr_vals)
+                          var_init=arr_vals)
     idx_loop_fun = FunctionNode('idx_loop_fun', output=sum)
     idx_loop_fun.add_object(sum).add_statement("=", sum, 0)
     idx_loop_fun.add_object(arr)

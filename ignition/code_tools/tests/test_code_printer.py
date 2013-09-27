@@ -19,8 +19,8 @@ def setup_module():
     global ROOT_DIR
     ROOT_DIR = os.getcwd()
     global TEST_DIR
-    time_str = time.strftime('%Y%m%d-%H:%M:%S')
-    TEST_DIR = tempfile.mkdtemp(prefix="ignition-%s" % time_str)
+    time_str = time.strftime('%Y%m%d-%H%M%S')
+    TEST_DIR = tempfile.mkdtemp(prefix="ignition-%s-" % time_str)
     os.chdir(TEST_DIR)
     print("Generating files in: %s" % TEST_DIR)
 
@@ -88,6 +88,15 @@ def test_double_sum_Py():
     sys.path.append(modpath)
     double_sum = import_module(modname)
     assert(double_sum.double_sum(3) == 20)
+
+
+def test_index_variable_loop_Py():
+    dag = create_index_variable_loop()
+    modname = "ignition_index_variable_loop_py"
+    modpath = PythonCodePrinter(dag).to_module(modname)
+    sys.path.append(modpath)
+    index_variable_loop = import_module(modname)
+    assert(index_variable_loop.idx_loop_fun() == 45)
 
 
 def test_class_Py():
