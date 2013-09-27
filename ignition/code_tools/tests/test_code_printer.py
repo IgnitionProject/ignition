@@ -4,7 +4,8 @@ import sys
 from ignition.code_tools.code_obj import Statement
 from ignition.code_tools.code_printer import CCodePrinter, PythonCodePrinter
 
-from test_code_obj import create_sum_squares, create_double_sum, create_index_variable_loop
+from test_code_obj import (create_class_obj, create_double_sum,
+                           create_index_variable_loop, create_sum_squares)
 
 
 def test_statement_C():
@@ -66,3 +67,15 @@ def test_double_sum_Py():
     sys.path.append(modpath)
     double_sum = import_module(modname)
     assert(double_sum.double_sum(3) == 20)
+
+
+def test_class_Py():
+    dag = create_class_obj()
+    modname= "ignition_class_obj_py"
+    modpath = PythonCodePrinter(dag).to_module(modname)
+    sys.path.append(modpath)
+    ignition_class_obj = import_module(modname)
+    counter = ignition_class_obj.Counter()
+    assert(counter.count == 0)
+    counter.add_one()
+    assert(counter.count == 1)
