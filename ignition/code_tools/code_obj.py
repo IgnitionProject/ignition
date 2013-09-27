@@ -15,11 +15,11 @@ class CodeObj(object):
         super(CodeObj, self).__init__()
         self.objs = []
         self.idx_vars = []
+        self.class_member = False
 
-    def add_function(self, name, **kws):
-        node = FunctionNode(name, **kws)
-        self.objs.append(node)
-        return node
+    def add_function(self, func_obj):
+        self.objs.append(func_obj)
+        return self
 
     def add_for_loop(self, **kws):
         node = LoopNode('for', **kws)
@@ -41,10 +41,20 @@ class CodeObj(object):
         self.idx_vars.append(next_idx)
         return next_idx
 
-    def get_functions(self):
-        return map(lambda y: y.func_name, filter(lambda x: isinstance(x, FunctionNode), self.objs))
+    @property
+    def expressions(self):
+        return filter(lambda y: isinstance(y, Expression), self.objs)
 
-    def get_vars(self):
+    @property
+    def functions(self):
+        return filter(lambda x: isinstance(x, FunctionNode), self.objs)
+
+    @property
+    def statements(self):
+        return filter(lambda y: isinstance(y, Statement), self.objs)
+
+    @property
+    def variables(self):
         vars = filter(lambda x: isinstance(x, Variable), self.objs)
         loops = filter(lambda x: isinstance(x, LoopNode) and x.kind == "for", self.objs)
         for loop in loops:
@@ -53,7 +63,12 @@ class CodeObj(object):
         return vars
 
 
-class Statement(CodeObj):
+class Expression(CodeObj):
+
+    name = "expression"
+
+
+class Statement(Expression):
 
     name = "statement"
 
@@ -108,7 +123,7 @@ class IndexedVariable(Variable):
         return Statement("index", self, idx)
 
 
-class BlockNode(CodeObj):
+class BlockNode(Expression):
     """Represents a code block for printing"""
 
     name = 'blocknode'
@@ -135,14 +150,18 @@ class FunctionNode(BlockNode):
 
     name = "functionnode"
 
-    def __init__(self, func_name, ret_type=None, inputs=None, output=None):
+    def __init__(self, func_name, ret_type=None, inputs=None, output=None,
+                 member_function=False):
         super(FunctionNode, self).__init__()
         self.func_name = func_name
         self.ret_type = ret_type
-        if ret_type is None and output is not None and output.var_type is not None:
+        if ret_type is None and \
+           output is not None and \
+           output.var_type is not None:
             self.ret_type = output.var_type
         self.inputs = [] if inputs is None else inputs
         self.output = output
+        self.member_function = member_function
 
     def add_function(self, name, **kws):
         raise RuntimeError("Nested functions not currently supported")
@@ -156,17 +175,32 @@ class ClassNode(BlockNode):
 
     name = "classnode"
 
-    def __init__(self, class_name):
+    def __init__(self, class_name, parents=None):
         super(ClassNode, self).__init__()
-        self.members = []
+        self.members = set([])
         self.constructors = []
+        self.class_name = class_name
+        self.parents = parents if parents is not None else []
 
-    def add_member_variable(self, var_node):
-        self.add_object(var_node)
-        self.members.append(var_node)
+    def add_member_function(self, func_node):
+        func_node.class_member = True
+        self.objs.append(func_node)
+        self.members.add(func_node)
         return self
 
-    def add_constructor(self, *args, **kws):
+    def add_member_variable(self, var_node):
+        var_node.class_member = True
+        self.add_object(var_node)
+        self.members.add(var_node)
+        return self
+
+    def create_constructor(self, *args, **kws):
+        """Creates a constructor and adds to class node.
+
+        See FunctionNode for keyword arguments.
+        """
         node = FunctionNode("<constructor>", *args, **kws)
+        node.class_member = True
+        self.add_object(node)
         self.constructors.append(node)
         return node

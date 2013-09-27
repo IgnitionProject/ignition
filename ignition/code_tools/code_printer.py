@@ -41,15 +41,15 @@ class CodePrinter(object):
 
     def _visit_functionnode(self, node, indent=0):
         ret_str = self._decl_func(node)
-        ret_str += self._visit_block_head(node, indent + self.num_indent)
-        ret_str += self._visit_node(node.objs, indent + self.num_indent)
+        ret_str += self._visit_block_head(node, self.num_indent)
+        ret_str += self._visit_node(node.expressions, self.num_indent)
         if node.output:
-            ret_str +=  self._visit_func_return(node, indent + self.num_indent)
-        ret_str += self._visit_block_foot(node, indent)
+            ret_str +=  self._visit_func_return(node, self.num_indent)
+        ret_str += self._visit_block_foot(node, 0)
         return indent_code(ret_str, indent)
 
     def _visit_indexed_variable(self, node, indent=0):
-        return ''
+        return self._visit_variable(node, indent)
 
     def _visit_loopnode(self, node, indent=0):
         kind = node.kind
@@ -63,7 +63,7 @@ class CodePrinter(object):
                                       % kind)
         ret_str = ret_str % node.__dict__
         ret_str += self._visit_block_head(node, indent)
-        ret_str += self._visit_node(node.objs, indent)
+        ret_str += self._visit_node(node.expressions, indent)
         if kind == "while":
             ret_str += self._visit_while_loop_inc(node, indent)
         ret_str += self._visit_block_foot(node, indent)
@@ -72,6 +72,8 @@ class CodePrinter(object):
     def _visit_node(self, node, indent=0):
         if hasattr(node, "__iter__"):
             return "".join(map(lambda n: self._visit_node(n, indent), node))
+        if not hasattr(node, "name"):
+            return str(node)
         try:
             visitor_func = self.__getattribute__("_visit_%s" % node.name)
         except AttributeError:
@@ -82,7 +84,7 @@ class CodePrinter(object):
     def _visit_statement(self, node, indent=0, add_end=True):
         operator = node.operator
         args = map(lambda x: self._visit_statement(x, add_end=False)
-                   if hasattr(x, 'name') and x.name == "statement" else str(x),
+                   if hasattr(x, 'name') and x.name == "statement" else self._visit_node(x),
                    node.args)
         visit_func_str = "_visit_statement_%s" % node.operator
         if hasattr(self, visit_func_str):
@@ -98,7 +100,7 @@ class CodePrinter(object):
         if len(args) == 2 and op in ['=', '+', '+=', '*', '*=', '-', '-=', '/', '/=']:
             ret_str = " ".join([args[0], str(op), args[1]])
         elif len(args) == 1 and op in ['*', '&', '-', '++', '--']:
-            ret_str = str(op) + args[0]
+            ret_str = str(op) + self._visit_node(args[0])
         else:
             ret_str = "%s(%s)" % (op, ", ".join(args))
         return ret_str
@@ -107,7 +109,7 @@ class CodePrinter(object):
         return "%s[%s]" % (args[0], "][".join(map(str, args[1:])))
 
     def _visit_variable(self, node, indent=0):
-        return ''
+        return str(node)
 
 
 class CCodePrinter(CodePrinter):
@@ -126,8 +128,8 @@ class CCodePrinter(CodePrinter):
         self._compile_shared_lib(modname)
         ctypes_mod = "from ctypes import cdll\n"
         ctypes_mod += "lib = cdll.LoadLibrary('./lib%(modname)s.so')\n"
-        for f in self.code_obj.get_functions():
-            ctypes_mod += "%(func)s = lib.%(func)s" % {"func": f}
+        for f in self.code_obj.functions:
+            ctypes_mod += "%(func)s = lib.%(func)s" % {"func": f.func_name}
         with open(modname + ".py", 'w') as fp:
             fp.write(ctypes_mod % {"modname": modname})
         # TODO: Need to manage temporary files better.
@@ -192,27 +194,27 @@ class CCodePrinter(CodePrinter):
         return ret_str
 
     def _visit_block_head(self, node, indent=0):
-        vars = set(node.get_vars())
+        vars = set(node.variables)
         ret_str = "{\n"
         ret_str += indent_code(self._decl_vars(vars), indent)
         return ret_str
 
-    def _visit_block_foot(self, node, indent):
+    def _visit_block_foot(self, node, indent=0):
         ret_str = "}\n"
         return ret_str
 
-    def _visit_for_loop_head(self, node, indent):
+    def _visit_for_loop_head(self, node, indent=0):
         return "for (%(idx)s = %(init)s; " \
                "%(idx)s < %(test)s; %(idx)s += %(inc)s)\n" % node.__dict__
 
-    def _visit_func_return(self, node, indent):
+    def _visit_func_return(self, node, indent=0):
         return indent_code("return %(output)s;\n" % node.__dict__, indent)
 
-    def _visit_while_loop_head(self, node, indent):
+    def _visit_while_loop_head(self, node, indent=0):
         return "(%(idx)s = %(init)s; \n" \
                "while (%(idx)s < %(test)s)\n" % node.__dict__
 
-    def _visit_while_loop_inc(self, node, indent):
+    def _visit_while_loop_inc(self, node, indent=0):
         ret_str += indent_code("%(idx)s += %(inc)s;\n" % node.__dict__,
                                self.num_indent)
 
@@ -232,9 +234,14 @@ class PythonCodePrinter(CodePrinter):
         return os.getcwd()
 
     def _decl_func(self, func_node, add_end=False):
+        func_name = func_node.func_name
+        if func_name == "<constructor>":
+            func_name = "__init__"
         func_args = " ".join(map(lambda x: x.var_name, func_node.inputs))
+        if func_node.class_member:
+            func_args += ",".join(("self", func_args))
         return "def %(func_name)s(%(func_args)s):\n" \
-               % {'func_name': func_node.func_name,
+               % {'func_name': func_name,
                   'func_args': func_args,
                   }
 
@@ -264,32 +271,48 @@ class PythonCodePrinter(CodePrinter):
                 ret_str += self._decl_index_var(var)
             else:
                 ret_str += "%(var_name)s = %(val)s" \
-                           % {"var_name": var.var_name,
+                           % {"var_name": self._visit_variable(var),
                               "val": var.init_var}
             ret_str += "\n"
         return ret_str
 
     def _visit_block_head(self, node, indent=0):
-        vars = set(node.get_vars())
+        vars = set(node.variables)
         ret_str = ""
         ret_str += indent_code(self._decl_vars(vars), indent + self.num_indent)
         return ret_str
 
-    def _visit_block_foot(self, node, indent):
+    def _visit_block_foot(self, node, indent=0):
         ret_str = "\n"
         return ret_str
 
-    def _visit_for_loop_head(self, node, indent):
+    def _visit_classnode(self, node, indent=0):
+        ret_str = "class %(class_name)s(%(parents)s):\n" \
+                  % {"class_name": node.class_name,
+                     "parents": ",".join(node.parents) if node.parents else 'object',
+                     }
+        ret_str += self._visit_block_head(node)
+        ret_str += self._visit_node(node.expressions, self.num_indent)
+        ret_str += self._visit_block_foot(node)
+        return ret_str
+
+    def _visit_for_loop_head(self, node, indent=0):
         return "for %(idx)s in range(%(init)s, %(test)s, %(inc)s):\n" % node.__dict__
 
-    def _visit_func_return(self, node, indent):
+    def _visit_func_return(self, node, indent=0):
         return indent_code("return %(output)s\n" % node.__dict__, indent)
 
 
-    def _visit_while_loop_head(self, node, indent):
+    def _visit_while_loop_head(self, node, indent=0):
         return "(%(idx)s = %(init)s \n" \
                "while (%(idx)s < %(test)s):\n" % node.__dict__
 
-    def _visit_while_loop_inc(self, node, indent):
+    def _visit_while_loop_inc(self, node, indent=0):
         return indent_code("%(idx)s += %(inc)s\n" % node.__dict__,
                            indent + self.num_indent)
+
+    def _visit_variable(self, node, indent=0):
+        ret_str = str(node)
+        if node.class_member:
+            ret_str = "self." + ret_str
+        return ret_str

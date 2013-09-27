@@ -74,10 +74,11 @@ def create_class_obj():
     counter_node = ClassNode('Counter')
     count_var = Variable('count', var_type='int')
     counter_node.add_member_variable(count_var)
-    init_func = counter_node.add_constructor()
+    init_func = counter_node.create_constructor()
     init_func.add_statement('=', count_var, 0)
-    add_one_func = counter_node.add_function('add_one')
+    add_one_func = FunctionNode('add_one')
     add_one_func.add_statement('+=', count_var, 1)
+    counter_node.add_member_function(add_one_func)
     return counter_node
 
 def test_create_class_obj():
