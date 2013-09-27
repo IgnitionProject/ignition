@@ -1,4 +1,7 @@
 from importlib import import_module
+import os
+import time
+import tempfile
 import sys
 
 from ignition.code_tools.code_obj import Statement
@@ -6,6 +9,23 @@ from ignition.code_tools.code_printer import CCodePrinter, PythonCodePrinter
 
 from test_code_obj import (create_class_obj, create_double_sum,
                            create_index_variable_loop, create_sum_squares)
+
+
+TEST_DIR = ''
+ROOT_DIR = ''
+
+def setup_module():
+    global ROOT_DIR
+    ROOT_DIR = os.getcwd()
+    global TEST_DIR
+    time_str = time.strftime('%Y%m%d-%H:%M:%S')
+    TEST_DIR = tempfile.mkdtemp(prefix="ignition-%s" % time_str)
+    os.chdir(TEST_DIR)
+    print("Generating files in: %s" % TEST_DIR)
+
+
+def teardown_module():
+    os.chdir(ROOT_DIR)
 
 
 def test_statement_C():
