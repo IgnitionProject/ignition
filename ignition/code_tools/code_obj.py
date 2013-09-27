@@ -17,21 +17,12 @@ class CodeObj(object):
         self.idx_vars = []
         self.class_member = False
 
-    def add_function(self, func_obj):
-        self.objs.append(func_obj)
-        return self
-
-    def add_for_loop(self, **kws):
-        node = LoopNode('for', **kws)
-        self.objs.append(node)
+    def add_object(self, code_obj):
+        self.objs.append(code_obj)
         return self
 
     def add_statement(self, *args, **kws):
         self.objs.append(Statement(*args, **kws))
-        return self
-
-    def add_object(self, code_obj):
-        self.objs.append(code_obj)
         return self
 
     def next_idx_var(self, idx_type="int"):
@@ -100,7 +91,7 @@ class Variable(CodeObj):
         self.declared = False
         self.var_name = var_name
         self.var_type = var_type
-        self.init_var = kws.get("init_var", None)
+        self.init_var = kws.get("init_var")
 
     def __str__(self):
         return self.var_name
@@ -141,9 +132,6 @@ class LoopNode(BlockNode):
         self.init = init
         self.idx = idx if idx is not None else self.next_idx_var()
 
-    def add_function(self, name, inputs=None, outputs=None):
-        raise RuntimeError("Function blocks in loops not supported")
-
 
 class FunctionNode(BlockNode):
     """Represents a function block"""
@@ -162,9 +150,6 @@ class FunctionNode(BlockNode):
         self.inputs = [] if inputs is None else inputs
         self.output = output
         self.member_function = member_function
-
-    def add_function(self, name, **kws):
-        raise RuntimeError("Nested functions not currently supported")
 
     def add_return(self, variable):
         self.outputs.append(variable)

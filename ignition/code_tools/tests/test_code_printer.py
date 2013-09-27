@@ -14,6 +14,7 @@ from test_code_obj import (create_class_obj, create_double_sum,
 TEST_DIR = ''
 ROOT_DIR = ''
 
+
 def setup_module():
     global ROOT_DIR
     ROOT_DIR = os.getcwd()
