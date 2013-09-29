@@ -278,10 +278,13 @@ class PythonCodePrinter(CodePrinter):
             ret_str += "\n"
         return ret_str
 
-    def _visit_block_head(self, node, indent=0):
-        vars = set(node.variables)
+    def _visit_block_head(self, node, indent=0, decl_vars=None):
         ret_str = ""
-        ret_str += indent_code(self._decl_vars(vars), self.num_indent)
+        if decl_vars is None:
+            vars = set(node.variables)
+            ret_str += indent_code(self._decl_vars(vars), self.num_indent)
+        else:
+            ret_str += indent_code(self._decl_vars(decl_vars), self.num_indent)
         return ret_str
 
     def _visit_block_foot(self, node, indent=0):
@@ -293,7 +296,7 @@ class PythonCodePrinter(CodePrinter):
                   % {"class_name": node.class_name,
                      "parents": ",".join(node.parents) if node.parents else 'object',
                      }
-        ret_str += self._visit_block_head(node)
+        ret_str += self._visit_block_head(node, decl_vars=node.classdict_members)
         ret_str += self._visit_node(node.expressions, self.num_indent)
         ret_str += self._visit_block_foot(node)
         return ret_str
