@@ -1,6 +1,7 @@
 """Module for code to represent code objects and DAGs"""
 
 from ..utils.iterators import counting_iter
+from ..utils.ordered_set import OrderedSet
 
 VAR_COUNTER = counting_iter()
 
@@ -13,23 +14,23 @@ class CodeObj(object):
 
     def __init__(self):
         super(CodeObj, self).__init__()
-        self.objs = []
-        self.idx_vars = []
+        self.objs = OrderedSet([])
+        self.idx_vars = OrderedSet([])
         self.class_member = False
 
     def add_object(self, code_obj):
-        self.objs.append(code_obj)
+        self.objs.add(code_obj)
         return self
 
     def add_statement(self, *args, **kws):
-        self.objs.append(Statement(*args, **kws))
+        self.objs.add(Statement(*args, **kws))
         return self
 
     def next_idx_var(self, idx_type="int"):
         """Returns a free index to use in code"""
         idx_name = self.LOOP_IDX_PREFIX + "_" + str(VAR_COUNTER.next())
         next_idx = Variable(idx_name, idx_type)
-        self.idx_vars.append(next_idx)
+        self.idx_vars.add(next_idx)
         return next_idx
 
     @property
@@ -105,7 +106,7 @@ class IndexedVariable(Variable):
 
     name = "indexed_variable"
 
-    def __init__(self, var_name, var_type, shape=None, **kws):
+    def __init__(self, var_name, var_type=None, shape=None, **kws):
         super(IndexedVariable, self).__init__(var_name, var_type, **kws)
         self.shape = shape
 
@@ -162,14 +163,27 @@ class ClassNode(BlockNode):
 
     def __init__(self, class_name, parents=None):
         super(ClassNode, self).__init__()
-        self.members = set([])
+        self.members = OrderedSet([])
+        self.classdict_members = OrderedSet([])
         self.constructors = []
         self.class_name = class_name
         self.parents = parents if parents is not None else []
 
-    def add_member_function(self, func_node):
+    def add_classdict_member_variable(self, var_node):
+        var_node.class_member = True
+        self.add_object(var_node)
+        self.classdict_members.add(var_node)
+        return self
+
+    def add_classdict_member_function(self, func_node):
         func_node.class_member = True
         self.objs.append(func_node)
+        self.classdict_members.add(func_node)
+        return self
+
+    def add_member_function(self, func_node):
+        func_node.class_member = True
+        self.objs.add(func_node)
         self.members.add(func_node)
         return self
 
