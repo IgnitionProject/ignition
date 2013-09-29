@@ -60,14 +60,14 @@ class ProteusCoefficientGenerator(SFLGenerator):
                              ["M", "A", "B", "C"])
         _rFunc = code_obj.Variable("rFunc", "function", var_init=None)
         useSparseDiffusion = code_obj.Variable("useSparseDiffusion",
-                                                bool, var_init=True)
+                                               bool, var_init=True)
         default_input_vars = [_M, _A, _B, _C, _rFunc, useSparseDiffusion]
         args = [nc] + default_input_vars
         constructor = self.class_dag.create_constructor(args)
 
-        member_names = ["M", "A", "B", "C"],
-        M, A, B, C = map(lambda x, v: code_obj.Variable(x, int, var_init=v),
-                          zip(member_names, default_input_vars))
+        member_names = ["M", "A", "B", "C"]
+        M, A, B, C = map(lambda (x, v): code_obj.Variable(x, int, var_init=v),
+                         zip(member_names, default_input_vars))
         rFunc = code_obj.Variable('rFunc', "function", _rFunc)
 
         member_vars = [M, A, B, C, rFunc]
@@ -93,10 +93,11 @@ class ProteusCoefficientGenerator(SFLGenerator):
                                 "{%s, 'u'}" % init_loop.idx)
         init_loop.add_statement("=", reaction.index_stmt(init_loop.idx),
                                 "{%s, 'linear'}" % init_loop.idx)
+        constructor.add_object(init_loop)
 
         init_args = ", ".join(tmp_names +
                               ["useSparseDiffusion = useSparseDiffusion"])
-        init_loop.add_statement("%(parent)s.__init__(self, %(args)s))" %
+        constructor.add_statement("%(parent)s.__init__(self, %(args)s))" %
                                 {"parent": self.class_dag.parents[0],
                                  "args": init_args,
                                  })
