@@ -1,5 +1,17 @@
 """Tools for manipulating strings of code"""
 
+
+class CodeNil(object):
+    """Ignition value for a NULL
+
+    This class is to get around problem of setting things to None which
+    has meaning in Python.
+    """
+    pass
+
+NIL = CodeNil()
+
+
 def comment_code(code_str, line_comment=None, block_comment=None):
     """Adds comments to a snippet of code.
 

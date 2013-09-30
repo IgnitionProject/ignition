@@ -5,7 +5,7 @@ import os
 
 import numpy as np
 
-from .code_tools import comment_code, indent_code
+from .code_tools import comment_code, indent_code, NIL
 from ..utils.ordered_set import OrderedSet
 
 
@@ -237,9 +237,16 @@ class PythonCodePrinter(CodePrinter):
         func_name = func_node.func_name
         if func_name == "<constructor>":
             func_name = "__init__"
-        func_args = " ".join(map(lambda x: x.var_name, func_node.inputs))
+        func_args = ""
+        inputs = sorted(func_node.inputs, key=lambda x: x.var_init is not None)
+        for var in func_node.inputs:
+            if var.var_init is not NIL:
+                func_args += var.var_name + "=" + repr(var.var_init)
+            else:
+                func_args += var.var_name
+            func_args += ", "
         if func_node.class_member:
-            func_args += ",".join(("self", func_args))
+            func_args = ", ".join(("self", func_args))
         return "def %(func_name)s(%(func_args)s):\n" \
                % {'func_name': func_name,
                   'func_args': func_args,
@@ -247,12 +254,12 @@ class PythonCodePrinter(CodePrinter):
 
     def _decl_index_var(self, var):
         ret_tmp = "%(var_name)s = %(init_str)s"
-        if var.var_init is not None:
+        if var.var_init is not NIL:
             if isinstance(var.var_init, np.ndarray):
                 self.imports.add("import numpy as np")
                 init_str = "np." + repr(var.var_init)
             else:
-                init_str = repr(var.var_init)
+                init_str = str(var.var_init)
             ret_str = ret_tmp % {"var_name": var.var_name,
                                  "init_str": init_str}
         elif var.shape:
@@ -267,7 +274,7 @@ class PythonCodePrinter(CodePrinter):
     def _decl_vars(self, vars):
         ret_str = ''
         for var in vars:
-            if var.var_init is None:
+            if var.var_init is NIL:
                 continue
             if var.name == "indexed_variable":
                 ret_str += self._decl_index_var(var)

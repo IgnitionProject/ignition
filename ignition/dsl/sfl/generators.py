@@ -62,8 +62,8 @@ class ProteusCoefficientGenerator(SFLGenerator):
         useSparseDiffusion = code_obj.Variable("useSparseDiffusion",
                                                bool, var_init=True)
         default_input_vars = [_M, _A, _B, _C, _rFunc, useSparseDiffusion]
-        args = [nc] + default_input_vars
-        constructor = self.class_dag.create_constructor(args)
+        inputs = [nc] + default_input_vars
+        constructor = self.class_dag.create_constructor(inputs=inputs)
 
         member_names = ["M", "A", "B", "C"]
         M, A, B, C = map(lambda (x, v): code_obj.Variable(x, int, var_init=v),

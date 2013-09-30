@@ -2,6 +2,8 @@
 
 from ..utils.iterators import counting_iter
 from ..utils.ordered_set import OrderedSet
+from .code_tools import NIL
+
 
 VAR_COUNTER = counting_iter()
 
@@ -86,7 +88,7 @@ class Variable(CodeObj):
 
     name = "variable"
 
-    def __init__(self, var_name, var_type, var_init=None, **kws):
+    def __init__(self, var_name, var_type, var_init=NIL, **kws):
         super(Variable, self).__init__()
         self.generated = False
         self.declared = False
