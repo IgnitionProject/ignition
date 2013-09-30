@@ -95,12 +95,9 @@ class ProteusCoefficientGenerator(SFLGenerator):
                                 "{%s, 'linear'}" % init_loop.idx)
         constructor.add_object(init_loop)
 
-        init_args = ", ".join(tmp_names +
-                              ["useSparseDiffusion = useSparseDiffusion"])
-        constructor.add_statement("%(parent)s.__init__(self, %(args)s))" %
-                                {"parent": self.class_dag.parents[0],
-                                 "args": init_args,
-                                 })
+        init_args = ["self"] + tmp_names + ["useSparseDiffusion = useSparseDiffusion"]
+        constructor.add_statement("%s.__init__" % self.class_dag.parents[0],
+                                  *init_args)
 
     def gen_coefficient_class(self, classname=None):
         if classname is not None:
