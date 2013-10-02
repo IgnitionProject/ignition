@@ -99,6 +99,52 @@ class ProteusCoefficientGenerator(SFLGenerator):
         constructor.add_statement("%s.__init__" % self.class_dag.parents[0],
                                   *init_args)
 
+    def gen_evaluate_func_node(self):
+        #XXX: much hardcoded here
+        dag = self.class_dag
+
+        t_var = code_obj.Variable('t', int)
+        c_var = code_obj.IndexedVariable('c', int)
+
+        nc = code_obj.Variable('nc', int)
+        dag.add_member_variable(nc)
+
+        eval_func = code_obj.FunctionNode('evaluate', inputs=(t_var, c_var))
+        dag.add_object(eval_func)
+
+        eval_loop = code_obj.LoopNode('for', test=nc)
+        dag.add_object(eval_loop)
+        loop_idx = eval_loop.idx
+        c_eval_args = (dag.get_member_variable('M').index_stmt(loop_idx),
+                       dag.get_member_variable('A').index_stmt(loop_idx),
+                       dag.get_member_variable('B').index_stmt(loop_idx),
+                       dag.get_member_variable('C').index_stmt(loop_idx),
+                       t_var,
+                       c_var.index_stmt('x'),
+                       c_var.index_stmt("('u', %s)" % loop_idx),
+                       c_var.index_stmt("('m', %s)" % loop_idx),
+                       c_var.index_stmt("('dm', %s, %s)" % (loop_idx,loop_idx)),
+                       c_var.index_stmt("('f', %s)" % loop_idx),
+                       c_var.index_stmt("('df', %s, %s)" % (loop_idx,loop_idx)),
+                       c_var.index_stmt("('a', %s)" % (loop_idx,loop_idx)),
+                       c_var.index_stmt("('r', %s)" % loop_idx),
+                       c_var.index_stmt("('dr', %s)" % (loop_idx,loop_idx)),
+                       )
+        eval_loop.add_statement("self.linearADR_ContantCoefficientsEvaluate",
+                                *c_eval_args)
+
+        # XXX: Total cheat
+        blurb = code_obj.Blurb("""
+nSpace=c['x'].shape[-1]
+if self.rFunc != None:
+    for n in range(len(c[('u',i)].flat)):
+        c[('r',i)].flat[n] = self.rFunc[i].rOfUX(c[('u',i)].flat[n],c['x'].flat[n*nSpace:(n+1)*nSpace])
+        c[('dr',i,i)].flat[n] = self.rFunc[i].drOfUX(c[('u',i)].flat[n],c['x'].flat[n*nSpace:(n+1)*nSpace])
+"""
+        )
+        eval_loop.add_object(blurb)
+
+
     def gen_coefficient_class(self, classname=None):
         if classname is not None:
             self._classname = classname
