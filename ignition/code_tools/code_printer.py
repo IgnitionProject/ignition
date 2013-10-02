@@ -39,6 +39,9 @@ class CodePrinter(object):
     def _visit_codeobj(self, node, indent=0):
         return self._visit_node(node.objs, indent)
 
+    def _visit_blurb(self, node, indent=0):
+        return indent_code(node.blurb, indent)
+
     def _visit_functionnode(self, node, indent=0):
         ret_str = self._decl_func(node)
         ret_str += self._visit_block_head(node, self.num_indent)

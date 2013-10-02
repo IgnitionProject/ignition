@@ -65,6 +65,15 @@ class Expression(CodeObj):
     name = "expression"
 
 
+class Blurb(Expression):
+
+    name = 'blurb'
+
+    def __init__(self, blurb, *args, **kws):
+        super(Blurb, self).__init__()
+        self.blurb = blurb
+
+
 class Statement(Expression):
 
     name = "statement"
@@ -78,7 +87,7 @@ class Statement(Expression):
         operator = self.operator
         args = self.args
         if len(args) == 1:
-            ret_str =  str(operator) + " " + str(args[0])
+            ret_str = str(operator) + " " + str(args[0])
         elif len(args) == 2:
             ret_str = " ".join([str(args[0]), str(operator), str(args[1])])
         else:
