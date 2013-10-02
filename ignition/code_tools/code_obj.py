@@ -1,5 +1,7 @@
 """Module for code to represent code objects and DAGs"""
 
+from collections import OrderedDict
+
 from ..utils.iterators import counting_iter
 from ..utils.ordered_set import OrderedSet
 from .code_tools import NIL
@@ -165,35 +167,35 @@ class ClassNode(BlockNode):
 
     def __init__(self, class_name, parents=None):
         super(ClassNode, self).__init__()
-        self.members = OrderedSet([])
-        self.classdict_members = OrderedSet([])
+        self.members = OrderedDict([])
+        self.classdict_members = OrderedDict()
         self.constructors = []
         self.class_name = class_name
         self.parents = parents if parents is not None else []
 
-    def add_classdict_member_variable(self, var_node):
-        var_node.class_member = True
-        self.add_object(var_node)
-        self.classdict_members.add(var_node)
+    def _add_member(self, odict, node):
+        existing = odict.get(str(node))
+        if existing != node:
+            raise RuntimeError("Over writing known node.")
+        elif existing == node:
+            pass
+        else:
+            node.class_member = True
+            self.add_object(node)
+            odict[str(node)] = node
         return self
 
     def add_classdict_member_function(self, func_node):
-        func_node.class_member = True
-        self.objs.append(func_node)
-        self.classdict_members.add(func_node)
-        return self
+        return self._add_member(self.classdict_members, func_node)
+
+    def add_classdict_member_variable(self, var_node):
+        return self._add_member(self.classdict_members, var_node)
 
     def add_member_function(self, func_node):
-        func_node.class_member = True
-        self.objs.add(func_node)
-        self.members.add(func_node)
-        return self
+        return self._add_member(self.members, func_node)
 
     def add_member_variable(self, var_node):
-        var_node.class_member = True
-        self.add_object(var_node)
-        self.members.add(var_node)
-        return self
+        return self._add_member(self.members, var_node)
 
     def create_constructor(self, *args, **kws):
         """Creates a constructor and adds to class node.
@@ -205,3 +207,11 @@ class ClassNode(BlockNode):
         self.add_object(node)
         self.constructors.append(node)
         return node
+
+    def get_member_variable(self, var_name, *args, **kws):
+        ret_var = self.member.get(var_name)
+        if ret_var is None:
+            ret_var = Variable(var_name, *args, **kws)
+            self.add_member_variable(ret_var)
+        return ret_var
+
