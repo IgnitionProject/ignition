@@ -169,7 +169,7 @@ class CCodePrinter(CodePrinter):
         type_mod = ''
         if var.shape:
             var_name += "[%s]" % "][".join(map(str, var.shape))
-            if init_val:
+            if init_val is not NIL:
                 init_str = " = "
                 init_str += str(init_val).replace('[', '{').replace(']', '}')
         else:
@@ -189,7 +189,7 @@ class CCodePrinter(CodePrinter):
             else:
                 ret_str += "%(var_type)s %(var_name)s" % var.__dict__
                 val = var.var_init
-                ret_str += "" if val is None else "= %s" % val
+                ret_str += "" if val is NIL else "= %s" % val
             ret_str += ";\n"
         return ret_str
 
