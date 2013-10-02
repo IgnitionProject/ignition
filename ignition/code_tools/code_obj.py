@@ -1,6 +1,7 @@
 """Module for code to represent code objects and DAGs"""
 
 from collections import OrderedDict
+import warnings
 
 from ..utils.iterators import counting_iter
 from ..utils.ordered_set import OrderedSet
@@ -175,8 +176,9 @@ class ClassNode(BlockNode):
 
     def _add_member(self, odict, node):
         existing = odict.get(str(node))
-        if existing != node:
-            raise RuntimeError("Over writing known node.")
+        if existing == node:
+            warnings.warn("Over writing known node: %s" % str(node),
+                          RuntimeWarning, stacklevel=3)
         elif existing == node:
             pass
         else:
