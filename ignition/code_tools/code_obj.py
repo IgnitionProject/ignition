@@ -220,7 +220,7 @@ class ClassNode(BlockNode):
         return node
 
     def get_member_variable(self, var_name, *args, **kws):
-        ret_var = self.member.get(var_name)
+        ret_var = self.members.get(var_name)
         if ret_var is None:
             ret_var = Variable(var_name, *args, **kws)
             self.add_member_variable(ret_var)

@@ -5,6 +5,7 @@ import sys
 
 from .proteus_coefficient_printer import ProteusCoefficientPrinter
 from ...code_tools import code_obj
+from ...utils.ordered_set import OrderedSet
 
 class SFLGenerator(object):
     """Base class for strong form language generator.
@@ -28,6 +29,7 @@ class ProteusCoefficientGenerator(SFLGenerator):
         self._filename = None
         self._classname = None
         self.class_dag = None
+        self._modules = OrderedSet()
 
     @property
     def filename(self):
@@ -56,7 +58,7 @@ class ProteusCoefficientGenerator(SFLGenerator):
     def gen_init_func_node(self):
         # XXX: Much hardcoded here.
         nc = code_obj.Variable("nc", int, var_init=1)
-        _M, _A, _B, _C = map(lambda x: code_obj.Variable(x, int, var_init=0),
+        _M, _A, _B, _C = map(lambda x: code_obj.Variable(x, int, var_init=[0]),
                              ["M", "A", "B", "C"])
         _rFunc = code_obj.Variable("rFunc", "function", var_init=None)
         useSparseDiffusion = code_obj.Variable("useSparseDiffusion",
@@ -66,7 +68,7 @@ class ProteusCoefficientGenerator(SFLGenerator):
         constructor = self.class_dag.create_constructor(inputs=inputs)
 
         member_names = ["M", "A", "B", "C"]
-        M, A, B, C = map(lambda (x, v): code_obj.Variable(x, int, var_init=v),
+        M, A, B, C = map(lambda (x, v): code_obj.IndexedVariable(x, int, var_init=v),
                          zip(member_names, default_input_vars))
         rFunc = code_obj.Variable('rFunc', "function", _rFunc)
 
@@ -113,7 +115,7 @@ class ProteusCoefficientGenerator(SFLGenerator):
         dag.add_object(eval_func)
 
         eval_loop = code_obj.LoopNode('for', test=nc)
-        dag.add_object(eval_loop)
+        eval_func.add_object(eval_loop)
         loop_idx = eval_loop.idx
         c_eval_args = (dag.get_member_variable('M').index_stmt(loop_idx),
                        dag.get_member_variable('A').index_stmt(loop_idx),
@@ -126,9 +128,9 @@ class ProteusCoefficientGenerator(SFLGenerator):
                        c_var.index_stmt("('dm', %s, %s)" % (loop_idx,loop_idx)),
                        c_var.index_stmt("('f', %s)" % loop_idx),
                        c_var.index_stmt("('df', %s, %s)" % (loop_idx,loop_idx)),
-                       c_var.index_stmt("('a', %s)" % (loop_idx,loop_idx)),
+                       c_var.index_stmt("('a', %s, %s)" % (loop_idx,loop_idx)),
                        c_var.index_stmt("('r', %s)" % loop_idx),
-                       c_var.index_stmt("('dr', %s)" % (loop_idx,loop_idx)),
+                       c_var.index_stmt("('dr', %s, %s)" % (loop_idx,loop_idx)),
                        )
         eval_loop.add_statement("self.linearADR_ContantCoefficientsEvaluate",
                                 *c_eval_args)
@@ -142,15 +144,19 @@ if self.rFunc != None:
         c[('dr',i,i)].flat[n] = self.rFunc[i].drOfUX(c[('u',i)].flat[n],c['x'].flat[n*nSpace:(n+1)*nSpace])
 """
         )
-        eval_loop.add_object(blurb)
+        eval_func.add_object(blurb)
 
 
     def gen_coefficient_class(self, classname=None):
         if classname is not None:
             self._classname = classname
+        self._modules.add("import proteus")
+        self._modules.add("from proteus.TransportCoefficients import TC_base")
         self.class_dag = code_obj.ClassNode(self.classname,
-                                             parents=["TC_Base"])
+                                             parents=["TC_base"])
+        self.class_dag.add_object(code_obj.Blurb("from proteus.ctransportCoefficients import linearADR_ConstantCoefficientsEvaluate"))
         self.gen_init_func_node()
+        self.gen_evaluate_func_node()
 
     def to_file(self, filename=None):
         self.gen_coefficient_class()

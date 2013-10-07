@@ -23,5 +23,9 @@ class ProteusCoefficientPrinter(SFLPrinter):
     def print_file(self, indent=0):
         ret_code = ""
         ret_code += self._print_header(indent)
+        if self._generator._modules:
+            for mod_str in self._generator._modules:
+                ret_code += mod_str + "\n"
+            ret_code += "\n"
         ret_code += PythonCodePrinter(self._generator.class_dag).code_str()
         return ret_code

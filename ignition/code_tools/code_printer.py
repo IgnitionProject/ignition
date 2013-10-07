@@ -40,7 +40,7 @@ class CodePrinter(object):
         return self._visit_node(node.objs, indent)
 
     def _visit_blurb(self, node, indent=0):
-        return indent_code(node.blurb, indent)
+        return indent_code(node.blurb + "\n", indent)
 
     def _visit_functionnode(self, node, indent=0):
         ret_str = self._decl_func(node)
@@ -312,7 +312,14 @@ class PythonCodePrinter(CodePrinter):
         return ret_str
 
     def _visit_for_loop_head(self, node, indent=0):
-        return "for %(idx)s in range(%(init)s, %(test)s, %(inc)s):\n" % node.__dict__
+        if node.init is None and node.inc is None:
+            ret_tmp = "for %(idx)s in range(%(test)s):\n"
+        else:
+            ret_tmp = "for %(idx)s in range(%(init)s, %(test)s, %(inc)s):\n"
+        return ret_tmp % {"test": self._visit_node(node.test),
+                          "inc": self._visit_node(node.inc),
+                          "idx": self._visit_node(node.idx),
+                          }
 
     def _visit_func_return(self, node, indent=0):
         return indent_code("return %(output)s\n" % node.__dict__, indent)
