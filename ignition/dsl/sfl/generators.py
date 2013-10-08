@@ -4,6 +4,7 @@ import os
 import sys
 
 from .proteus_coefficient_printer import ProteusCoefficientPrinter
+from .proteus_script_printer import ProteusScriptPrinter
 from ...code_tools import code_obj
 from ...utils.ordered_set import OrderedSet
 
