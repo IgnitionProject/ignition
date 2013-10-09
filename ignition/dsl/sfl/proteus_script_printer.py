@@ -24,7 +24,7 @@ from proteus.TimeIntegration import NoIntegration
 from ignition.utils.proteus.defaults import ProteusProblem, ProteusNumerics
 from ignition.utils.proteus.optparser import get_prog_opts
 
-%(module_name)s
+from %(module_name)s import %(coefficient_class)s
 
 log = Profiling.logEvent
 nd = 3
@@ -63,7 +63,7 @@ class MyProblem(ProteusProblem):
         self.fluxBoundaryConditions = {0:'setFlow'} #options are 'setFlow','noFlow','mixedFlow'
 
         #equation coefficient names
-        self.coefficients = %(coefficient_class)s(self.aOfX, self.fOfX, self.nc, self.nd)
+        self.coefficients = %(coefficient_class)s(self.nc, self.nd, self.aOfX, self.fOfX)
         self.coefficients.variableNames=['u0']
 
 
@@ -284,6 +284,7 @@ class ProteusScriptPrinter(SFLPrinter):
     def _print_header(self, indent):
         return script_header % {'expr': str(self._generator.expr),
                                 'module_name': self._generator.module_name,
+                                'coefficient_class': self._generator.coefficient_class,
                                 }
 
     def _print_problem_class(self, indent):

@@ -257,18 +257,19 @@ class PythonCodePrinter(CodePrinter):
 
     def _decl_index_var(self, var):
         ret_tmp = "%(var_name)s = %(init_str)s"
+        var_name = self._visit_node(var)
         if var.var_init is not NIL:
             if isinstance(var.var_init, np.ndarray):
                 self.imports.add("import numpy as np")
                 init_str = "np." + repr(var.var_init)
             else:
                 init_str = str(var.var_init)
-            ret_str = ret_tmp % {"var_name": var.var_name,
+            ret_str = ret_tmp % {"var_name": var_name,
                                  "init_str": init_str}
         elif var.shape:
             self.imports.add("import numpy as np")
             init_str = "np.empty(%s)" % "][".join(map(str, var.shape))
-            ret_str = ret_tmp % {"var_name": var.var_name,
+            ret_str = ret_tmp % {"var_name": var_name,
                                  "init_str": init_str}
         else:
             ret_str = ''

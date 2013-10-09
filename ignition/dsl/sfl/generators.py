@@ -54,7 +54,7 @@ class ProteusCoefficientGenerator(SFLGenerator):
                 self._classname = os.path.split(sys.argv[0])[1][:-3]\
                     .title().replace("_", "") \
                     + "Coefficients"
-            return self._classname
+        return self._classname
 
     def gen_init_func_node(self):
         # XXX: Much hardcoded here.
@@ -86,19 +86,19 @@ class ProteusCoefficientGenerator(SFLGenerator):
 
         init_loop = code_obj.LoopNode('for', nc)
         init_loop.add_statement("=", mass.index_stmt(init_loop.idx),
-                                "{%s, 'linear'}" % init_loop.idx)
+                                "{%s: 'linear'}" % init_loop.idx)
         init_loop.add_statement("=", advection.index_stmt(init_loop.idx),
-                                "{%s, 'linear'}" % init_loop.idx)
+                                "{%s: 'linear'}" % init_loop.idx)
         init_loop.add_statement("=", diffusion.index_stmt(init_loop.idx),
-                                "{%s, {%s, 'constant'}}" %
+                                "{%s: {%s: 'constant'}}" %
                                 (init_loop.idx, init_loop.idx))
         init_loop.add_statement("=", potential.index_stmt(init_loop.idx),
-                                "{%s, 'u'}" % init_loop.idx)
+                                "{%s: 'u'}" % init_loop.idx)
         init_loop.add_statement("=", reaction.index_stmt(init_loop.idx),
-                                "{%s, 'linear'}" % init_loop.idx)
+                                "{%s: 'linear'}" % init_loop.idx)
         constructor.add_object(init_loop)
 
-        init_args = ["self"] + tmp_names + ["useSparseDiffusion = useSparseDiffusion"]
+        init_args = ["self", nc] + tmp_names + ["useSparseDiffusion = useSparseDiffusion"]
         constructor.add_statement("%s.__init__" % self.class_dag.parents[0],
                                   *init_args)
 
@@ -113,7 +113,7 @@ class ProteusCoefficientGenerator(SFLGenerator):
         dag.add_member_variable(nc)
 
         eval_func = code_obj.FunctionNode('evaluate', inputs=(t_var, c_var))
-        dag.add_object(eval_func)
+        dag.add_member_function(eval_func)
 
         eval_loop = code_obj.LoopNode('for', test=nc)
         eval_func.add_object(eval_loop)
@@ -133,7 +133,7 @@ class ProteusCoefficientGenerator(SFLGenerator):
                        c_var.index_stmt("('r', %s)" % loop_idx),
                        c_var.index_stmt("('dr', %s, %s)" % (loop_idx,loop_idx)),
                        )
-        eval_loop.add_statement("self.linearADR_ContantCoefficientsEvaluate",
+        eval_loop.add_statement("self.linearADR_ConstantCoefficientsEvaluate",
                                 *c_eval_args)
 
         # XXX: Total cheat
@@ -179,7 +179,6 @@ class ProteusScriptGenerator(SFLGenerator):
         if self.coefficient_class is None:
             self._gen_coefficient_class()
         self._filename = None
-        self._classname = None
 
     @property
     def filename(self):
@@ -195,7 +194,7 @@ class ProteusScriptGenerator(SFLGenerator):
     def _gen_coefficient_class(self):
         coefficient_generator = ProteusCoefficientGenerator(self.expr)
         coefficient_generator.to_file()
-        self.module_name = coefficient_generator.filename
+        self.module_name = coefficient_generator.filename.replace(".py", "")
         self.coefficient_class = coefficient_generator.classname
 
     def to_file(self, filename=None):
