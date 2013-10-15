@@ -320,6 +320,7 @@ class PythonCodePrinter(CodePrinter):
         return ret_tmp % {"test": self._visit_node(node.test),
                           "inc": self._visit_node(node.inc),
                           "idx": self._visit_node(node.idx),
+                          "init": self._visit_node(node.init),
                           }
 
     def _visit_func_return(self, node, indent=0):
