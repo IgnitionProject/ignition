@@ -84,39 +84,41 @@ class StrongForm(object):
         div_args = map(lambda d: d.args[0], divs)
         return Add(*div_args)
 
+    def _find_grad_coefficient(self, node):
+        if isinstance(node, Add):
+            return Add(*map(self._find_grad_coefficient, node.args))
+        if isinstance(node, Mul):
+            grad_pos = []
+            for i in range(len(node.args)):
+                if isinstance(node.args[i], grad):
+                    grad_pos.append(i)
+            if grad_pos:
+                ret_mul = 1
+                for j in range(len(node.args)):
+                    if j not in grad_pos:
+                        ret_mul *= node.args[j]
+                return ret_mul
+            return 0
+        else:
+            return 0
+
+    def _is_div_grad(self, node):
+        is_div = isinstance(node, div)
+        div_grad = False
+        if is_div:
+            for arg in preorder_traversal(node.args[0]):
+                if isinstance(arg, grad):
+                    div_grad = True
+                    break
+        return div_grad
+
     def _extract_diffusion(self, order_dict):
-
-        def _find_grad_coefficient(node):
-            if isinstance(node, Add):
-                return Add(map(_find_grad_coefficient, node))
-            if isinstance(node, Mul):
-                grad_pos = []
-                for i in range(len(node.args)):
-                    if isinstance(node.args[i], grad):
-                        grad_pos.append(i)
-                if grad_pos:
-                    ret_mul = 1
-                    for j in range(len(node.args)):
-                        if j not in grad_pos:
-                            ret_mul *= node.args[j]
-                    return ret_mul
-                return 0
-            else:
-                return 0
-
-        def _is_div_grad(node):
-            is_div = isinstance(node, div)
-            div_grad = False
-            if is_div:
-                for arg in preorder_traversal(node.args[0]):
-                    if isinstance(arg, grad):
-                        div_grad = True
-                        break
-            return div_grad
-
         second_order = order_dict.get(2, 0)
-        div_grads = filter(_is_div_grad, preorder_traversal(second_order))
-        return div_grads
+        div_grads = filter(self._is_div_grad, preorder_traversal(second_order))
+        div_grad_args = map(lambda d: d.args[0], div_grads)
+        grads = map(self._find_grad_coefficient, div_grad_args)
+#        import pdb; pdb.set_trace()
+        return Add(*list(grads))
 
     def _extract_hamiltonian(self, order_dict):
         raise NotImplementedError()
