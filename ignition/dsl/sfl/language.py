@@ -232,6 +232,24 @@ class curl(Operator):
     differential_order = 1
 
 
+class NonLinearFunction(Operator):
+    """A nonlinear function based on given variables.
+
+    >>> u = Variable('u')
+    >>> f_u = NonLinearFunction('u', order=3)
+    """
+
+    def __new__(cls, *args, **kws):
+        diff_order = kws.pop("order", None)
+        obj = Operator.__new__(cls, *args, **kws)
+        obj._diff_order = diff_order
+        return obj
+
+    @property
+    def order(self):
+        return self._diff_order
+
+
 # Coefficients
 class Coefficient(Symbol):
     """Represents a coefficient that is evaluated at quadrature points.
