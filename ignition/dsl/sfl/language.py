@@ -78,7 +78,6 @@ class StrongForm(object):
 
         return ret_dict
 
-
     def _extract_advection(self, order_dict):
         first_order = order_dict.get(1, 0)
         divs = filter(lambda x: isinstance(x, div), preorder_traversal(first_order))
@@ -114,11 +113,10 @@ class StrongForm(object):
                         div_grad = True
                         break
             return div_grad
-        
 
         second_order = order_dict.get(2, 0)
         div_grads = filter(_is_div_grad, preorder_traversal(second_order))
-        
+        return div_grads
 
     def _extract_hamiltonian(self, order_dict):
         raise NotImplementedError()
