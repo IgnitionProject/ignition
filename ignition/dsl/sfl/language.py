@@ -14,10 +14,11 @@ class StrongForm(object):
             ret_set.add(node)
         if return_first and len(ret_set):
             return ret_set
-        for arg in node.args:
-            ret_set.update(self._find_obj(arg, func, return_first))
-            if return_first and len(ret_set):
-                return ret_set
+        if hasattr(node, "args"):
+            for arg in node.args:
+                ret_set.update(self._find_obj(arg, func, return_first))
+                if return_first and len(ret_set):
+                    return ret_set
         return ret_set
 
     def _find_obj_by_name(self, node, name):
@@ -60,12 +61,13 @@ class StrongForm(object):
 
         #TODO: Pretty gorpy, should probably use a dynamic programming solution
         def _order_visitor(node):
+            print "_order_visitor:", node
             if isinstance(node, Add):
                 return max(map(_order_visitor, node.args))
             elif isinstance(node, Mul):
                 return sum(map(_order_visitor, node.args))
             elif isinstance(node, Operator):
-                return _order_visitor(node.args[0]) + node.differential_order
+                return sum(map(_order_visitor, node.args)) + node.differential_order
             else:
                 return 0
 
@@ -170,6 +172,7 @@ class StrongForm(object):
             if isinstance(node, Add):
                 return Add(*map(lambda x: _mass_visitor(x), node.args))
             else:
+                print "_extract_mass", node
                 if self._find_obj_by_type(node, Dt):
                     return node
                 return 0
@@ -194,10 +197,11 @@ class StrongForm(object):
 
 class Variable(Symbol):
     """Represents an unknown quantity"""
-    def __new__(cls, name, dim=1, space="L2"):
+    def __new__(cls, name, rank=None, dim=1, space="L2"):
         obj = Symbol.__new__(cls, name)
         obj.dim = dim
         obj.space = space
+        obj.rank = rank
         return obj
 
 
@@ -227,6 +231,11 @@ class Region(Domain):
 
 # Operators
 class Operator(Expr):
+
+    differential_order = 0
+
+
+class dot(Operator):
 
     differential_order = 0
 

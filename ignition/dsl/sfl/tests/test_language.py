@@ -1,4 +1,4 @@
-from ignition.dsl.sfl.language import (Coefficients, Constant, Constants, grad, Dt, div, StrongForm, Variable, Variables)
+from ignition.dsl.sfl.language import (Coefficients, Constant, Constants, grad, Dt, dot, div, StrongForm, Variable, Variables)
 
 
 def test_StrongForm():
@@ -27,29 +27,33 @@ def test_variables():
 def test_separate_by_order():
     u, v = Variables('u v')
     c, f = Constants('c f')
-    strong_form = StrongForm(c*grad(div(u)) + div(v) - f)
+    strong_form = StrongForm(c*grad(div(u)) + div(v) - f + dot(c, grad(u)))
 
     order_dict = strong_form.separate_by_order()
-    print order_dict
     assert(order_dict[0] == -f)
-    assert(order_dict[1] == div(v))
+    assert(order_dict[1] == div(v) + dot(c, grad(u)))
     assert(order_dict[2] == c*grad(div(u)))
 
 
 def test_extract_transport_coefficients():
-    u = Variable('u')
-    
-    a, b, c, d = Coefficients('a b c d')
-    eqn = Dt(a*u) + div(b*u + c*grad(u)) + d*u + grad(u)*u
+    u = Variable('u', rank=0)
+    a, b, d = Coefficients('a b d', rank=0)
+    b, e = Coefficients('b e', rank=1)
+    c, = Coefficients('c', rank=2)
+
+    eqn = dot(e, grad(u))
+    eqn = Dt(a*u) + div(b*u + c*grad(u)) + d*u + dot(e, grad(u))
     strong_form = StrongForm(eqn)
 
     coeffs = {'diffusion': c,
               'reaction': d*u,
-              'hamiltonian': grad(u)*u,
+              'hamiltonian': dot(e, grad(u)),
               'potential': u,
               'mass': Dt(a*u),
               'advection': b*u,
               }
     sf_coeffs = strong_form.extract_transport_coefficients()
     assert(coeffs == sf_coeffs)
-
+    eqn =  d*u + dot(e,grad(u)) + Dt(a*u) + div(b*u) + div(c*grad(u))
+    sf_coeffs = strong_form.extract_transport_coefficients()
+    assert(coeffs == sf_coeffs)
