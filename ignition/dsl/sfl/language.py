@@ -79,12 +79,6 @@ class StrongForm(object):
 
         return ret_dict
 
-    def _extract_advection(self, order_dict):
-        first_order = order_dict.get(1, 0)
-        divs = filter(lambda x: isinstance(x, div), preorder_traversal(first_order))
-        div_args = map(lambda d: d.args[0], divs)
-        return Add(*div_args)
-
     def _find_grad_coefficient(self, node):
         if isinstance(node, Add):
             return Add(*map(self._find_grad_coefficient, node.args))
@@ -118,6 +112,7 @@ class StrongForm(object):
         return ret_val
 
     def _is_div_grad(self, node):
+        """Returns true node is a div with a grad argument inside"""
         is_div = isinstance(node, div)
         div_grad = False
         if is_div:
@@ -126,6 +121,23 @@ class StrongForm(object):
                     div_grad = True
                     break
         return div_grad
+
+    def _has_grad(self, node):
+        """Return true if node has a grad in it"""
+        return len(filter(lambda n: isinstance(n, grad), preorder_traversal(node))) > 0
+
+    def _extract_advection(self, node):
+#        import pdb; pdb.set_trace()
+        divs = filter(lambda x: isinstance(x, div), preorder_traversal(node))
+        div_args = map(lambda d: d.args[0], divs)
+        split_div_args = []
+        for arg in div_args:
+            if isinstance(arg, Add):
+                split_div_args.extend(arg.args)
+            else:
+                split_div_args.append(arg)
+        div_args = filter(lambda n: not self._has_grad(n), split_div_args)
+        return Add(*div_args)
 
     def _extract_diffusion(self, order_dict):
         second_order = order_dict.get(2, 0)
@@ -167,7 +179,7 @@ class StrongForm(object):
     def extract_transport_coefficients(self):
         ret_dict = {}
         order_dict = self.separate_by_order()
-        ret_dict["advection"] = self._extract_advection(order_dict)
+        ret_dict["advection"] = self._extract_advection(self.eqn)
         ret_dict["diffusion"] = self._extract_diffusion(order_dict)
         #ret_dict["hamiltonian"] =  self._extract_hamiltonian(order_dict)
         ret_dict["potential"] = self._extract_potential(order_dict)
