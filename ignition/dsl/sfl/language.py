@@ -1,7 +1,7 @@
 import numpy as np
 from sympy import Add, Expr, Mul, Symbol, preorder_traversal
 
-from ...utils import flatten_list
+from ...utils import flatten
 
 class StrongForm(object):
 
@@ -126,16 +126,20 @@ class StrongForm(object):
         """Return true if node has a grad in it"""
         return len(filter(lambda n: isinstance(n, grad), preorder_traversal(node))) > 0
 
+    def _has_div(self, node):
+        """Return true if node has a div in it"""
+        return len(filter(lambda n: isinstance(n, div), preorder_traversal(node))) > 0
+
+    def _split_on_add(self, node):
+        """Returns a iterable of nodes that are separated by add node"""
+        if isinstance(node, Add):
+            return node.args
+        return (node, )
+
     def _extract_advection(self, node):
-#        import pdb; pdb.set_trace()
         divs = filter(lambda x: isinstance(x, div), preorder_traversal(node))
         div_args = map(lambda d: d.args[0], divs)
-        split_div_args = []
-        for arg in div_args:
-            if isinstance(arg, Add):
-                split_div_args.extend(arg.args)
-            else:
-                split_div_args.append(arg)
+        split_div_args = flatten(map(self._split_on_add, div_args))
         div_args = filter(lambda n: not self._has_grad(n), split_div_args)
         return Add(*div_args)
 
@@ -144,18 +148,18 @@ class StrongForm(object):
         div_grads = filter(self._is_div_grad, preorder_traversal(second_order))
         div_grad_args = map(lambda d: d.args[0], div_grads)
         grads = map(self._find_grad_coefficient, div_grad_args)
-#        import pdb; pdb.set_trace()
         return Add(*list(grads))
 
-    def _extract_hamiltonian(self, order_dict):
-        raise NotImplementedError()
-        return
+    def _extract_hamiltonian(self, node):
+        grads = filter(self._has_grad, self._split_on_add(node))
+        grads_m_divs = filter(lambda n: not self._is_div_grad(n), grads)
+        return Add(*grads_m_divs)
 
     def _extract_potential(self, order_dict):
         second_order = order_dict.get(2, 0)
         div_grads = filter(self._is_div_grad, preorder_traversal(second_order))
         div_grad_args = map(lambda d: d.args[0], div_grads)
-        potentials = flatten_list((map(self._find_grad_args, div_grad_args)))
+        potentials = flatten((map(self._find_grad_args, div_grad_args)))
         if len(potentials) == 1:
             potentials = potentials[0]
         return potentials
@@ -164,7 +168,7 @@ class StrongForm(object):
 
         def _mass_visitor(node):
             if isinstance(node, Add):
-                return Add(*map(lambda x:_mass_visitor(x, top), node.args))
+                return Add(*map(lambda x: _mass_visitor(x), node.args))
             else:
                 if self._find_obj_by_type(node, Dt):
                     return node
@@ -181,7 +185,7 @@ class StrongForm(object):
         order_dict = self.separate_by_order()
         ret_dict["advection"] = self._extract_advection(self.eqn)
         ret_dict["diffusion"] = self._extract_diffusion(order_dict)
-        #ret_dict["hamiltonian"] =  self._extract_hamiltonian(order_dict)
+        ret_dict["hamiltonian"] = self._extract_hamiltonian(self.eqn)
         ret_dict["potential"] = self._extract_potential(order_dict)
         ret_dict["mass"] = self._extract_mass(order_dict)
         ret_dict["reaction"] = self._extract_reaction(order_dict)

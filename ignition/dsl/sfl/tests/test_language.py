@@ -40,10 +40,16 @@ def test_extract_transport_coefficients():
     u = Variable('u')
     
     a, b, c, d = Coefficients('a b c d')
-    eqn = Dt(a*u) + div(b*u + c*grad(u)) + d*u
+    eqn = Dt(a*u) + div(b*u + c*grad(u)) + d*u + grad(u)*u
     strong_form = StrongForm(eqn)
 
-    print strong_form.extract_transport_coefficients()
-    assert(False)
+    coeffs = {'diffusion': c,
+              'reaction': d*u,
+              'hamiltonian': grad(u)*u,
+              'potential': u,
+              'mass': Dt(a*u),
+              'advection': b*u,
+              }
+    sf_coeffs = strong_form.extract_transport_coefficients()
+    assert(coeffs == sf_coeffs)
 
-test_extract_transport_coefficients()
