@@ -1,6 +1,7 @@
 import numpy as np
 from sympy import Add, Expr, Mul, Symbol, preorder_traversal
 
+from ...utils import flatten_list
 
 class StrongForm(object):
 
@@ -102,6 +103,20 @@ class StrongForm(object):
         else:
             return 0
 
+    def _find_grad_args(self, node):
+        ret_val = 0
+        if isinstance(node, Add):
+            ret_val = filter(lambda x: x != 0, map(self._find_grad_args, node.args))
+        elif isinstance(node, Mul):
+            grads = filter(lambda n: isinstance(n, grad), node.args)
+            if len(grads) == 1:
+                ret_val = self._find_grad_args(grads[0])
+            elif len(grads) > 1:
+                raise RuntimeError("Don't know how to deal with grad(x)grad(y): given %s" % node)
+        elif isinstance(node, grad):
+            ret_val = node.args[0]
+        return ret_val
+
     def _is_div_grad(self, node):
         is_div = isinstance(node, div)
         div_grad = False
@@ -125,8 +140,13 @@ class StrongForm(object):
         return
 
     def _extract_potential(self, order_dict):
-        raise NotImplementedError()
-        return
+        second_order = order_dict.get(2, 0)
+        div_grads = filter(self._is_div_grad, preorder_traversal(second_order))
+        div_grad_args = map(lambda d: d.args[0], div_grads)
+        potentials = flatten_list((map(self._find_grad_args, div_grad_args)))
+        if len(potentials) == 1:
+            potentials = potentials[0]
+        return potentials
 
     def _extract_mass(self, order_dict):
 
@@ -148,10 +168,10 @@ class StrongForm(object):
         ret_dict = {}
         order_dict = self.separate_by_order()
         ret_dict["advection"] = self._extract_advection(order_dict)
-        ret_dict["diffusion"] =  self._extract_diffusion(order_dict)
+        ret_dict["diffusion"] = self._extract_diffusion(order_dict)
         #ret_dict["hamiltonian"] =  self._extract_hamiltonian(order_dict)
-        #ret_dict["potential"] =  self._extract_potential(order_dict)
-        ret_dict["mass"] =  self._extract_mass(order_dict)
+        ret_dict["potential"] = self._extract_potential(order_dict)
+        ret_dict["mass"] = self._extract_mass(order_dict)
         ret_dict["reaction"] = self._extract_reaction(order_dict)
         return ret_dict
 
