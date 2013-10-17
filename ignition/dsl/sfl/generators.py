@@ -8,6 +8,7 @@ from .proteus_script_printer import ProteusScriptPrinter
 from ...code_tools import code_obj
 from ...utils.ordered_set import OrderedSet
 
+
 class SFLGenerator(object):
     """Base class for strong form language generator.
 
@@ -55,6 +56,14 @@ class ProteusCoefficientGenerator(SFLGenerator):
                     .title().replace("_", "") \
                     + "Coefficients"
         return self._classname
+
+    @property
+    def module_path(self):
+        return os.path.dirname(self.filename)
+
+    @property
+    def module_name(self):
+        return os.path.basename(self.filename).replace('.py', '')
 
     def gen_init_func_node(self):
         # XXX: Much hardcoded here.
