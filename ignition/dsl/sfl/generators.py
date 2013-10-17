@@ -31,7 +31,7 @@ class ProteusCoefficientGenerator(SFLGenerator):
         self._filename = None
         self._classname = None
         self.class_dag = None
-        self._modules = OrderedSet()
+        self.modules = OrderedSet()
 
     @property
     def filename(self):
@@ -156,12 +156,11 @@ if self.rFunc != None:
         )
         eval_func.add_object(blurb)
 
-
     def gen_coefficient_class(self, classname=None):
         if classname is not None:
             self._classname = classname
-        self._modules.add("import proteus")
-        self._modules.add("from proteus.TransportCoefficients import TC_base")
+        self.modules.add("import proteus")
+        self.modules.add("from proteus.TransportCoefficients import TC_base")
         self.class_dag = code_obj.ClassNode(self.classname,
                                              parents=["TC_base"])
         self.class_dag.add_object(code_obj.Blurb("from proteus.ctransportCoefficients import linearADR_ConstantCoefficientsEvaluate"))
@@ -173,9 +172,7 @@ if self.rFunc != None:
         printer = ProteusCoefficientPrinter(self)
         if filename is not None:
             self._filename = filename
-        with open(self.filename, 'w') as f:
-            print("Writing proteus coefficient file to %s" % self.filename)
-            f.write(printer.print_file())
+        printer.print_file(self.filename)
 
 
 class ProteusScriptGenerator(SFLGenerator):
@@ -210,9 +207,8 @@ class ProteusScriptGenerator(SFLGenerator):
         printer = ProteusScriptPrinter(self)
         if filename is not None:
             self._filename = filename
-        with open(self.filename, 'w') as f:
-            print("Writing proteus script file to %s" % self.filename)
-            f.write(printer.print_file())
+        print("Writing proteus script file to %s" % self.filename)
+        printer.to_file(filename)
 
 
 class UFLGenerator(SFLGenerator):
