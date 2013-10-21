@@ -208,7 +208,7 @@ class ProteusScriptGenerator(SFLGenerator):
         if filename is not None:
             self._filename = filename
         print("Writing proteus script file to %s" % self.filename)
-        printer.to_file(filename)
+        printer.print_file(self.filename)
 
 
 class UFLGenerator(SFLGenerator):

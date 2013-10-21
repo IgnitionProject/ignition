@@ -300,10 +300,11 @@ class ProteusScriptPrinter(SFLPrinter):
         ret_code = script_foot_template
         return ret_code
 
-    def print_file(self, indent=0):
+    def print_file(self, filename, indent=0):
         ret_code = ""
         ret_code += self._print_header(indent)
         ret_code += self._print_problem_class(indent)
         ret_code += self._print_numeric_class(indent)
         ret_code += self._print_script_footer(indent)
-        return ret_code
+        with open(filename, 'w') as fp:
+            fp.write(ret_code)

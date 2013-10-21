@@ -67,7 +67,8 @@ class StrongForm(object):
             elif isinstance(node, Mul):
                 return sum(map(_order_visitor, node.args))
             elif isinstance(node, Operator):
-                return sum(map(_order_visitor, node.args)) + node.differential_order
+                #XXX: This is wrong but sum works for our current ops
+                return max(map(_order_visitor, node.args)) + node.differential_order
             else:
                 return 0
 
@@ -76,7 +77,7 @@ class StrongForm(object):
                 order = _order_visitor(arg)
                 ret_dict[order] = ret_dict.get(order, 0) + arg
         else:
-            order = _order_visitor(arg)
+            order = _order_visitor(self.eqn)
             ret_dict[order] = self.eqn
 
         return ret_dict

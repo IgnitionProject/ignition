@@ -19,7 +19,7 @@ class CodeObj(object):
 
     def __init__(self):
         super(CodeObj, self).__init__()
-        self.objs = OrderedSet([])
+        self.objs = OrderedSet([]) #XXX: Should be list
         self.idx_vars = OrderedSet([])
         self.class_member = False
 
