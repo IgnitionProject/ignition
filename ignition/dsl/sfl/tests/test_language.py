@@ -57,22 +57,3 @@ def test_extract_transport_coefficients():
     sf_coeffs = strong_form.extract_transport_coefficients()
     assert(coeffs == sf_coeffs)
 
-
-def test_create_order_dictionary():
-    u = Variable('u', rank=0)
-    a, b, d = Coefficients('a b d', rank=0)
-    b, e = Coefficients('b e', rank=1)
-    c, = Coefficients('c', rank=2)
-
-    eqn = Dt(a*u) + div(b*u + c*grad(u)) + d*u + e*grad(u)
-    strong_form = StrongForm(eqn)
-
-    tc_dict = {'mass': {0: 'linear'},
-               'advection': {0: 'linear'},
-               'diffusion': {0: 'constant'},
-               'potential': {0: 'linear'},
-               'reaction': {0: 'linear'},
-               'hamiltonian': {0: 'linear'},
-               }
-    computed_tc_dict = strong_form.transport_coefficient_dictionary(u)
-    assert(tc_dict == computed_tc_dict)

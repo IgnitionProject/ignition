@@ -5,6 +5,14 @@ from ...utils import flatten
 
 class StrongForm(object):
 
+    transport_eqn_names = ("advection",
+                           "diffusion",
+                           "hamiltonian",
+                           "potential",
+                           "mass",
+                           "reaction",
+                           )
+
     def __init__(self, eqn):
         self.eqn = eqn
 
@@ -99,21 +107,26 @@ class StrongForm(object):
         else:
             return 0
 
-    def _find_grad_args(self, node):
+    @staticmethod
+    def _find_grad_args(node):
         ret_val = 0
         if isinstance(node, Add):
-            ret_val = filter(lambda x: x != 0, map(self._find_grad_args, node.args))
+            ret_val = filter(lambda x: x != 0, map(StrongForm._find_grad_args,
+                                                   node.args))
         elif isinstance(node, Mul):
             grads = filter(lambda n: isinstance(n, grad), node.args)
             if len(grads) == 1:
-                ret_val = self._find_grad_args(grads[0])
+                ret_val = StrongForm._find_grad_args(grads[0])
             elif len(grads) > 1:
-                raise RuntimeError("Don't know how to deal with grad(x)grad(y): given %s" % node)
+                raise RuntimeError(
+                    "Don't know how to deal with grad(x)grad(y): given %s" %
+                    node)
         elif isinstance(node, grad):
             ret_val = node.args[0]
         return ret_val
 
-    def _is_div_grad(self, node):
+    @staticmethod
+    def _is_div_grad(node):
         """Returns true node is a div with a grad argument inside"""
         is_div = isinstance(node, div)
         div_grad = False
@@ -124,21 +137,27 @@ class StrongForm(object):
                     break
         return div_grad
 
-    def _has_grad(self, node):
+    @staticmethod
+    def _has_grad(node):
         """Return true if node has a grad in it"""
-        return len(filter(lambda n: isinstance(n, grad), preorder_traversal(node))) > 0
+        return len(filter(lambda n: isinstance(n, grad),
+                          preorder_traversal(node))) > 0
 
-    def _has_div(self, node):
+    @staticmethod
+    def _has_div(node):
         """Return true if node has a div in it"""
-        return len(filter(lambda n: isinstance(n, div), preorder_traversal(node))) > 0
+        return len(filter(lambda n: isinstance(n, div),
+                          preorder_traversal(node))) > 0
 
-    def _split_on_add(self, node):
+    @staticmethod
+    def _split_on_add(node):
         """Returns a iterable of nodes that are separated by add node"""
         if isinstance(node, Add):
             return node.args
         return (node, )
 
-    def _extract_advection(self, node):
+    def _extract_advection(self, order_dict):
+        node = Add(*flatten(order_dict.itervalues()))
         divs = filter(lambda x: isinstance(x, div), preorder_traversal(node))
         div_args = map(lambda d: d.args[0], divs)
         split_div_args = flatten(map(self._split_on_add, div_args))
@@ -152,7 +171,8 @@ class StrongForm(object):
         grads = map(self._find_grad_coefficient, div_grad_args)
         return Add(*list(grads))
 
-    def _extract_hamiltonian(self, node):
+    def _extract_hamiltonian(self, order_dict):
+        node = Add(*flatten(order_dict.itervalues()))
         grads = filter(self._has_grad, self._split_on_add(node))
         grads_m_divs = filter(lambda n: not self._is_div_grad(n), grads)
         return Add(*grads_m_divs)
@@ -179,70 +199,64 @@ class StrongForm(object):
         first_order = order_dict.get(1, 0)                
         return _mass_visitor(first_order)
 
-    def _extract_reaction(self, order_dict):
+    @staticmethod
+    def _extract_reaction(order_dict):
         return order_dict.get(0, 0)
+
+    @property
+    def transport_eqn_names_extractors(self):
+        return dict([(name, getattr(self, "_extract_%s" % name))
+                     for name in self.transport_eqn_names])
 
     def extract_transport_coefficients(self):
         ret_dict = {}
         order_dict = self.separate_by_order()
-        ret_dict["advection"] = self._extract_advection(self.eqn)
-        ret_dict["diffusion"] = self._extract_diffusion(order_dict)
-        ret_dict["hamiltonian"] = self._extract_hamiltonian(self.eqn)
-        ret_dict["potential"] = self._extract_potential(order_dict)
-        ret_dict["mass"] = self._extract_mass(order_dict)
-        ret_dict["reaction"] = self._extract_reaction(order_dict)
+        for eqn_name, eqn_extractor in self.transport_eqn_names_extractors.iteritems():
+            ret_dict[eqn_name] = eqn_extractor(order_dict)
         return ret_dict
 
-    def _is_constant(self, node, variable):
+    @staticmethod
+    def _is_constant(node, variable):
         return variable not in node.atoms()
 
-    def _is_linear(self, node, variable):
+    @staticmethod
+    def _is_linear(node, variable):
         if node == variable:
             return True
-        elif self._is_constant(node, variable):
+        elif StrongForm._is_constant(node, variable):
             return True
         elif isinstance(node, NonLinearFunction):
             return False
         elif isinstance(node, Add):
-            terms = self._split_on_add(self, node)
+            terms = StrongForm._split_on_add(node)
             for term in terms:
-                if not self._is_linear(self, term, variable):
+                if not StrongForm._is_linear(term, variable):
                     return False
             return True
         elif isinstance(node, Pow):
             return False
         elif isinstance(node, (Mul, dot)):
-            non_const_terms = filter(lambda n: not self._is_constant(n, variable), node.args)
-            terms = filter(lambda n: self._is_linear(n, variable), non_const_terms)
+            non_const_terms = filter(lambda n:
+                                     not StrongForm._is_constant(n, variable),
+                                     node.args)
+            terms = filter(lambda n: StrongForm._is_linear(n, variable),
+                           non_const_terms)
             if len(terms) > 1:
                 return False
             return True
         elif isinstance(node, Operator):
-            return self._is_linear(node.args[0], variable)
+            return StrongForm._is_linear(node.args[0], variable)
         raise(RuntimeError("Unknown node type %s" % node))
 
-    def _extract_order(self, node, variable):
-        if self._is_constant(node, variable):
+    @staticmethod
+    def extract_order(node, variable):
+        if StrongForm._is_constant(node, variable):
             ret_str = 'constant'
-        elif self._is_linear(node, variable):
+        elif StrongForm._is_linear(node, variable):
             ret_str = 'linear'
         else:
             ret_str = 'nonlinear'
         return ret_str
-
-    def transport_coefficient_dictionary(self, variables):
-        ret_dict = {}
-
-        if not hasattr(variables, "__iter__"):
-            variables = [variables]
-
-        transport_coefficients = self.extract_transport_coefficients()
-        for n, variable in enumerate(variables):
-            for eqn_part, eqn in transport_coefficients.iteritems():
-                eqn_dict = ret_dict.get(eqn_part, {})
-                eqn_dict[n] = self._extract_order(eqn, variable)
-                ret_dict[eqn_part] = eqn_dict
-        return ret_dict
 
 
 class Variable(Symbol):

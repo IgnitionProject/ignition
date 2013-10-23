@@ -3,18 +3,21 @@
 import os
 import sys
 
+from .language import StrongForm, Variable
 from .proteus_coefficient_printer import ProteusCoefficientPrinter
 from .proteus_script_printer import ProteusScriptPrinter
 from ...code_tools import code_obj
 from ...utils.ordered_set import OrderedSet
+from ...utils.iterators import flatten
 
 
 class SFLGenerator(object):
     """Base class for strong form language generator.
 
     """
-    def __init__(self, expr, **kwargs):
-        self.expr = expr
+    def __init__(self, strong_forms, variables=None, **kwargs):
+        self.strong_forms = strong_forms if not isinstance(strong_forms, StrongForm) else (strong_forms,)
+        self.variables = variables if not isinstance(variables, Variable) else (variables,)
         self.kwargs = kwargs
 
     def generate(self):
@@ -26,8 +29,8 @@ class ProteusCoefficientGenerator(SFLGenerator):
 
     """
 
-    def __init__(self, expr, **kwargs):
-        super(ProteusCoefficientGenerator, self).__init__(expr, **kwargs)
+    def __init__(self, strong_forms, variables=None, **kwargs):
+        super(ProteusCoefficientGenerator, self).__init__(strong_forms, variables, **kwargs)
         self._filename = None
         self._classname = None
         self.class_dag = None
@@ -65,6 +68,25 @@ class ProteusCoefficientGenerator(SFLGenerator):
     def module_name(self):
         return os.path.basename(self.filename).replace('.py', '')
 
+    def gen_transport_coefficient_dictionary(self):
+        ret_dict = {}
+
+        if self.variables is None:
+            self.variables = OrderedSet(flatten(map(lambda x: x.variables(),
+                                                    self.strong_forms)))
+
+        ret_dict = dict([(name, {})
+                         for name in StrongForm.transport_eqn_names])
+        for sf_idx, sf in enumerate(self.strong_forms):
+            transport_coefficients = sf.extract_transport_coefficients()
+            for var_idx, variable in enumerate(self.variables):
+                for eqn_part, eqn in transport_coefficients.iteritems():
+                    eqn_dict = ret_dict[eqn_part].get(sf_idx, {})
+                    eqn_dict[var_idx] = StrongForm.extract_order(eqn, variable)
+                    ret_dict[eqn_part][sf_idx] = eqn_dict
+        return ret_dict
+
+
     def gen_init_func_node(self):
         # XXX: Much hardcoded here.
         nc = code_obj.Variable("nc", int, var_init=1)
@@ -78,7 +100,8 @@ class ProteusCoefficientGenerator(SFLGenerator):
         constructor = self.class_dag.create_constructor(inputs=inputs)
 
         member_names = ["M", "A", "B", "C"]
-        M, A, B, C = map(lambda (x, v): code_obj.IndexedVariable(x, int, var_init=v),
+        M, A, B, C = map(lambda (x, v): code_obj.IndexedVariable(x, int,
+                                                                 var_init=v),
                          zip(member_names, default_input_vars))
         rFunc = code_obj.Variable('rFunc', "function", _rFunc)
 
@@ -87,25 +110,15 @@ class ProteusCoefficientGenerator(SFLGenerator):
         tmp_names = ["mass", "advection", "diffusion", "potential", "reaction",
                      "hamiltonian"]
         mass, advection, diffusion, potential, reaction, hamiltonian = \
-            map(lambda name: code_obj.IndexedVariable(name, var_init="{}"),
+            map(lambda name: code_obj.IndexedVariable(name),
                 tmp_names)
         tmp_vars = [mass, advection, diffusion, potential, reaction,
                     hamiltonian]
         map(lambda x: constructor.add_object(x), member_vars + tmp_vars)
 
-        init_loop = code_obj.LoopNode('for', nc)
-        init_loop.add_statement("=", mass.index_stmt(init_loop.idx),
-                                "{%s: 'linear'}" % init_loop.idx)
-        init_loop.add_statement("=", advection.index_stmt(init_loop.idx),
-                                "{%s: 'linear'}" % init_loop.idx)
-        init_loop.add_statement("=", diffusion.index_stmt(init_loop.idx),
-                                "{%s: {%s: 'constant'}}" %
-                                (init_loop.idx, init_loop.idx))
-        init_loop.add_statement("=", potential.index_stmt(init_loop.idx),
-                                "{%s: 'u'}" % init_loop.idx)
-        init_loop.add_statement("=", reaction.index_stmt(init_loop.idx),
-                                "{%s: 'linear'}" % init_loop.idx)
-        constructor.add_object(init_loop)
+        coeff_dict = self.gen_transport_coefficient_dictionary()
+        for variable, name in zip(tmp_vars, tmp_names):
+            constructor.add_statement("=", variable, str(coeff_dict[name]))
 
         init_args = ["self", nc] + tmp_names + ["useSparseDiffusion = useSparseDiffusion"]
         constructor.add_statement("%s.__init__" % self.class_dag.parents[0],
@@ -146,15 +159,15 @@ class ProteusCoefficientGenerator(SFLGenerator):
                                 *c_eval_args)
 
         # XXX: Total cheat
-        blurb = code_obj.Blurb("""
+        if self.kwargs.get("rfunc_flatten"):
+            blurb = code_obj.Blurb("""
 nSpace=c['x'].shape[-1]
 if self.rFunc != None:
     for n in range(len(c[('u',i)].flat)):
         c[('r',i)].flat[n] = self.rFunc[i].rOfUX(c[('u',i)].flat[n],c['x'].flat[n*nSpace:(n+1)*nSpace])
         c[('dr',i,i)].flat[n] = self.rFunc[i].drOfUX(c[('u',i)].flat[n],c['x'].flat[n*nSpace:(n+1)*nSpace])
-"""
-        )
-        eval_func.add_object(blurb)
+""")
+            eval_func.add_object(blurb)
 
     def gen_coefficient_class(self, classname=None):
         if classname is not None:
@@ -172,14 +185,15 @@ if self.rFunc != None:
         printer = ProteusCoefficientPrinter(self)
         if filename is not None:
             self._filename = filename
+        print("Writing proteus coefficient file to %s" % self.filename)
         printer.print_file(self.filename)
 
 
 class ProteusScriptGenerator(SFLGenerator):
     """Generates a base script for calling a SFL code from Proteus"""
-    def __init__(self, expr, **kwargs):
-        super(ProteusScriptGenerator, self).__init__(expr, **kwargs)
-        self.expr = expr
+    def __init__(self, strong_forms, variables=None, **kwargs):
+        super(ProteusScriptGenerator, self).__init__(strong_forms, variables,
+                                                     **kwargs)
         self.coefficient_class = kwargs.get("coefficient_class")
         self.module_name = kwargs.get("module_name")
         if self.coefficient_class is None:
@@ -198,7 +212,8 @@ class ProteusScriptGenerator(SFLGenerator):
         return self._filename
 
     def _gen_coefficient_class(self):
-        coefficient_generator = ProteusCoefficientGenerator(self.expr)
+        coefficient_generator = ProteusCoefficientGenerator(self.strong_forms,
+                                                            self.variables)
         coefficient_generator.to_file()
         self.module_name = coefficient_generator.filename.replace(".py", "")
         self.coefficient_class = coefficient_generator.classname
@@ -218,9 +233,9 @@ class UFLGenerator(SFLGenerator):
             f.write(self.generate())
 
 
-def generate(framework, expr, **kwargs):
+def generate(framework, strong_forms, variables=None, **kwargs):
     """Generates the equation in a lower level framework"""
     if framework == "proteus-coefficient":
-        return ProteusCoefficientGenerator(expr, **kwargs).to_file()
+        return ProteusCoefficientGenerator(strong_forms, variables, **kwargs).to_file()
     elif framework == "proteus-script":
-        return ProteusScriptGenerator(expr, **kwargs).to_file()
+        return ProteusScriptGenerator(strong_forms, variables, **kwargs).to_file()

@@ -282,9 +282,10 @@ class ProteusScriptPrinter(SFLPrinter):
         self._generator = generator
 
     def _print_header(self, indent):
-        return script_header % {'expr': str(self._generator.expr),
+        return script_header % {'expr': str(self._generator.strong_forms),
                                 'module_name': self._generator.module_name,
-                                'coefficient_class': self._generator.coefficient_class,
+                                'coefficient_class':
+                                    self._generator.coefficient_class,
                                 }
 
     def _print_problem_class(self, indent):
