@@ -53,7 +53,8 @@ def test_extract_transport_coefficients():
               }
     sf_coeffs = strong_form.extract_transport_coefficients()
     assert(coeffs == sf_coeffs)
-    eqn =  d*u + dot(e,grad(u)) + Dt(a*u) + div(b*u) + div(c*grad(u))
+    eqn =  d*u + dot(e, grad(u)) + Dt(a*u) + div(b*u) + div(c*grad(u))
+    strong_form = StrongForm(eqn)
     sf_coeffs = strong_form.extract_transport_coefficients()
     assert(coeffs == sf_coeffs)
 
