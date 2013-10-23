@@ -1,5 +1,5 @@
 import numpy as np
-from sympy import Add, Expr, Mul, Symbol, preorder_traversal
+from sympy import Add, Expr, Mul, Pow, Symbol, preorder_traversal
 
 from ...utils import flatten
 
@@ -61,7 +61,6 @@ class StrongForm(object):
 
         #TODO: Pretty gorpy, should probably use a dynamic programming solution
         def _order_visitor(node):
-            print "_order_visitor:", node
             if isinstance(node, Add):
                 return max(map(_order_visitor, node.args))
             elif isinstance(node, Mul):
@@ -173,7 +172,6 @@ class StrongForm(object):
             if isinstance(node, Add):
                 return Add(*map(lambda x: _mass_visitor(x), node.args))
             else:
-                print "_extract_mass", node
                 if self._find_obj_by_type(node, Dt):
                     return node
                 return 0
@@ -193,6 +191,52 @@ class StrongForm(object):
         ret_dict["potential"] = self._extract_potential(order_dict)
         ret_dict["mass"] = self._extract_mass(order_dict)
         ret_dict["reaction"] = self._extract_reaction(order_dict)
+        return ret_dict
+
+    def _is_constant(self, node, variable):
+        return variable not in node.atoms()
+
+    def _is_linear(self, node, variable):
+        if node == variable:
+            return True
+        elif self._is_constant(node, variable):
+            return True
+        elif isinstance(node, Add):
+            terms = self._split_on_add(self, node)
+            for term in terms:
+                if not self._is_linear(self, term, variable):
+                    return False
+            return True
+        elif isinstance(node, Pow):
+            return False
+        elif isinstance(node, Mul):
+            terms = map(lambda n: self._is_linear(n, variable), node.args)
+            if sum(terms) > 1:
+                return False
+            return True
+        raise(RuntimeError("Unknown node type %s" % node))
+
+    def _extract_order(self, node, variable):
+        if self._is_constant(node, variable):
+            ret_str = 'constant'
+        elif self.is_linear:
+            ret_str = 'linear'
+        else:
+            ret_str = 'nonlinear'
+        return ret_str
+
+    def transport_coefficient_dictionary(self, variables):
+        ret_dict = {}
+
+        if not hasattr(variables, "__iter__"):
+            variables = [variables]
+
+        transport_coefficients = self.extract_transport_coefficients()
+        for n, variable in enumerate(variables):
+            for eqn_part, eqn in transport_coefficients.iteritems():
+                eqn_dict = ret_dict.get(eqn_part, {})
+                eqn_dict[n] = self._extract_order(eqn, variable)
+                ret_dict[eqn_part] = eqn_dict
         return ret_dict
 
 

@@ -64,7 +64,7 @@ def test_create_order_dictionary():
     b, e = Coefficients('b e', rank=1)
     c, = Coefficients('c', rank=2)
 
-    eqn = Dt(a*u) + div(b*u + c*grad(u)) + d*u + dot(e, grad(u))
+    eqn = Dt(a*u) + div(b*u + c*grad(u)) + d*u + e*grad(u)
     strong_form = StrongForm(eqn)
 
     tc_dict = {'mass': {0: 'linear'},
@@ -74,5 +74,8 @@ def test_create_order_dictionary():
                'reaction': {0: 'linear'},
                'hamiltonian': {0: 'linear'},
                }
+    import pdb; pdb.set_trace()
     computed_tc_dict = strong_form.transport_coefficient_dictionary(u)
     assert(tc_dict == computed_tc_dict)
+
+test_create_order_dictionary()
