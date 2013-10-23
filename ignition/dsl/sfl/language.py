@@ -201,6 +201,8 @@ class StrongForm(object):
             return True
         elif self._is_constant(node, variable):
             return True
+        elif isinstance(node, NonLinearFunction):
+            return False
         elif isinstance(node, Add):
             terms = self._split_on_add(self, node)
             for term in terms:
@@ -209,17 +211,20 @@ class StrongForm(object):
             return True
         elif isinstance(node, Pow):
             return False
-        elif isinstance(node, Mul):
-            terms = map(lambda n: self._is_linear(n, variable), node.args)
-            if sum(terms) > 1:
+        elif isinstance(node, (Mul, dot)):
+            non_const_terms = filter(lambda n: not self._is_constant(n, variable), node.args)
+            terms = filter(lambda n: self._is_linear(n, variable), non_const_terms)
+            if len(terms) > 1:
                 return False
             return True
+        elif isinstance(node, Operator):
+            return self._is_linear(node.args[0], variable)
         raise(RuntimeError("Unknown node type %s" % node))
 
     def _extract_order(self, node, variable):
         if self._is_constant(node, variable):
             ret_str = 'constant'
-        elif self.is_linear:
+        elif self._is_linear(node, variable):
             ret_str = 'linear'
         else:
             ret_str = 'nonlinear'

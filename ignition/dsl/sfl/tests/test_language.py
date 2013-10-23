@@ -74,8 +74,5 @@ def test_create_order_dictionary():
                'reaction': {0: 'linear'},
                'hamiltonian': {0: 'linear'},
                }
-    import pdb; pdb.set_trace()
     computed_tc_dict = strong_form.transport_coefficient_dictionary(u)
     assert(tc_dict == computed_tc_dict)
-
-test_create_order_dictionary()
