@@ -217,7 +217,7 @@ class StrongForm(object):
 
     @staticmethod
     def _is_constant(node, variable):
-        return variable not in node.atoms()
+        return isinstance(node, (int, float)) or variable not in node.atoms()
 
     @staticmethod
     def _is_linear(node, variable):
